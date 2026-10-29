@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "Shattered Essentials minimal prototype",
   "estimated_total_completion_percent": 70,
-  "estimate_basis": "Real-source complete game folder and ZIP assembled; static validation passed. Android runtime and exact Victory Road layout unverified.",
+  "estimate_basis": "v0.2 full private game ZIP built with a reception-outpost starting room using stock FRLG Indigo Plateau Gate; event coordinates and static checks passed. Android runtime and exact custom Shattered layout unverified.",
   "tasks": [
     {
       "id": "SET-001",
@@ -56,6 +56,22 @@
       "status": "todo",
       "depends_on": [
         "SET-004"
+      ]
+    },
+    {
+      "id": "SET-007",
+      "title": "Align Victory Road starting interior with Shattered reception outpost",
+      "status": "in_progress",
+      "depends_on": [
+        "SET-002"
+      ],
+      "evidence": [
+        "v0.2 map222 uses FRLG Indigo Plateau Gate map017 with 6 statues and a ruined Johto entrance, instead of South Rock Cave",
+        "Static map/event and ZIP tests pass, SHA256 ad64634ae22553c73babdf4648f4e84e19d72bb144f39c3ff4b20f6d9666eb23"
+      ],
+      "acceptance": [
+        "Actual Shattered map or visual reference comparison",
+        "Android in-game appearance confirmed"
       ]
     }
   ]
