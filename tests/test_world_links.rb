@@ -8,9 +8,9 @@ module RPG
       @x, @y, @pages = x, y, []
     end
     class Page
-      attr_accessor :trigger, :priority_type, :list
+      attr_accessor :trigger, :through, :always_on_top, :list
       def initialize
-        @trigger, @list = 0, []
+        @trigger, @through, @always_on_top, @list = 0, false, false, []
       end
     end
   end
@@ -66,7 +66,8 @@ class WorldLinkInstallerTest < Minitest::Test
     b = load_data("Data/Map011.rxdata").events.values.first
     assert_equal "SHATTERED_LINK:door-one:F", a.name
     assert_equal 1, a.pages.first.trigger
-    assert_equal 0, a.pages.first.priority_type
+    assert_equal false, a.pages.first.always_on_top
+    assert_equal false, a.pages.first.through
     assert_equal [0, 11, 2, 4, 8, 0], a.pages.first.list.first.parameters
     assert_equal [0, 10, 3, 5, 2, 0], b.pages.first.list.first.parameters
     second = ShatteredWorldLinks.install(@plan)
