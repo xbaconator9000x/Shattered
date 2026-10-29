@@ -70,4 +70,25 @@ module ShatteredViridian
     $game_switches[switches[:rain]] = value[:started] && !value[:center]
     value
   end
+  # Called after both nonblocking move routes finish. If either NPC was
+  # obstructed, the escort remains retryable rather than marking success.
+  def self.complete_route!(guard_id, nidoran_id, guard_start, nidoran_start,
+                           guard_end, nidoran_end, started_switch, rain_switch)
+    valid_switch!(started_switch)
+    valid_switch!(rain_switch)
+    return false unless defined?($game_map) && $game_map &&
+      $game_map.respond_to?(:events)
+    guard = $game_map.events[guard_id]
+    nidoran = $game_map.events[nidoran_id]
+    return false unless guard && nidoran
+    complete = [guard.x, guard.y] == guard_end && [nidoran.x, nidoran.y] == nidoran_end
+    unless complete
+      guard.moveto(*guard_start) if guard.respond_to?(:moveto)
+      nidoran.moveto(*nidoran_start) if nidoran.respond_to?(:moveto)
+      return false
+    end
+    start!(started_switch, rain_switch)
+    true
+  end
+
 end
