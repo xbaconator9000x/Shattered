@@ -235,7 +235,8 @@
         "Smoke map transitions, NPC pathing and persisted story flags"
       ],
       "evidence": [
-        "Draft SE-018 PR: native RPG Maker XP entry/guard/Nidoran/arrival/rain/Center events and PokemonGlobal persisted state, 2-map transactional staged installer, source-marker checks, Ruby state/install/failure tests; not native Essentials compiled or Android-tested. Actual guard/Nidoran identities, licensed sprites, map IDs, paths and tile passability require source review."
+        "Draft SE-018 PR: native RPG Maker XP entry/guard/Nidoran/arrival/rain/Center events and PokemonGlobal persisted state, 2-map transactional staged installer, source-marker checks, Ruby state/install/failure tests; not native Essentials compiled or Android-tested. Actual guard/Nidoran identities, licensed sprites, map IDs, paths and tile passability require source review.",
+        "Viridian isolated CI run 40951970699 passed on 8978646b: 14 Ruby tests / 74 assertions / 0 failures, including occupied-event refusal, stale backups, rollback of two map files, save-state persistence, and blocked NPC movement retry. General integration CI run 40951961883 also passed. Both are fixture/static evidence only."
       ],
       "blocker": "Actual target Viridian and Center RMXP map IDs, approved NPC identities and walkable path/transfer coordinates, source-licensed sprites, native Essentials save/warp/rain test and Android validation are still open. Synthetic test fixture is not a playable map."
     },
