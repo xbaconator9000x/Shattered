@@ -23,9 +23,24 @@
   },
   "main": {
     "ref": "main",
-    "commit": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c"
+    "commit": "563a9b9791975d36a04475d4ebf7ead247b064c0"
+  },
+  "inspected_main": {
+    "commit": "563a9b9791975d36a04475d4ebf7ead247b064c0",
+    "merged_feature_prs": [6, 10]
   },
   "pull_requests": [
+    {
+      "id": 6,
+      "title": "Harden plugin catalogue verification and compatibility gates",
+      "branch": "copilot/se-002-verify-harden-plugin-manifest",
+      "head": "fdbb3986b47b489cc3fbf6ee997fb64171bd7ab4",
+      "base_ref": "main",
+      "base": "14f9cdb98f4690ba3faec64d13907778912fffa9",
+      "ancestry_parent": null,
+      "build_requires": [],
+      "state": "merged"
+    },
     {
       "id": 10,
       "title": "HnS reception-gate conversion pipeline",
@@ -35,7 +50,7 @@
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
       "build_requires": [],
-      "state": "open_draft"
+      "state": "merged"
     },
     {
       "id": 11,
@@ -118,7 +133,29 @@
       "id": 19,
       "title": "Non-stacking Beedrill raid encounters",
       "branch": "copilot/se-019b-implement-non-stacking-beedrill-raids",
-      "head": "826770aa30bf9f4eb937d777281f64f31d87459b",
+      "head": "d3868f7919bd430927067bd40d6b5ba73b9ebfe0",
+      "base_ref": "main",
+      "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
+      "ancestry_parent": null,
+      "build_requires": [11],
+      "state": "open_draft"
+    },
+    {
+      "id": 24,
+      "title": "Save-safe Murkrow rescue events",
+      "branch": "copilot/se-019c-implement-murkrow-rescue-quest",
+      "head": "6a6dbbc34af89298fdf1f28b4c4f27d5859f3e9a",
+      "base_ref": "main",
+      "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
+      "ancestry_parent": null,
+      "build_requires": [11, 12, 13],
+      "state": "open_draft"
+    },
+    {
+      "id": 25,
+      "title": "HUMAN equipment and technique adapter",
+      "branch": "copilot/se-020a-implement-equipment-adapter",
+      "head": "9314e34f654a9b5dff1357c6db027c4737b74b2c",
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
@@ -158,33 +195,56 @@
     }
   ],
   "required_source_files": [
+    {"pr": 6, "path": "development/plugin_manifest.json", "stage": false},
+    {"pr": 6, "path": "scripts/validate_integration.py", "stage": false},
+    {"pr": 6, "path": "tests/test_manifest.py", "stage": false},
     {"pr": 10, "path": "essentials/Plugins/Shattered HnS Gate/001_Import.rb", "stage": true},
     {"pr": 10, "path": "essentials/Plugins/Shattered HnS Gate/meta.txt", "stage": true},
     {"pr": 10, "path": "scripts/convert_hns_reception_gate.py", "stage": false},
+    {"pr": 10, "path": "tests/test_hns_gate_conversion.py", "stage": false},
+    {"pr": 10, "path": "tests/test_hns_gate_import.rb", "stage": false},
+    {"pr": 10, "path": "tests/test_stage.py", "stage": false},
     {"pr": 11, "path": "essentials/Plugins/Shattered Core/001_Core.rb", "stage": true},
     {"pr": 11, "path": "essentials/Plugins/Shattered Core/meta.txt", "stage": true},
     {"pr": 11, "path": "essentials/PBS/HUMAN.pbs", "stage": false, "pbs_target": "PBS/pokemon.txt"},
+    {"pr": 11, "path": "tests/test_shattered_core.rb", "stage": false},
     {"pr": 12, "path": "development/demo_parity_reference.json", "stage": false},
     {"pr": 12, "path": "scripts/extract_demo_parity.py", "stage": false},
+    {"pr": 12, "path": "tests/test_demo_parity.py", "stage": false},
     {"pr": 13, "path": "essentials/Plugins/Shattered World Links/001_Install.rb", "stage": true},
     {"pr": 13, "path": "essentials/Plugins/Shattered World Links/meta.txt", "stage": true},
     {"pr": 13, "path": "scripts/build_world_links.py", "stage": false},
+    {"pr": 13, "path": "tests/test_world_links.py", "stage": false},
+    {"pr": 13, "path": "tests/test_world_links.rb", "stage": false},
     {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/001_GateStory.rb", "stage": true},
     {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/002_Install.rb", "stage": true},
     {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/meta.txt", "stage": true},
     {"pr": 14, "path": "essentials/PBS/SHATTEREDGATEKEY.pbs", "stage": false, "pbs_target": "PBS/items.txt"},
     {"pr": 14, "path": "scripts/install_gate_key_pbs.py", "stage": false},
+    {"pr": 14, "path": "tests/test_gate_key_pbs.py", "stage": false},
+    {"pr": 14, "path": "tests/test_gate_story.rb", "stage": false},
     {"pr": 15, "path": "essentials/Plugins/Shattered Route22/001_Route22.rb", "stage": true},
     {"pr": 15, "path": "essentials/Plugins/Shattered Route22/002_Install.rb", "stage": true},
     {"pr": 15, "path": "essentials/Plugins/Shattered Route22/meta.txt", "stage": true},
+    {"pr": 15, "path": "tests/test_route22.rb", "stage": false},
     {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/001_Entry.rb", "stage": true},
     {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/002_Install.rb", "stage": true},
     {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/meta.txt", "stage": true},
+    {"pr": 16, "path": "tests/test_viridian.rb", "stage": false},
     {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/001_Starter.rb", "stage": true},
     {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/002_Install.rb", "stage": true},
     {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/meta.txt", "stage": true},
+    {"pr": 17, "path": "tests/test_dojo.rb", "stage": false},
     {"pr": 19, "path": "essentials/Plugins/Shattered Raid/001_Raid.rb", "stage": true},
-    {"pr": 19, "path": "essentials/Plugins/Shattered Raid/meta.txt", "stage": true}
+    {"pr": 19, "path": "essentials/Plugins/Shattered Raid/meta.txt", "stage": true},
+    {"pr": 19, "path": "tests/test_shattered_raid.rb", "stage": false},
+    {"pr": 24, "path": "essentials/Plugins/Shattered Murkrow Rescue/001_Quest.rb", "stage": true},
+    {"pr": 24, "path": "essentials/Plugins/Shattered Murkrow Rescue/002_Install.rb", "stage": true},
+    {"pr": 24, "path": "essentials/Plugins/Shattered Murkrow Rescue/meta.txt", "stage": true},
+    {"pr": 24, "path": "tests/test_murkrow_rescue.rb", "stage": false},
+    {"pr": 25, "path": "essentials/Plugins/Shattered Equipment/001_Equipment.rb", "stage": true},
+    {"pr": 25, "path": "essentials/Plugins/Shattered Equipment/meta.txt", "stage": true},
+    {"pr": 25, "path": "tests/test_equipment.rb", "stage": false}
   ],
   "plugin_archives": [
     {"id": "hotfixes", "name": "v21.1 Hotfixes", "version": "1.0.9", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/1376/"},
@@ -207,7 +267,9 @@
     "Shattered Route22",
     "Shattered Viridian",
     "Shattered Dojo",
-    "Shattered Raid"
+    "Shattered Raid",
+    "Shattered Murkrow Rescue",
+    "Shattered Equipment"
   ],
   "components": [
     {
@@ -373,6 +435,49 @@
           "event_prefix": "ShatteredRaid:BEEDRILL:",
           "encounters": 3,
           "progression": "Only victory outcome 1 advances; flee/defeat/abort are retryable."
+        }
+      ]
+    },
+    {
+      "id": "murkrow_rescue",
+      "name": "Shattered Murkrow Rescue",
+      "version": "0.1.0",
+      "pr": 24,
+      "scope": "later",
+      "build_requires": [11, 12, 13],
+      "map_writes": [{"slot": "viridian_rescue", "mode": "modify"}],
+      "runtime_requires": ["MURKROW PBS", "reviewed local target map/event, sprite, reward, and map hash"],
+      "save_state": "$PokemonGlobal ShatteredMurKrow rescue quest flags.",
+      "hook_claims": [],
+      "event_contracts": [
+        {
+          "api": "pbInstallShatteredMurkrowRescue",
+          "event_prefix": "SHATTERED_MURKROW_RESCUE:",
+          "switch_ids": [],
+          "variable_ids": [],
+          "battle_hooks": ["pbWildBattle", "pbTrainerBattle"]
+        }
+      ]
+    },
+    {
+      "id": "equipment",
+      "name": "Shattered Equipment",
+      "version": "0.1.0",
+      "pr": 25,
+      "scope": "later",
+      "build_requires": [11],
+      "map_writes": [],
+      "runtime_requires": ["Shattered Core 0.2.2 battle hooks", "native configured item IDs", "native Essentials battle test"],
+      "save_state": "HUMAN equipment slots; no item PBS is included.",
+      "hook_claims": [
+        "Battle::Battler#pbInitPokemon",
+        "EventHandlers:on_start_battle:shattered_equipment_battle_hook"
+      ],
+      "event_contracts": [
+        {
+          "api": "ShatteredEquipment.equip",
+          "battle_moves": ["SLASH", "EMBER", "ROCKTHROW", "BUBBLE", "DEFENSECURL"],
+          "native_items": ["KNIFE", "BRAZIER", "SLING", "SPRAYGUN", "BUCKLER"]
         }
       ]
     }
