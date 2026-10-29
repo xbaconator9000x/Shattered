@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "project": "Shattered Essentials minimal prototype",
-  "estimated_total_completion_percent": 70,
-  "estimate_basis": "v0.2 full private game ZIP built with a reception-outpost starting room using stock FRLG Indigo Plateau Gate; event coordinates and static checks passed. Android runtime and exact custom Shattered layout unverified.",
+  "estimated_total_completion_percent": 75,
+  "estimate_basis": "Canonical Crystal reception-gate block map, graphics and per-quadrant collisions installed and rebuilt to a 20x18 tile RPG Maker XP project; archive CRC, passability and event static tests pass. Android gameplay remains unverified; custom Shattered-ROM hall is not exact.",
   "tasks": [
     {
       "id": "SET-001",
@@ -67,11 +67,30 @@
       ],
       "evidence": [
         "v0.2 map222 uses FRLG Indigo Plateau Gate map017 with 6 statues and a ruined Johto entrance, instead of South Rock Cave",
-        "Static map/event and ZIP tests pass, SHA256 ad64634ae22553c73babdf4648f4e84e19d72bb144f39c3ff4b20f6d9666eb23"
+        "Static map/event and ZIP tests pass, SHA256 ad64634ae22553c73babdf4648f4e84e19d72bb144f39c3ff4b20f6d9666eb23",
+        "The vanilla Crystal gate is now source-grounded (SET-008), while exact custom Shattered ROM gate and Android visual comparison remain outstanding."
       ],
       "acceptance": [
         "Actual Shattered map or visual reference comparison",
         "Android in-game appearance confirmed"
+      ]
+    },
+    {
+      "id": "SET-008",
+      "title": "Use the full original Crystal Johto reception gate instead of a shortened FRLG hall",
+      "status": "done",
+      "depends_on": [
+        "SET-002"
+      ],
+      "evidence": [
+        "pret/pokecrystal VictoryRoadGate.blk 10x9 source blocks translated to 20x18 XP map with custom tileset 27 and source collision",
+        "11 event locations and all four directions statically verified",
+        "ZIP archive CRC verified for 7597-file Lite and 7675-file Full builds; SHA256 recorded in docs/ESSENTIALS_PROTOTYPE_0_4_ORIGINAL_CRYSTAL_GATE.md"
+      ],
+      "acceptance": [
+        "Full four-way gate reconstructed from canonical GenII source",
+        "All directions and Johto collapse intact",
+        "APK-compatible RPG XP project packaged"
       ]
     }
   ]
