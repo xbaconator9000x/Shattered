@@ -238,8 +238,9 @@ module ShatteredViridian
         Digest::SHA256.file(path).hexdigest == config["expected_#{kind}_sha256"]
     end
     planned_city = [config["entry_trigger"], config["finish_trigger"],
-                    config["rain_controller"], ["guard", "nidoran"].map { |n|
-                      [config[n]["x"], config[n]["y"]] }].flatten(1)
+                    config["rain_controller"],
+                    [config["guard"]["x"], config["guard"]["y"]],
+                    [config["nidoran"]["x"], config["nidoran"]["y"]]]
     raise "Occupied city event tile" if city.events.values.any? { |e| planned_city.include?([e.x, e.y]) }
     raise "Occupied Center event tile" if center.events.values.any? { |e| [e.x,e.y] == config["center_trigger"] }
     guard_id = (city.events.keys.max || 0) + 1
