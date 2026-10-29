@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "Shattered Essentials v21.1 plugin integration",
   "estimated_integration_completion_percent": 16,
-  "measure": "Core infrastructure and real-game static staging validated locally; GitHub-hosted CI is blocked before job startup, and external plugins are not installed.",
+  "measure": "Original plugin integration estimate remains a partial infrastructure indicator, NOT the full demo remake. Copilot SE-002 on PR #6; source rights, runtime compile, mobile playthrough and most demo events unverified.",
   "max_parallel_active": 3,
   "tasks": [
     {
@@ -103,12 +103,12 @@
     },
     {
       "id": "SE-010",
-      "title": "Audit Feral Tank stat overrides, then equipment and moves",
+      "title": "Optional Feral Tank stat-override compatibility audit",
       "status": "blocked",
       "depends_on": [
         "SE-003"
       ],
-      "blocker": "Source archive and Pokemon.calc_stats conflict analysis required"
+      "blocker": "Optional plugin, do NOT block core HUMAN battle or demo. Audit only before deciding to install it; no base-game dependency."
     },
     {
       "id": "SE-011",
@@ -116,8 +116,13 @@
       "status": "queued",
       "depends_on": [
         "SE-004",
-        "SE-006",
-        "SE-010"
+        "SE-006"
+      ],
+      "validation": [
+        "Human battle hooks integrate with DBK and correctly calculate defensive type effectiveness",
+        "Shared stamina cost applies exactly once for executed HUMAN moves, preserving Pokémon PP separately",
+        "HP/level scaling, move affordability and save/load unit tests plus runtime evidence",
+        "Equipment and classes scoped against actual demo acceptance; Feral Tank is optional and never blocks HUMAN battle"
       ]
     },
     {
@@ -131,10 +136,16 @@
     },
     {
       "id": "SE-013",
-      "title": "Convert Heart & Soul reception gate and scene events",
+      "title": "Import faithful Heart & Soul League Reception Gate map and four exits",
       "status": "queued",
       "depends_on": [
         "SE-003"
+      ],
+      "validation": [
+        "Check map provenance/permission before redistributing art",
+        "Recreate three RMXP tile layers plus terrain/collision/warps for 22x21 gate",
+        "Keep original crystal map only as fallback prototype; test north/south/east/west transfers",
+        "Do not claim map is imported until actual Essentials runtime load and warp test"
       ]
     },
     {
@@ -147,6 +158,147 @@
         "SE-008",
         "SE-013"
       ]
+    },
+    {
+      "id": "SE-015",
+      "title": "Source-grounded Shattered demo scene and asset parity inventory",
+      "status": "queued",
+      "depends_on": [
+        "SE-001"
+      ],
+      "validation": [
+        "Extract an objective scene and interaction list from authorised original demo and v0.4 test; no redistribution of source game assets",
+        "Track original scene/event reference, target Essentials map and event IDs, flags, dialogs, BGM/SFX, blockers and status",
+        "Clearly distinguish original source access, planned design and actually implemented runtime features"
+      ]
+    },
+    {
+      "id": "SE-016",
+      "title": "Implement Johto collapse cinematic, Aipom key and persistent blocked entrance",
+      "status": "queued",
+      "depends_on": [
+        "SE-013",
+        "SE-015",
+        "SE-004"
+      ],
+      "validation": [
+        "Recreate timed tremors/roars/impacts, falling rock blocker and correct directional messages",
+        "Aipom with shiny held key, facing/cry/exclamation, event interaction, item pickup and stable state",
+        "Test revisit, interruptions, save/restore, no duplicated rewards or softlocks"
+      ]
+    },
+    {
+      "id": "SE-017",
+      "title": "Connect Route 22 and implement mandatory Rattata encounter",
+      "status": "queued",
+      "depends_on": [
+        "SE-013",
+        "SE-015",
+        "SE-004"
+      ],
+      "validation": [
+        "Faithful Route 22 layered map and eastern gate transfer to correct warp",
+        "Scatter encounter group then mandatory lv5 Rattata battle using real HUMAN battler",
+        "Test victory/flee/blackout/return save flags and collision"
+      ]
+    },
+    {
+      "id": "SE-018",
+      "title": "Implement Viridian walls, escort, interiors, doors and weather state",
+      "status": "queued",
+      "depends_on": [
+        "SE-017"
+      ],
+      "validation": [
+        "Walled Viridian and guard/Nidoran escort, Center, farm, bunkhouse, guardhouse, kitchen and dojo entrances",
+        "Door directions, stairs, furniture collision, weather until Center and correct rain SFX",
+        "Smoke map transitions, NPC pathing and persisted story flags"
+      ]
+    },
+    {
+      "id": "SE-019",
+      "title": "Complete Viridian raid, rescue, dojo tutorial and starter-choice events",
+      "status": "queued",
+      "depends_on": [
+        "SE-018",
+        "SE-008",
+        "SE-012"
+      ],
+      "validation": [
+        "Murkrow rescue, Beedrill attack/chase without stacked encounters, NPC enters Center",
+        "Dojo/befriending tutorial and starter questionnaire producing usable Vulpix, Staryu or Exeggcute companion",
+        "Quest flags, starter uniqueness, recovery/resume and story lockout checks with game runtime"
+      ]
+    },
+    {
+      "id": "SE-020",
+      "title": "Integrated playable visual, audio and follower/UI pass",
+      "status": "queued",
+      "depends_on": [
+        "SE-007",
+        "SE-013",
+        "SE-017"
+      ],
+      "validation": [
+        "HUMAN sprite, player genders, Aipom/Staryu/Vulpix/Exeggcute followers and battle/UI art render without palette corruption",
+        "Gate impacts, roars, key cry, rain and background music do not overlap or leak maps",
+        "Menus, follower spacing, turns and rain events survive save, map transition and mobile screen"
+      ]
+    },
+    {
+      "id": "SE-021",
+      "title": "Produce one reproducible fully compiled Essentials v21.1 game staging build",
+      "status": "queued",
+      "depends_on": [
+        "SE-004",
+        "SE-005",
+        "SE-006",
+        "SE-007",
+        "SE-008",
+        "SE-009",
+        "SE-013"
+      ],
+      "validation": [
+        "Verified plugin versions and sources, deterministic install manifest, no competing Ruby overrides",
+        "Compile actual source-owned game PBS and scripts, run clean new game and save/restore on supported Essentials runtime",
+        "Preserve original source and do not publish third-party game assets or copyrighted ROM"
+      ]
+    },
+    {
+      "id": "SE-022",
+      "title": "Verify Shattered real-project editing through Essentials Studio Mobile",
+      "status": "queued",
+      "depends_on": [
+        "SE-016",
+        "SE-018"
+      ],
+      "validation": [
+        "Import authorised Essentials game ZIP in Android editor, edit map and event, export through SAF",
+        "Unchanged members byte-identical, desktop project reopen, actual changed event runs",
+        "Capture physical device, build SHA, project hashes and manual evidence; cross-repo Essentials gate"
+      ]
+    },
+    {
+      "id": "SE-023",
+      "title": "Full demo end-to-end regression and Android playthrough release gate",
+      "status": "queued",
+      "depends_on": [
+        "SE-011",
+        "SE-012",
+        "SE-014",
+        "SE-019",
+        "SE-020",
+        "SE-021",
+        "SE-022"
+      ],
+      "validation": [
+        "On supported Android RPG runner: new game → Johto gate/Aipom → Route22 battle → Viridian escort → rescue/dojo/starter",
+        "Save/close/reopen and continue, no softlocks, no Poké Ball capture, proper HUMAN stamina and independent Pokémon PP",
+        "Original game remains intact, full dependency manifest and reproducible patch, regression evidence and asset rights verified",
+        "No release marked integrated/complete without manual device and true game-engine execution"
+      ]
     }
-  ]
+  ],
+  "estimated_full_demo_completion_percent": null,
+  "full_demo_scope": "See docs/SHATTERED_ESSENTIALS_FULL_REMAKE_ACCEPTANCE.md; plugin infrastructure completion does NOT equal full remake completion"
 }

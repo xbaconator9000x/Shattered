@@ -1,8 +1,12 @@
 name: Shattered Essentials queue watchdog
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '29 */6 * * *'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'development/integration_queue.json'
 permissions:
   contents: read
   issues: write
