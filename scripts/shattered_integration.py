@@ -166,6 +166,12 @@ def validate_manifest(manifest):
     main = manifest.get("main", {})
     if not HEX_40.fullmatch(main.get("commit", "")):
         raise IntegrationError("main commit must be a full 40-character SHA")
+    inspected = manifest.get("inspected_main", {})
+    if inspected.get("commit") != main["commit"]:
+        raise IntegrationError("inspected main commit is stale relative to pinned main")
+    merged_ids = sorted(pr["id"] for pr in prs if pr.get("state") == "merged")
+    if sorted(inspected.get("merged_feature_prs", [])) != merged_ids:
+        raise IntegrationError("merged PR ledger differs from pinned source states")
     pr_deps = {}
     for pr in prs:
         pid = pr.get("id")
