@@ -1,8 +1,9 @@
 # frozen_string_literal: true
-# Shattered Core v0.2 — Pokémon Essentials 21.1.
+# Shattered Core v0.2.1 — Pokémon Essentials 21.1.
 # Does not override Pokemon#calc_stats. Battle hooks use Essentials v21.1 APIs.
 module Shattered
   HUMAN_SPECIES = :HUMAN
+  STRUGGLE = :STRUGGLE
   BASE_STAMINA = 60
   STAMINA_PER_10_LEVELS = 5
   STAMINA_CAP = 100
@@ -60,16 +61,22 @@ module Shattered
 
         def load_new_game_values(*args)
           result = shattered_core_load_new_game_values(*args)
-          Shattered.ensure_human
+          Shattered.ensure_human_if_player_available
           result
         end
 
         def load_all_values(*args)
           result = shattered_core_load_all_values(*args)
-          Shattered.ensure_human
+          Shattered.ensure_human_if_player_available
           result
         end
       end
+      true
+    end
+
+    def ensure_human_if_player_available
+      return false unless defined?($player) && $player && $player.respond_to?(:party)
+      ensure_human($player)
       true
     end
 
@@ -100,6 +107,7 @@ module Shattered
 
     def stamina_cost(move)
       return nil unless move.respond_to?(:to_sym)
+      return 0 if move.to_sym == STRUGGLE
       TECHNIQUE_COSTS[move.to_sym]
     end
 
@@ -110,6 +118,7 @@ module Shattered
 
     def spend_stamina(human, move, store = stamina_store)
       cost = stamina_cost(move)
+      return true if human?(human) && cost == 0
       return false unless store && cost && can_spend_stamina?(human, move, store)
       store.instance_variable_set(:@shattered_stamina, stamina(human, store) - cost)
       true
@@ -206,6 +215,8 @@ end
 
 Shattered.install_lifecycle_hooks
 if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_core_ensure_human,
+    proc { |*args| Shattered.ensure_human_if_player_available })
   EventHandlers.add(:on_start_battle, :shattered_core_battle_hooks,
     proc { |*args| Shattered.install_battle_hooks })
 end

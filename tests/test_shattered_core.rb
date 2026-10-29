@@ -84,19 +84,23 @@ ItemHandlers::CanUseInBattle.add(:POTION, proc { true })
 
 module Battle
   class Battler
-    attr_reader :base_try_calls, :battle
-    attr_accessor :base_allowed, :base_result
+    attr_reader :base_try_calls, :base_pp_calls, :battle
+    attr_accessor :base_allowed, :base_result, :disabled_move_ids
     def initialize(pokemon)
       @pokemon = pokemon
       @battle = BattleStub.new
       @base_allowed = true
       @base_result = true
       @base_try_calls = 0
+      @base_pp_calls = 0
+      @disabled_move_ids = []
     end
     def pbCanChooseMove?(move, commandPhase, showMessages = true, specialUsage = false)
-      @base_allowed
+      @base_allowed && !@disabled_move_ids.include?(move.id)
     end
     def pbReducePP(move)
+      @base_pp_calls += 1
+      return true if move.pp < 0
       return false if move.pp == 0
       move.pp -= 1
       true
@@ -129,6 +133,10 @@ class ShatteredCoreTest < Minitest::Test
 
   def begin_battle
     EventHandlers.trigger(:on_start_battle, Object.new)
+  end
+
+  def setup_game_map
+    EventHandlers.trigger(:on_game_map_setup, 1, nil, nil)
   end
 
   def test_creates_one_true_human_and_reuses_it
@@ -166,6 +174,25 @@ class ShatteredCoreTest < Minitest::Test
     assert Shattered.human?(@player.party.first)
   end
 
+  def test_new_game_defers_human_until_map_setup_if_player_is_not_ready
+    SaveData.next_player = nil
+    assert_equal :new_game, SaveData.load_new_game_values
+    assert_nil $player
+    $player = @player
+    setup_game_map
+    assert_equal 1, @player.party.length
+    assert Shattered.human?(@player.party.first)
+  end
+
+  def test_load_defers_human_until_map_setup_if_player_is_not_ready
+    assert_equal :loaded, SaveData.load_all_values(:player => nil)
+    assert_nil $player
+    $player = @player
+    setup_game_map
+    assert_equal 1, @player.party.length
+    assert Shattered.human?(@player.party.first)
+  end
+
   def test_load_lifecycle_restores_exactly_one_human
     human = Pokemon.new(:HUMAN, 7)
     @player.party = [Pokemon.new(:PIKACHU, 3), human, Pokemon.new(:HUMAN, 8)]
@@ -185,6 +212,7 @@ class ShatteredCoreTest < Minitest::Test
     assert_nil Shattered.stamina_cost(:NOT_A_MOVE)
     refute Shattered.can_spend_stamina?(human, :NOT_A_MOVE, @store)
     refute Shattered.spend_stamina(human, :NOT_A_MOVE, @store)
+    assert Shattered.spend_stamina(human, :STRUGGLE, nil)
   end
 
   def test_level_scaled_cap_and_saved_stamina_survive_marshal_round_trip
@@ -236,6 +264,40 @@ class ShatteredCoreTest < Minitest::Test
     refute battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
     assert_equal 60, Shattered.stamina(human, @store)
     assert_equal 10, move.pp
+  end
+
+  def test_struggle_is_free_fallback_when_all_techniques_are_unavailable
+    human = Shattered.ensure_human(@player, 5)
+    Shattered.restore_stamina(human, @store)
+    @store.instance_variable_set(:@shattered_stamina, 0)
+    begin_battle
+    battler = Battle::Battler.new(human)
+    battler.disabled_move_ids = Shattered::TECHNIQUE_COSTS.keys
+    Shattered::TECHNIQUE_COSTS.each_key do |move_id|
+      refute battler.pbCanChooseMove?(MoveStub.new(move_id, move_id.to_s, 10), true, false)
+    end
+    struggle = MoveStub.new(:STRUGGLE, "Struggle", -1)
+    assert_equal 0, Shattered.stamina_cost(:STRUGGLE)
+    assert battler.pbCanChooseMove?(struggle, true, false)
+    assert battler.pbTryUseMove([:UseMove, 0, struggle], struggle, false, false)
+    assert_equal 0, Shattered.stamina(human, @store)
+    assert_equal(-1, struggle.pp)
+    assert_equal 0, battler.base_pp_calls
+  end
+
+  def test_companion_struggle_keeps_essentials_pp_behavior
+    human = Shattered.ensure_human(@player, 5)
+    Shattered.restore_stamina(human, @store)
+    @store.instance_variable_set(:@shattered_stamina, 0)
+    companion = Pokemon.new(:AIPOM, 5)
+    begin_battle
+    battler = Battle::Battler.new(companion)
+    struggle = MoveStub.new(:STRUGGLE, "Struggle", -1)
+    assert battler.pbCanChooseMove?(struggle, true, false)
+    assert battler.pbTryUseMove([:UseMove, 0, struggle], struggle, false, false)
+    assert_equal(-1, struggle.pp)
+    assert_equal 1, battler.base_pp_calls
+    assert_equal 0, Shattered.stamina(human, @store)
   end
 
   def test_failed_or_fled_battle_does_not_spend_stamina
