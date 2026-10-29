@@ -39,6 +39,16 @@ class ParityTests(unittest.TestCase):
             self.assertNotIn(secret, serial)
         self.assertEqual(result["scenes"]["johto_gate_aipom"]["anchors"][0]["script_length"], 23)
 
+    def test_script_semantics_are_identifiers_only(self):
+        source = "setflag 0x148\nsetvar 0x409B, 0x3\nplayse 0x26\nwarp 0x1C, 0x0\napplymovement 0xF, @walk\n@text:\n= private dialogue"
+        result = mod.extract_script_ops(source)
+        self.assertEqual(result["flags_set"], ["0X148"])
+        self.assertEqual(result["vars_written"], ["0X409B"])
+        self.assertEqual(result["audio_cues"], ["playse:0X26"])
+        self.assertEqual(result["warp_commands"], 1)
+        self.assertEqual(result["movement_commands"], 1)
+        self.assertNotIn("private", json.dumps(result))
+
     def test_rejects_invalid_map_and_warp_coordinates(self):
         data = fixture()
         data["links"][0]["to"]["x"] = 48
