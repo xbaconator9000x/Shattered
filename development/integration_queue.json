@@ -54,6 +54,9 @@
       "validation": [
         "Ruby tests pass",
         "Essentials compile and real JoiPlay runtime"
+      ],
+      "evidence": [
+        "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested."
       ]
     },
     {
@@ -137,7 +140,7 @@
     {
       "id": "SE-013",
       "title": "Import faithful Heart & Soul League Reception Gate map and four exits",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-003"
       ],
@@ -146,6 +149,9 @@
         "Recreate three RMXP tile layers plus terrain/collision/warps for 22x21 gate",
         "Keep original crystal map only as fallback prototype; test north/south/east/west transfers",
         "Do not claim map is imported until actual Essentials runtime load and warp test"
+      ],
+      "evidence": [
+        "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN."
       ]
     },
     {
@@ -162,7 +168,7 @@
     {
       "id": "SE-015",
       "title": "Source-grounded Shattered demo scene and asset parity inventory",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-001"
       ],
@@ -170,6 +176,11 @@
         "Extract an objective scene and interaction list from authorised original demo and v0.4 test; no redistribution of source game assets",
         "Track original scene/event reference, target Essentials map and event IDs, flags, dialogs, BGM/SFX, blockers and status",
         "Clearly distinguish original source access, planned design and actually implemented runtime features"
+      ],
+      "evidence": [
+        "Authorised original xx0.77 PokéBacon map export inspected privately: 23 maps, 656 event markers (77 NPC, 156 triggers, 423 signs), 567 placed objects and 36 map links; no raw user project file or asset uploaded.",
+        "Sanitised development/demo_parity_reference.json records 123 source event anchors across 7 scene groups, map/warp coordinates and source addresses without original scripts/dialogue/graphics.",
+        "scripts/extract_demo_parity.py + 7 offline Python tests pass locally; source event -> real RPG Maker XP event ID mapping and native playback remain OPEN."
       ]
     },
     {
@@ -299,6 +310,6 @@
       ]
     }
   ],
-  "estimated_full_demo_completion_percent": null,
-  "full_demo_scope": "See docs/SHATTERED_ESSENTIALS_FULL_REMAKE_ACCEPTANCE.md; plugin infrastructure completion does NOT equal full remake completion"
+  "estimated_full_demo_completion_percent": 4,
+  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%."
 }
