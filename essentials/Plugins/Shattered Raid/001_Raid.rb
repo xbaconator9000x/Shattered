@@ -29,6 +29,7 @@ module ShatteredRaid
              [true, false].include?(value["completed"]) &&
              value["completed"] == (value["progression"] == ENCOUNTER_COUNT) &&
              (value["map_id"].nil? || (value["map_id"].is_a?(Integer) && value["map_id"] > 0)) &&
+             (value["map_id"].nil? == value["switch_ids"].nil?) &&
              (value["switch_ids"].nil? ||
                (value["switch_ids"].is_a?(Array) && value["switch_ids"].length == ENCOUNTER_COUNT &&
                 value["switch_ids"].all? { |id| id.is_a?(Integer) && id > 0 } &&
@@ -190,9 +191,11 @@ module ShatteredRaid
       raise InstallationError, "installer only supports a staged Shattered project" unless File.file?(marker)
       marker_text = read_file(marker)
       raise InstallationError, "staging report is not for Essentials 21.1" unless marker_text.include?('"engine": "Essentials 21.1"')
+      core = File.join(root, "Plugins", "Shattered Core", "001_Core.rb")
+      raise InstallationError, "staged Shattered Core plugin is missing" unless File.file?(core)
       map_path = File.join(root, "Data", "Map#{format_map_id(config["map_id"])}.rxdata")
       unless File.file?(map_path) && !File.symlink?(map_path) && !File.symlink?(File.join(root, "Data")) &&
-             File.expand_path(map_path).start_with?(root + File::SEPARATOR)
+             File.expand_path(map_path).index(root + File::SEPARATOR) == 0
         raise InstallationError, "target native map is missing"
       end
       backup_path = map_path + ".shattered-raid.bak"
@@ -200,6 +203,7 @@ module ShatteredRaid
       rollback_path = map_path + ".shattered-raid.rollback"
       raise InstallationError, "stale installer temporary file exists" if File.exist?(temp_path)
       raise InstallationError, "stale installer rollback file exists" if File.exist?(rollback_path)
+      raise InstallationError, "stale backup temporary file exists" if File.exist?(backup_path + ".tmp")
 
       original = read_file(map_path)
       expected = config["expected_sha256"]
@@ -210,18 +214,18 @@ module ShatteredRaid
       if original_digest != expected && !File.exist?(backup_path)
         raise InstallationError, "target map SHA256 is stale or already modified"
       end
-      map = Marshal.load(original)
+      source = original_digest == expected ? original : read_file(backup_path)
+      map = Marshal.load(source)
       validate_native_map!(map, config)
-      existing = installed_events(map)
-      if existing.length == ENCOUNTER_COUNT && exact_installed_events?(existing, config)
-        return :already_installed
-      end
-      unless original_digest == expected
-        raise InstallationError, "target map SHA256 is stale or already modified"
-      end
       preflight_events!(map, config, root, passability)
       install_native_events!(map, config)
       replacement = Marshal.dump(map)
+      if original_digest != expected
+        if Digest::SHA256.hexdigest(replacement) == original_digest
+          return :already_installed
+        end
+        raise InstallationError, "target map SHA256 is stale or already modified"
+      end
 
       backup_created = false
       target_moved = false
@@ -255,6 +259,7 @@ module ShatteredRaid
 
     def validate_install_config(config)
       unless config.is_a?(Hash) && config["reviewed"] == true &&
+             config["switches_reviewed"] == true && config["outcome_variable_reviewed"] == true &&
              config["map_id"].is_a?(Integer) && config["map_id"] > 0 &&
              config["expected_sha256"].is_a?(String) &&
              config["expected_sha256"] =~ /\A[0-9a-f]{64}\z/ &&
@@ -366,23 +371,6 @@ module ShatteredRaid
       "ShatteredRaid.trigger(#{index}, #{runtime.inspect})"
     end
 
-    def installed_events(map)
-      map.events.values.select { |event| event.name.to_s[0, EVENT_PREFIX.length] == EVENT_PREFIX }
-    end
-
-    def exact_installed_events?(events, config)
-      return false unless events.length == ENCOUNTER_COUNT
-      config["events"].each do |entry|
-        event = events.find { |candidate| candidate.name == EVENT_PREFIX + entry["index"].to_s }
-        return false unless event && event.x == entry["x"] && event.y == entry["y"] &&
-                            event.pages && event.pages.length == 2 &&
-                            event.pages[0].graphic.character_name == entry["sprite_name"] &&
-                            event.pages[0].list[0].parameters[0] == runtime_script(entry["index"], config) &&
-                            event.pages[1].condition.switch1_id == entry["switch_id"]
-      end
-      true
-    end
-
     def format_map_id(map_id)
       ("%03d" % map_id)
     end
@@ -398,9 +386,10 @@ module ShatteredRaid
       end
     end
 
-    if defined?(EventHandlers)
-      EventHandlers.add(:on_game_map_setup, :shattered_raid_switch_sync,
-        proc { |map_id, _map, _tileset| ShatteredRaid.sync_saved_state_for_map(map_id) })
-    end
   end
+end
+
+if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_raid_switch_sync,
+    proc { |map_id, _map, _tileset| ShatteredRaid.sync_saved_state_for_map(map_id) })
 end

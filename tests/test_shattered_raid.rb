@@ -216,6 +216,22 @@ class ShatteredRaidTest < Minitest::Test
     end
   end
 
+  def test_installer_rejects_modified_installed_map_instead_of_overwriting
+    with_staged_map do |root, config, _original|
+      ShatteredRaid.install_staged(root, config, passability)
+      path = map_path(root, 301)
+      installed = Marshal.load(File.open(path, "rb") { |file| file.read })
+      event = installed.events.values.find { |candidate| candidate.name == "ShatteredRaid:BEEDRILL:0" }
+      event.pages[0].list[0].parameters[0] = "changed"
+      File.open(path, "wb") { |file| file.write(Marshal.dump(installed)) }
+      changed = File.open(path, "rb") { |file| file.read }
+      assert_raises(ShatteredRaid::InstallationError) do
+        ShatteredRaid.install_staged(root, config, passability)
+      end
+      assert_equal changed, File.open(path, "rb") { |file| file.read }
+    end
+  end
+
   def test_install_failure_after_replacement_rolls_back_every_write
     with_staged_map do |root, config, original|
       failure = proc { |stage| raise "injected install failure" if stage == :after_replace }
@@ -239,6 +255,23 @@ class ShatteredRaidTest < Minitest::Test
     end
   end
 
+  def test_install_refuses_occupied_tiles_before_writing
+    with_staged_map do |root, config, _original|
+      map = Marshal.load(File.open(map_path(root, 301), "rb") { |file| file.read })
+      occupied = RPG::Event.new(config["events"][0]["x"], config["events"][0]["y"])
+      occupied.id = 4
+      map.events[occupied.id] = occupied
+      original = Marshal.dump(map)
+      File.open(map_path(root, 301), "wb") { |file| file.write(original) }
+      config["expected_sha256"] = Digest::SHA256.hexdigest(original)
+      assert_raises(ShatteredRaid::InstallationError) do
+        ShatteredRaid.install_staged(root, config, passability)
+      end
+      assert_equal original, File.open(map_path(root, 301), "rb") { |file| file.read }
+      refute File.exist?(map_path(root, 301) + ".shattered-raid.bak")
+    end
+  end
+
   def test_install_refuses_unreviewed_roles_missing_sprites_and_stale_backups
     with_staged_map do |root, config, original|
       config["events"][0]["role_reviewed"] = false
@@ -246,12 +279,22 @@ class ShatteredRaidTest < Minitest::Test
         ShatteredRaid.install_staged(root, config, passability)
       end
       config["events"][0]["role_reviewed"] = true
+      config["events"][0]["source_anchor_reviewed"] = false
+      assert_raises(ShatteredRaid::ConfigurationError) do
+        ShatteredRaid.install_staged(root, config, passability)
+      end
+      config["events"][0]["source_anchor_reviewed"] = true
       File.delete(File.join(root, "Graphics", "Characters", "BeedrillRaid1.png"))
       assert_raises(ShatteredRaid::InstallationError) do
         ShatteredRaid.install_staged(root, config, passability)
       end
       backup_path = map_path(root, 301) + ".shattered-raid.bak"
       File.open(backup_path, "wb") { |file| file.write("stale") }
+      assert_raises(ShatteredRaid::InstallationError) do
+        ShatteredRaid.install_staged(root, config, passability)
+      end
+      File.delete(backup_path)
+      File.open(backup_path + ".tmp", "wb") { |file| file.write("stale") }
       assert_raises(ShatteredRaid::InstallationError) do
         ShatteredRaid.install_staged(root, config, passability)
       end
@@ -304,6 +347,8 @@ class ShatteredRaidTest < Minitest::Test
     Dir.mktmpdir("shattered-raid-test-") do |root|
       FileUtils.mkdir_p(File.join(root, "Data"))
       FileUtils.mkdir_p(File.join(root, "Graphics", "Characters"))
+      FileUtils.mkdir_p(File.join(root, "Plugins", "Shattered Core"))
+      File.open(File.join(root, "Plugins", "Shattered Core", "001_Core.rb"), "wb") { |file| file.write("stub") }
       File.open(File.join(root, "SHATTERED_STAGING_REPORT.json"), "wb") do |file|
         file.write('{"engine": "Essentials 21.1"}')
       end
@@ -323,6 +368,8 @@ class ShatteredRaidTest < Minitest::Test
       File.open(map_path(root, 301), "wb") { |file| file.write(original) }
       config = {
         "reviewed" => true,
+        "switches_reviewed" => true,
+        "outcome_variable_reviewed" => true,
         "map_id" => 301,
         "expected_sha256" => Digest::SHA256.hexdigest(original),
         "width" => 48,

@@ -1,0 +1,27 @@
+name: Shattered Beedrill raid tests
+on:
+  push:
+    paths:
+      - 'essentials/Plugins/Shattered Raid/**'
+      - 'tests/test_shattered_raid.rb'
+      - 'docs/SE-019B_BEEDRILL_RAID.md'
+      - '.github/workflows/shattered-raid-ci.yml'
+  pull_request:
+    paths:
+      - 'essentials/Plugins/Shattered Raid/**'
+      - 'tests/test_shattered_raid.rb'
+      - 'docs/SE-019B_BEEDRILL_RAID.md'
+      - '.github/workflows/shattered-raid-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check raid plugin syntax
+        run: ruby -c 'essentials/Plugins/Shattered Raid/001_Raid.rb'
+      - name: Run isolated raid tests
+        run: ruby tests/test_shattered_raid.rb
