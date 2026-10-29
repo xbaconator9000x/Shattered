@@ -2,7 +2,7 @@
   "schema_version": 1,
   "project": "Shattered Essentials minimal prototype",
   "estimated_total_completion_percent": 75,
-  "estimate_basis": "Canonical Crystal reception-gate block map, graphics and per-quadrant collisions installed and rebuilt to a 20x18 tile RPG Maker XP project; archive CRC, passability and event static tests pass. Android gameplay remains unverified; custom Shattered-ROM hall is not exact.",
+  "estimate_basis": "v0.4 Crystal gate and mini-event test assembled/static checked, verified 294KB overlay. Heart & Soul source map located but not converted; Android runtime unverified.",
   "tasks": [
     {
       "id": "SET-001",
@@ -91,6 +91,35 @@
         "Full four-way gate reconstructed from canonical GenII source",
         "All directions and Johto collapse intact",
         "APK-compatible RPG XP project packaged"
+      ]
+    },
+    {
+      "id": "SET-009",
+      "title": "Replace Crystal gate with the actual Heart & Soul 2.0 ReceptionGate_hns map",
+      "status": "in_progress",
+      "depends_on": [
+        "SET-008"
+      ],
+      "evidence": [
+        "HnS public source located: data/layouts/ReceptionGate_hns/map.bin (22x21), data/maps/ReceptionGate_hns/map.json and scripts.inc",
+        "5 source warps and 4 NPC object locations audited"
+      ],
+      "acceptance": [
+        "Convert source GBA metatiles and palettes to XP tiles and passability",
+        "Preserve original four-way layout",
+        "Overlay Shattered events and test Android runtime"
+      ]
+    },
+    {
+      "id": "SET-010",
+      "title": "Provide tiny Android overlay for original FRLG source",
+      "status": "done",
+      "depends_on": [
+        "SET-003"
+      ],
+      "evidence": [
+        "294496-byte ZIP contains 17 changed/new project files plus installation guide",
+        "Reproduces all 7674 target game files byte-for-byte except original guide PDF, ZIP CRC passes"
       ]
     }
   ]
