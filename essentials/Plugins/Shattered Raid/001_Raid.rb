@@ -201,9 +201,11 @@ module ShatteredRaid
       backup_path = map_path + ".shattered-raid.bak"
       temp_path = map_path + ".shattered-raid.tmp"
       rollback_path = map_path + ".shattered-raid.rollback"
-      raise InstallationError, "stale installer temporary file exists" if File.exist?(temp_path)
-      raise InstallationError, "stale installer rollback file exists" if File.exist?(rollback_path)
-      raise InstallationError, "stale backup temporary file exists" if File.exist?(backup_path + ".tmp")
+      backup_temp_path = backup_path + ".tmp"
+      raise InstallationError, "stale installer temporary file exists" if path_exists?(temp_path)
+      raise InstallationError, "stale installer rollback file exists" if path_exists?(rollback_path)
+      raise InstallationError, "stale backup temporary file exists" if path_exists?(backup_temp_path)
+      raise InstallationError, "installer backup must not be a symlink" if File.symlink?(backup_path)
 
       original = read_file(map_path)
       expected = config["expected_sha256"]
@@ -229,17 +231,24 @@ module ShatteredRaid
 
       backup_created = false
       target_moved = false
+      backup_temp_identity = nil
+      temp_identity = nil
       begin
         unless File.exist?(backup_path)
-          write_file(backup_path + ".tmp", original)
-          File.rename(backup_path + ".tmp", backup_path)
+          backup_temp_identity = write_file(backup_temp_path, original)
+          raise InstallationError, "backup temporary file changed" unless owned_file?(backup_temp_path, backup_temp_identity)
+          File.rename(backup_temp_path, backup_path)
+          backup_temp_identity = nil
           backup_created = true
         end
         failure_hook.call(:after_backup) if failure_hook
-        write_file(temp_path, replacement)
+        temp_identity = write_file(temp_path, replacement)
+        raise InstallationError, "installer temporary file changed" unless owned_file?(temp_path, temp_identity)
         File.rename(map_path, rollback_path)
         target_moved = true
+        raise InstallationError, "installer temporary file changed" unless owned_file?(temp_path, temp_identity)
         File.rename(temp_path, map_path)
+        temp_identity = nil
         failure_hook.call(:after_replace) if failure_hook
         File.delete(rollback_path)
         :installed
@@ -248,13 +257,13 @@ module ShatteredRaid
           File.delete(map_path) if File.exist?(map_path)
           File.rename(rollback_path, map_path)
         end
-        File.delete(temp_path) if File.exist?(temp_path)
+        delete_owned_file(temp_path, temp_identity)
         File.delete(backup_path) if backup_created && File.exist?(backup_path)
-        File.delete(backup_path + ".tmp") if File.exist?(backup_path + ".tmp")
+        delete_owned_file(backup_temp_path, backup_temp_identity)
         raise
       end
     ensure
-      File.delete(temp_path) if temp_path && File.exist?(temp_path)
+      delete_owned_file(temp_path, temp_identity) if temp_path
     end
 
     def validate_install_config(config)
@@ -380,10 +389,33 @@ module ShatteredRaid
     end
 
     def write_file(path, content)
-      File.open(path, "wb") do |file|
+      identity = nil
+      flags = File::WRONLY | File::CREAT | File::EXCL
+      flags |= File::BINARY if defined?(File::BINARY)
+      File.open(path, flags, 0600) do |file|
+        stat = file.stat
+        identity = [stat.dev, stat.ino]
         file.write(content)
         file.flush
       end
+      identity
+    rescue Exception
+      delete_owned_file(path, identity)
+      raise
+    end
+
+    def path_exists?(path)
+      File.exist?(path) || File.symlink?(path)
+    end
+
+    def owned_file?(path, identity)
+      return false unless identity && File.exist?(path) && !File.symlink?(path)
+      stat = File.lstat(path)
+      [stat.dev, stat.ino] == identity
+    end
+
+    def delete_owned_file(path, identity)
+      File.delete(path) if owned_file?(path, identity)
     end
 
   end

@@ -272,6 +272,19 @@ class ShatteredRaidTest < Minitest::Test
     end
   end
 
+  def test_installer_rejects_dangling_sidecar_symlinks_without_following_them
+    with_staged_map do |root, config, original|
+      temp = map_path(root, 301) + ".shattered-raid.tmp"
+      outside = File.join(root, "outside-write")
+      File.symlink(outside, temp)
+      assert_raises(ShatteredRaid::InstallationError) do
+        ShatteredRaid.install_staged(root, config, passability)
+      end
+      refute File.exist?(outside)
+      assert_equal original, File.open(map_path(root, 301), "rb") { |file| file.read }
+    end
+  end
+
   def test_install_refuses_unreviewed_roles_missing_sprites_and_stale_backups
     with_staged_map do |root, config, original|
       config["events"][0]["role_reviewed"] = false
