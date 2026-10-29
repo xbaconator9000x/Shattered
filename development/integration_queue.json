@@ -255,7 +255,7 @@
         "Quest flags, starter uniqueness, recovery/resume and story lockout checks with game runtime"
       ],
       "evidence": [
-        "Draft SE-019 native dojo questionnaire/starter plugin and guarded RMXP installer on feat/se019-dojo-starter-native; isolated tests only, source dialogue/NPC role and real Essentials gameplay unverified."
+        "Draft PR #17 (SE-019 dojo slice): native Essentials v21.1 starter questionnaire, no-ball recruitment, saved one-time award and guarded RMXP installer. Commit c8e3b72b passed 17 Ruby tests/47 assertions (dojo CI run 40961007164) and general integration CI run 40961007188; real native Essentials/Android gameplay and source dialogue/NPC roles still OPEN."
       ],
       "blocker": "Quest system, native map identity/passability, source questionnaire parity, follower and full game runtime not verified."
     },
