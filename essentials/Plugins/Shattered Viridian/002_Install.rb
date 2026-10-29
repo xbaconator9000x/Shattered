@@ -139,7 +139,7 @@ module ShatteredViridian
     codes = { [0,1] => 1, [-1,0] => 2, [1,0] => 3, [0,-1] => 4 }
     route = RPG::MoveRoute.new
     route.repeat = false
-    route.skippable = false
+    route.skippable = true # never softlock on a dynamic obstruction
     route.list = path.each_cons(2).map do |from, to|
       RPG::MoveCommand.new(codes[[to[0]-from[0], to[1]-from[1]]])
     end
@@ -163,7 +163,7 @@ module ShatteredViridian
       command(209, [guard_id, move_route(config["guard_path"])]),
       command(209, [nidoran_id, move_route(config["nidoran_path"])]),
       command(210), # wait for movement; only then persist escort start
-      command(355, ["ShatteredViridian.start!(#{started}, #{rain})"]),
+      command(355, ["ShatteredViridian.complete_route!(#{guard_id}, #{nidoran_id}, #{config['guard_path'].first.inspect}, #{config['nidoran_path'].first.inspect}, #{config['guard_path'].last.inspect}, #{config['nidoran_path'].last.inspect}, #{started}, #{rain})"]),
       command(0)
     ]
     entry_done = page(started, 2)
