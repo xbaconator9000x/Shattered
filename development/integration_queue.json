@@ -1,23 +1,152 @@
 {
   "schema_version": 1,
   "project": "Shattered Essentials v21.1 plugin integration",
-  "estimated_integration_completion_percent": 12,
-  "measure": "Work verified by code/CI and runtime, not plugin names appearing in a manifest.",
+  "estimated_integration_completion_percent": 16,
+  "measure": "Core infrastructure and real-game static staging validated locally; GitHub-hosted CI is blocked before job startup, and external plugins are not installed.",
   "max_parallel_active": 3,
   "tasks": [
-    {"id":"SE-001","title":"Baseline FRLG dependency and installed-plugin inventory","status":"done","depends_on":[],"evidence":["Existing game archive inspected: Hotfixes 1.0.3 and compiled PluginScripts.rxdata are present"]},
-    {"id":"SE-002","title":"Versioned plugin catalogue, dependency and conflict gates","status":"in_progress","depends_on":["SE-001"],"validation":["manifest schema and dependency graph pass","source attribution/permission review"]},
-    {"id":"SE-003","title":"Build safe source-to-staged-project plugin installer","status":"in_progress","depends_on":["SE-001"],"validation":["does not alter input project","blocks traversal/symlink and unsafe file replacements","idempotent HUMAN species and plugin staging"]},
-    {"id":"SE-004","title":"Implement HUMAN species and no-capture friendship APIs","status":"in_progress","depends_on":["SE-001"],"validation":["Ruby tests pass","Essentials compile and real JoiPlay runtime"]},
-    {"id":"SE-005","title":"Install v21.1 Hotfixes 1.0.9 on clean staging copy","status":"blocked","depends_on":["SE-003"],"blocker":"Authoritative plugin distribution archive not yet obtained and verified"},
-    {"id":"SE-006","title":"Integrate Deluxe Battle Kit and boss/cutscene battle hooks","status":"blocked","depends_on":["SE-005"],"blocker":"Verified DBK archive and runtime regression tests needed"},
-    {"id":"SE-007","title":"Integrate Following Pokemon EX, event-based companions","status":"blocked","depends_on":["SE-003"],"blocker":"Verified archive, companion sprite and on-device follower tests needed"},
-    {"id":"SE-008","title":"Integrate Modern Quest System with Shattered quests","status":"blocked","depends_on":["SE-003"],"blocker":"Verified archive and project compile needed"},
-    {"id":"SE-009","title":"Integrate Enhanced Battle UI after Deluxe Battle Kit","status":"blocked","depends_on":["SE-006"],"blocker":"DBK must be installed and verified first"},
-    {"id":"SE-010","title":"Audit Feral Tank stat overrides, then equipment and moves","status":"blocked","depends_on":["SE-003"],"blocker":"Source archive and Pokemon.calc_stats conflict analysis required"},
-    {"id":"SE-011","title":"Human defensive type modifiers, battle PP/stamina hooks, classes","status":"queued","depends_on":["SE-004","SE-006","SE-010"]},
-    {"id":"SE-012","title":"Disable Poké Balls, implement befriending and no-ball battle entry","status":"queued","depends_on":["SE-004","SE-006"]},
-    {"id":"SE-013","title":"Convert Heart & Soul reception gate and scene events","status":"queued","depends_on":["SE-003"]},
-    {"id":"SE-014","title":"End-to-end JoiPlay/NaviaXP smoke and save tests","status":"queued","depends_on":["SE-006","SE-007","SE-008","SE-013"]}
+    {
+      "id": "SE-001",
+      "title": "Baseline FRLG dependency and installed-plugin inventory",
+      "status": "done",
+      "depends_on": [],
+      "evidence": [
+        "Existing game archive inspected: Hotfixes 1.0.3 and compiled PluginScripts.rxdata are present"
+      ]
+    },
+    {
+      "id": "SE-002",
+      "title": "Versioned plugin catalogue, dependency and conflict gates",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-001"
+      ],
+      "validation": [
+        "manifest schema and dependency graph pass",
+        "source attribution/permission review"
+      ]
+    },
+    {
+      "id": "SE-003",
+      "title": "Build safe source-to-staged-project plugin installer",
+      "status": "done",
+      "depends_on": [
+        "SE-001"
+      ],
+      "validation": [
+        "does not alter input project",
+        "blocks traversal/symlink and unsafe file replacements",
+        "idempotent HUMAN species and plugin staging"
+      ],
+      "evidence": [
+        "9 Python tests pass (archive ZIP traversal, symlinks, collisions, staging, dependencies, queue)",
+        "Actual user-supplied Shattered Essentials v0.4 Android Lite project staged successfully without altering source, resulting Plugins/Shattered Core and exactly one [HUMAN] PBS entry",
+        "5 Ruby tests/16 assertions pass for core event-facing API; Android/runtime still unverified"
+      ]
+    },
+    {
+      "id": "SE-004",
+      "title": "Implement HUMAN species and no-capture friendship APIs",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-001"
+      ],
+      "validation": [
+        "Ruby tests pass",
+        "Essentials compile and real JoiPlay runtime"
+      ]
+    },
+    {
+      "id": "SE-005",
+      "title": "Install v21.1 Hotfixes 1.0.9 on clean staging copy",
+      "status": "blocked",
+      "depends_on": [
+        "SE-003"
+      ],
+      "blocker": "Authoritative plugin distribution archive not yet obtained and verified"
+    },
+    {
+      "id": "SE-006",
+      "title": "Integrate Deluxe Battle Kit and boss/cutscene battle hooks",
+      "status": "blocked",
+      "depends_on": [
+        "SE-005"
+      ],
+      "blocker": "Verified DBK archive and runtime regression tests needed"
+    },
+    {
+      "id": "SE-007",
+      "title": "Integrate Following Pokemon EX, event-based companions",
+      "status": "blocked",
+      "depends_on": [
+        "SE-003"
+      ],
+      "blocker": "Verified archive, companion sprite and on-device follower tests needed"
+    },
+    {
+      "id": "SE-008",
+      "title": "Integrate Modern Quest System with Shattered quests",
+      "status": "blocked",
+      "depends_on": [
+        "SE-003"
+      ],
+      "blocker": "Verified archive and project compile needed"
+    },
+    {
+      "id": "SE-009",
+      "title": "Integrate Enhanced Battle UI after Deluxe Battle Kit",
+      "status": "blocked",
+      "depends_on": [
+        "SE-006"
+      ],
+      "blocker": "DBK must be installed and verified first"
+    },
+    {
+      "id": "SE-010",
+      "title": "Audit Feral Tank stat overrides, then equipment and moves",
+      "status": "blocked",
+      "depends_on": [
+        "SE-003"
+      ],
+      "blocker": "Source archive and Pokemon.calc_stats conflict analysis required"
+    },
+    {
+      "id": "SE-011",
+      "title": "Human defensive type modifiers, battle PP/stamina hooks, classes",
+      "status": "queued",
+      "depends_on": [
+        "SE-004",
+        "SE-006",
+        "SE-010"
+      ]
+    },
+    {
+      "id": "SE-012",
+      "title": "Disable Poké Balls, implement befriending and no-ball battle entry",
+      "status": "queued",
+      "depends_on": [
+        "SE-004",
+        "SE-006"
+      ]
+    },
+    {
+      "id": "SE-013",
+      "title": "Convert Heart & Soul reception gate and scene events",
+      "status": "queued",
+      "depends_on": [
+        "SE-003"
+      ]
+    },
+    {
+      "id": "SE-014",
+      "title": "End-to-end JoiPlay/NaviaXP smoke and save tests",
+      "status": "queued",
+      "depends_on": [
+        "SE-006",
+        "SE-007",
+        "SE-008",
+        "SE-013"
+      ]
+    }
   ]
 }
