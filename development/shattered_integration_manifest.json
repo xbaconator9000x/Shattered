@@ -23,11 +23,15 @@
   },
   "main": {
     "ref": "main",
-    "commit": "563a9b9791975d36a04475d4ebf7ead247b064c0"
+    "commit": "8dbea4be96e7db5f8cbc6c31c810bf9acab9382f"
   },
   "inspected_main": {
-    "commit": "563a9b9791975d36a04475d4ebf7ead247b064c0",
-    "merged_feature_prs": [6, 10]
+    "commit": "8dbea4be96e7db5f8cbc6c31c810bf9acab9382f",
+    "merged_feature_prs": [
+      6,
+      10,
+      11
+    ]
   },
   "pull_requests": [
     {
@@ -56,12 +60,12 @@
       "id": 11,
       "title": "HUMAN lifecycle and battle hooks",
       "branch": "copilot/shattered-queue-se-004-human-species-apis",
-      "head": "fdb6a7401ab0fac061c50718306932caac7ee605",
+      "head": "9bb7d8250d3bb6acc808a05b88ac4f2706a38295",
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
       "build_requires": [],
-      "state": "open_draft"
+      "state": "merged"
     },
     {
       "id": 12,
@@ -82,7 +86,9 @@
       "base_ref": "feat/se015-source-parity-extractor",
       "base": "199ce2b5a97da6e8c18a9f7f33f3d888a07a416b",
       "ancestry_parent": 12,
-      "build_requires": [12],
+      "build_requires": [
+        12
+      ],
       "state": "open_draft"
     },
     {
@@ -93,7 +99,11 @@
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
-      "build_requires": [10, 11, 13],
+      "build_requires": [
+        10,
+        11,
+        13
+      ],
       "state": "open_draft"
     },
     {
@@ -104,7 +114,10 @@
       "base_ref": "feat/se017-verified-world-links",
       "base": "66022f04497a5562cee52191a0d952123f8f1877",
       "ancestry_parent": 13,
-      "build_requires": [11, 13],
+      "build_requires": [
+        11,
+        13
+      ],
       "state": "open_draft"
     },
     {
@@ -115,7 +128,10 @@
       "base_ref": "feat/se017-route22-rattata-native-events",
       "base": "947d542be37d9f2df9102ec418bbd9cbce3f33a2",
       "ancestry_parent": 15,
-      "build_requires": [13, 15],
+      "build_requires": [
+        13,
+        15
+      ],
       "state": "open_draft"
     },
     {
@@ -126,7 +142,11 @@
       "base_ref": "feat/se018-viridian-escort-weather-native",
       "base": "8f72ca12280895aeafbcdbc8052cf251b8de8af2",
       "ancestry_parent": 16,
-      "build_requires": [11, 13, 16],
+      "build_requires": [
+        11,
+        13,
+        16
+      ],
       "state": "open_draft"
     },
     {
@@ -137,7 +157,9 @@
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
-      "build_requires": [11],
+      "build_requires": [
+        11
+      ],
       "state": "open_draft"
     },
     {
@@ -148,7 +170,11 @@
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
-      "build_requires": [11, 12, 13],
+      "build_requires": [
+        11,
+        12,
+        13
+      ],
       "state": "open_draft"
     },
     {
@@ -159,7 +185,9 @@
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
-      "build_requires": [11],
+      "build_requires": [
+        11
+      ],
       "state": "open_draft"
     }
   ],
@@ -204,76 +232,440 @@
     }
   ],
   "required_source_files": [
-    {"pr": 6, "path": "scripts/validate_integration.py", "stage": false},
-    {"pr": 6, "path": "tests/test_manifest.py", "stage": false},
-    {"pr": 10, "path": "essentials/Plugins/Shattered HnS Gate/001_Import.rb", "stage": true},
-    {"pr": 10, "path": "essentials/Plugins/Shattered HnS Gate/meta.txt", "stage": true},
-    {"pr": 10, "path": "scripts/convert_hns_reception_gate.py", "stage": false},
-    {"pr": 10, "path": "tests/test_hns_gate_conversion.py", "stage": false},
-    {"pr": 10, "path": "tests/test_hns_gate_import.rb", "stage": false},
-    {"pr": 10, "path": "tests/test_stage.py", "stage": false},
-    {"pr": 11, "path": "essentials/Plugins/Shattered Core/001_Core.rb", "stage": true},
-    {"pr": 11, "path": "essentials/Plugins/Shattered Core/meta.txt", "stage": true},
-    {"pr": 11, "path": "essentials/PBS/HUMAN.pbs", "stage": false, "pbs_target": "PBS/pokemon.txt"},
-    {"pr": 11, "path": "tests/test_shattered_core.rb", "stage": false},
-    {"pr": 12, "path": "development/demo_parity_reference.json", "stage": false},
-    {"pr": 12, "path": "scripts/extract_demo_parity.py", "stage": false},
-    {"pr": 12, "path": "tests/test_demo_parity.py", "stage": false},
-    {"pr": 13, "path": "essentials/Plugins/Shattered World Links/001_Install.rb", "stage": true},
-    {"pr": 13, "path": "essentials/Plugins/Shattered World Links/meta.txt", "stage": true},
-    {"pr": 13, "path": "scripts/build_world_links.py", "stage": false},
-    {"pr": 13, "path": "tests/test_world_links.py", "stage": false},
-    {"pr": 13, "path": "tests/test_world_links.rb", "stage": false},
-    {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/001_GateStory.rb", "stage": true},
-    {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/002_Install.rb", "stage": true},
-    {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/meta.txt", "stage": true},
-    {"pr": 14, "path": "essentials/PBS/SHATTEREDGATEKEY.pbs", "stage": false, "pbs_target": "PBS/items.txt"},
-    {"pr": 14, "path": "scripts/install_gate_key_pbs.py", "stage": false},
-    {"pr": 14, "path": "tests/test_gate_key_pbs.py", "stage": false},
-    {"pr": 14, "path": "tests/test_gate_story.rb", "stage": false},
-    {"pr": 15, "path": "essentials/Plugins/Shattered Route22/001_Route22.rb", "stage": true},
-    {"pr": 15, "path": "essentials/Plugins/Shattered Route22/002_Install.rb", "stage": true},
-    {"pr": 15, "path": "essentials/Plugins/Shattered Route22/meta.txt", "stage": true},
-    {"pr": 15, "path": "tests/test_route22.rb", "stage": false},
-    {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/001_Entry.rb", "stage": true},
-    {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/002_Install.rb", "stage": true},
-    {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/meta.txt", "stage": true},
-    {"pr": 16, "path": "tests/test_viridian.rb", "stage": false},
-    {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/001_Starter.rb", "stage": true},
-    {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/002_Install.rb", "stage": true},
-    {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/meta.txt", "stage": true},
-    {"pr": 17, "path": "tests/test_dojo.rb", "stage": false},
-    {"pr": 19, "path": "essentials/Plugins/Shattered Raid/001_Raid.rb", "stage": true},
-    {"pr": 19, "path": "essentials/Plugins/Shattered Raid/meta.txt", "stage": true},
-    {"pr": 19, "path": "tests/test_shattered_raid.rb", "stage": false},
-    {"pr": 24, "path": "essentials/Plugins/Shattered Murkrow Rescue/001_Quest.rb", "stage": true},
-    {"pr": 24, "path": "essentials/Plugins/Shattered Murkrow Rescue/002_Install.rb", "stage": true},
-    {"pr": 24, "path": "essentials/Plugins/Shattered Murkrow Rescue/meta.txt", "stage": true},
-    {"pr": 24, "path": "tests/test_murkrow_rescue.rb", "stage": false},
-    {"pr": 25, "path": "essentials/Plugins/Shattered Equipment/001_Equipment.rb", "stage": true},
-    {"pr": 25, "path": "essentials/Plugins/Shattered Equipment/meta.txt", "stage": true},
-    {"pr": 25, "path": "tests/test_equipment.rb", "stage": false}
+    {
+      "pr": 6,
+      "path": "scripts/validate_integration.py",
+      "stage": false
+    },
+    {
+      "pr": 6,
+      "path": "tests/test_manifest.py",
+      "stage": false
+    },
+    {
+      "pr": 10,
+      "path": "essentials/Plugins/Shattered HnS Gate/001_Import.rb",
+      "stage": true
+    },
+    {
+      "pr": 10,
+      "path": "essentials/Plugins/Shattered HnS Gate/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 10,
+      "path": "scripts/convert_hns_reception_gate.py",
+      "stage": false
+    },
+    {
+      "pr": 10,
+      "path": "tests/test_hns_gate_conversion.py",
+      "stage": false
+    },
+    {
+      "pr": 10,
+      "path": "tests/test_hns_gate_import.rb",
+      "stage": false
+    },
+    {
+      "pr": 10,
+      "path": "tests/test_stage.py",
+      "stage": false
+    },
+    {
+      "pr": 11,
+      "path": "essentials/Plugins/Shattered Core/001_Core.rb",
+      "stage": true
+    },
+    {
+      "pr": 11,
+      "path": "essentials/Plugins/Shattered Core/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 11,
+      "path": "essentials/PBS/HUMAN.pbs",
+      "stage": false,
+      "pbs_target": "PBS/pokemon.txt"
+    },
+    {
+      "pr": 11,
+      "path": "tests/test_shattered_core.rb",
+      "stage": false
+    },
+    {
+      "pr": 12,
+      "path": "development/demo_parity_reference.json",
+      "stage": false
+    },
+    {
+      "pr": 12,
+      "path": "scripts/extract_demo_parity.py",
+      "stage": false
+    },
+    {
+      "pr": 12,
+      "path": "tests/test_demo_parity.py",
+      "stage": false
+    },
+    {
+      "pr": 13,
+      "path": "essentials/Plugins/Shattered World Links/001_Install.rb",
+      "stage": true
+    },
+    {
+      "pr": 13,
+      "path": "essentials/Plugins/Shattered World Links/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 13,
+      "path": "scripts/build_world_links.py",
+      "stage": false
+    },
+    {
+      "pr": 13,
+      "path": "tests/test_world_links.py",
+      "stage": false
+    },
+    {
+      "pr": 13,
+      "path": "tests/test_world_links.rb",
+      "stage": false
+    },
+    {
+      "pr": 14,
+      "path": "essentials/Plugins/Shattered Gate Story/001_GateStory.rb",
+      "stage": true
+    },
+    {
+      "pr": 14,
+      "path": "essentials/Plugins/Shattered Gate Story/002_Install.rb",
+      "stage": true
+    },
+    {
+      "pr": 14,
+      "path": "essentials/Plugins/Shattered Gate Story/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 14,
+      "path": "essentials/PBS/SHATTEREDGATEKEY.pbs",
+      "stage": false,
+      "pbs_target": "PBS/items.txt"
+    },
+    {
+      "pr": 14,
+      "path": "scripts/install_gate_key_pbs.py",
+      "stage": false
+    },
+    {
+      "pr": 14,
+      "path": "tests/test_gate_key_pbs.py",
+      "stage": false
+    },
+    {
+      "pr": 14,
+      "path": "tests/test_gate_story.rb",
+      "stage": false
+    },
+    {
+      "pr": 15,
+      "path": "essentials/Plugins/Shattered Route22/001_Route22.rb",
+      "stage": true
+    },
+    {
+      "pr": 15,
+      "path": "essentials/Plugins/Shattered Route22/002_Install.rb",
+      "stage": true
+    },
+    {
+      "pr": 15,
+      "path": "essentials/Plugins/Shattered Route22/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 15,
+      "path": "tests/test_route22.rb",
+      "stage": false
+    },
+    {
+      "pr": 16,
+      "path": "essentials/Plugins/Shattered Viridian/001_Entry.rb",
+      "stage": true
+    },
+    {
+      "pr": 16,
+      "path": "essentials/Plugins/Shattered Viridian/002_Install.rb",
+      "stage": true
+    },
+    {
+      "pr": 16,
+      "path": "essentials/Plugins/Shattered Viridian/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 16,
+      "path": "tests/test_viridian.rb",
+      "stage": false
+    },
+    {
+      "pr": 17,
+      "path": "essentials/Plugins/Shattered Dojo/001_Starter.rb",
+      "stage": true
+    },
+    {
+      "pr": 17,
+      "path": "essentials/Plugins/Shattered Dojo/002_Install.rb",
+      "stage": true
+    },
+    {
+      "pr": 17,
+      "path": "essentials/Plugins/Shattered Dojo/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 17,
+      "path": "tests/test_dojo.rb",
+      "stage": false
+    },
+    {
+      "pr": 19,
+      "path": "essentials/Plugins/Shattered Raid/001_Raid.rb",
+      "stage": true
+    },
+    {
+      "pr": 19,
+      "path": "essentials/Plugins/Shattered Raid/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 19,
+      "path": "tests/test_shattered_raid.rb",
+      "stage": false
+    },
+    {
+      "pr": 24,
+      "path": "essentials/Plugins/Shattered Murkrow Rescue/001_Quest.rb",
+      "stage": true
+    },
+    {
+      "pr": 24,
+      "path": "essentials/Plugins/Shattered Murkrow Rescue/002_Install.rb",
+      "stage": true
+    },
+    {
+      "pr": 24,
+      "path": "essentials/Plugins/Shattered Murkrow Rescue/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 24,
+      "path": "tests/test_murkrow_rescue.rb",
+      "stage": false
+    },
+    {
+      "pr": 25,
+      "path": "essentials/Plugins/Shattered Equipment/001_Equipment.rb",
+      "stage": true
+    },
+    {
+      "pr": 25,
+      "path": "essentials/Plugins/Shattered Equipment/meta.txt",
+      "stage": true
+    },
+    {
+      "pr": 25,
+      "path": "tests/test_equipment.rb",
+      "stage": false
+    }
   ],
   "contract_test_suites": [
-    {"pr": 6, "support_from_main": ["development/plugin_manifest.json"], "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_manifest.py", "-v"]]},
-    {"pr": 10, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_hns_gate_conversion.py", "-v"], ["ruby", "tests/test_hns_gate_import.rb"]]},
-    {"pr": 11, "commands": [["ruby", "tests/test_shattered_core.rb"]]},
-    {"pr": 12, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_demo_parity.py", "-v"]]},
-    {"pr": 13, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_world_links.py", "-v"], ["ruby", "tests/test_world_links.rb"]]},
-    {"pr": 14, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_gate_key_pbs.py", "-v"], ["ruby", "tests/test_gate_story.rb"]]},
-    {"pr": 15, "commands": [["ruby", "tests/test_route22.rb"]]},
-    {"pr": 16, "commands": [["ruby", "tests/test_viridian.rb"]]},
-    {"pr": 17, "commands": [["ruby", "tests/test_dojo.rb"]]},
-    {"pr": 19, "commands": [["ruby", "tests/test_shattered_raid.rb"]]},
-    {"pr": 24, "commands": [["ruby", "tests/test_murkrow_rescue.rb"]]},
-    {"pr": 25, "commands": [["ruby", "tests/test_equipment.rb"]]}
+    {
+      "pr": 6,
+      "support_from_main": [
+        "development/plugin_manifest.json"
+      ],
+      "commands": [
+        [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_manifest.py",
+          "-v"
+        ]
+      ]
+    },
+    {
+      "pr": 10,
+      "commands": [
+        [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_hns_gate_conversion.py",
+          "-v"
+        ],
+        [
+          "ruby",
+          "tests/test_hns_gate_import.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 11,
+      "commands": [
+        [
+          "ruby",
+          "tests/test_shattered_core.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 12,
+      "commands": [
+        [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_demo_parity.py",
+          "-v"
+        ]
+      ]
+    },
+    {
+      "pr": 13,
+      "commands": [
+        [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_world_links.py",
+          "-v"
+        ],
+        [
+          "ruby",
+          "tests/test_world_links.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 14,
+      "commands": [
+        [
+          "python3",
+          "-m",
+          "unittest",
+          "discover",
+          "-s",
+          "tests",
+          "-p",
+          "test_gate_key_pbs.py",
+          "-v"
+        ],
+        [
+          "ruby",
+          "tests/test_gate_story.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 15,
+      "commands": [
+        [
+          "ruby",
+          "tests/test_route22.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 16,
+      "commands": [
+        [
+          "ruby",
+          "tests/test_viridian.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 17,
+      "commands": [
+        [
+          "ruby",
+          "tests/test_dojo.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 19,
+      "commands": [
+        [
+          "ruby",
+          "tests/test_shattered_raid.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 24,
+      "commands": [
+        [
+          "ruby",
+          "tests/test_murkrow_rescue.rb"
+        ]
+      ]
+    },
+    {
+      "pr": 25,
+      "commands": [
+        [
+          "ruby",
+          "tests/test_equipment.rb"
+        ]
+      ]
+    }
   ],
   "profiles": {
     "initial_slice": {
-      "components": ["hns_gate", "shattered_core", "world_links", "gate_story", "route22"],
-      "source_prs": [10, 11, 12, 13, 14, 15],
-      "map_slots": ["reception_gate", "route22"],
-      "archives": ["hotfixes", "deluxe_battle_kit", "enhanced_battle_ui"],
+      "components": [
+        "hns_gate",
+        "shattered_core",
+        "world_links",
+        "gate_story",
+        "route22"
+      ],
+      "source_prs": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "map_slots": [
+        "reception_gate",
+        "route22"
+      ],
+      "archives": [
+        "hotfixes",
+        "deluxe_battle_kit",
+        "enhanced_battle_ui"
+      ],
       "assets": [
         "hns_reception_gate_tileset",
         "hns_reception_gate_mapping",
@@ -287,22 +679,89 @@
         "gate_collapse_se_6",
         "route22_rattata_sprite"
       ],
-      "source_projects": ["hns_reception_gate"],
-      "pbs_species": ["HUMAN", "RATTATA"],
-      "pbs_items": ["SHATTEREDGATEKEY"],
-      "switch_ids": ["route22_scatter", "route22_cleared"],
-      "variable_ids": ["route22_outcome"],
+      "source_projects": [
+        "hns_reception_gate"
+      ],
+      "pbs_species": [
+        "HUMAN",
+        "RATTATA"
+      ],
+      "pbs_items": [
+        "SHATTEREDGATEKEY"
+      ],
+      "switch_ids": [
+        "route22_scatter",
+        "route22_cleared"
+      ],
+      "variable_ids": [
+        "route22_outcome"
+      ],
       "acceptance_target": "new game -> genuine HUMAN -> gate collapse -> Aipom key -> mandatory Lv5 Route22 Rattata -> save/close/reload",
       "runtime_status": "BLOCKED until native Essentials build and private save/reload playthrough"
     }
   },
   "plugin_archives": [
-    {"id": "hotfixes", "name": "v21.1 Hotfixes", "version": "1.0.9", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/1376/", "expected_local_input": "archives/v21.1-hotfixes.zip"},
-    {"id": "deluxe_battle_kit", "name": "Deluxe Battle Kit", "version": "1.3.1", "depends_on": ["hotfixes"], "required": true, "source": "https://eeveeexpo.com/resources/1470/", "expected_local_input": "archives/deluxe-battle-kit.zip"},
-    {"id": "enhanced_battle_ui", "name": "Enhanced Battle UI", "version": "2.1.1", "depends_on": ["deluxe_battle_kit"], "required": true, "source": "https://eeveeexpo.com/resources/1472/", "expected_local_input": "archives/enhanced-battle-ui.zip"},
-    {"id": "following_pokemon_ex", "name": "Following Pokemon EX", "version": "2.5.1", "depends_on": [], "required": false, "install": false, "source": "https://eeveeexpo.com/resources/516/", "blocker": "Independent compatibility evaluation required; not needed by the initial slice."},
-    {"id": "modern_quest_system", "name": "Modern Quest System + UI", "version": "1.1.0", "depends_on": [], "required": false, "install": false, "source": "https://eeveeexpo.com/resources/709/", "blocker": "Independent compatibility evaluation required; not needed by the initial slice."},
-    {"id": "feral_tank", "name": "Feral Tank", "version": "1.1.9", "depends_on": [], "required": false, "source": "https://eeveeexpo.com/resources/2011/", "install": false, "blocker": "Optional only; audit Pokemon#calc_stats and HUMAN compatibility before any install."}
+    {
+      "id": "hotfixes",
+      "name": "v21.1 Hotfixes",
+      "version": "1.0.9",
+      "depends_on": [],
+      "required": true,
+      "source": "https://eeveeexpo.com/resources/1376/",
+      "expected_local_input": "archives/v21.1-hotfixes.zip"
+    },
+    {
+      "id": "deluxe_battle_kit",
+      "name": "Deluxe Battle Kit",
+      "version": "1.3.1",
+      "depends_on": [
+        "hotfixes"
+      ],
+      "required": true,
+      "source": "https://eeveeexpo.com/resources/1470/",
+      "expected_local_input": "archives/deluxe-battle-kit.zip"
+    },
+    {
+      "id": "enhanced_battle_ui",
+      "name": "Enhanced Battle UI",
+      "version": "2.1.1",
+      "depends_on": [
+        "deluxe_battle_kit"
+      ],
+      "required": true,
+      "source": "https://eeveeexpo.com/resources/1472/",
+      "expected_local_input": "archives/enhanced-battle-ui.zip"
+    },
+    {
+      "id": "following_pokemon_ex",
+      "name": "Following Pokemon EX",
+      "version": "2.5.1",
+      "depends_on": [],
+      "required": false,
+      "install": false,
+      "source": "https://eeveeexpo.com/resources/516/",
+      "blocker": "Independent compatibility evaluation required; not needed by the initial slice."
+    },
+    {
+      "id": "modern_quest_system",
+      "name": "Modern Quest System + UI",
+      "version": "1.1.0",
+      "depends_on": [],
+      "required": false,
+      "install": false,
+      "source": "https://eeveeexpo.com/resources/709/",
+      "blocker": "Independent compatibility evaluation required; not needed by the initial slice."
+    },
+    {
+      "id": "feral_tank",
+      "name": "Feral Tank",
+      "version": "1.1.9",
+      "depends_on": [],
+      "required": false,
+      "source": "https://eeveeexpo.com/resources/2011/",
+      "install": false,
+      "blocker": "Optional only; audit Pokemon#calc_stats and HUMAN compatibility before any install."
+    }
   ],
   "load_order": [
     "v21.1 Hotfixes",
@@ -326,8 +785,17 @@
       "version": "0.1.0",
       "pr": 10,
       "build_requires": [],
-      "map_writes": [{"slot": "reception_gate", "mode": "create"}],
-      "runtime_requires": ["rights-cleared tileset/mapping", "HnS source map conversion", "native map/warp review"],
+      "map_writes": [
+        {
+          "slot": "reception_gate",
+          "mode": "create"
+        }
+      ],
+      "runtime_requires": [
+        "rights-cleared tileset/mapping",
+        "HnS source map conversion",
+        "native map/warp review"
+      ],
       "save_state": "No gameplay state is claimed by the importer.",
       "hook_claims": [],
       "event_contracts": [
@@ -335,10 +803,40 @@
           "api": "pbInstallShatteredHNSReceptionGate",
           "map_source": "MAP_RECEPTION_GATE_HNS / LAYOUT_RECEPTION_GATE_HNS",
           "exits": {
-            "west": {"source": [1, 9], "destination": "MAP_ROUTE28_HNS"},
-            "east": {"source": [20, 9], "destination": "MAP_ROUTE22_HNS"},
-            "south": {"source": [11, 19], "destination": "MAP_ROUTE26_HNS"},
-            "north": {"source": [[10, 1], [11, 1]], "destination": "MAP_VICTORY_ROAD_HNS"}
+            "west": {
+              "source": [
+                1,
+                9
+              ],
+              "destination": "MAP_ROUTE28_HNS"
+            },
+            "east": {
+              "source": [
+                20,
+                9
+              ],
+              "destination": "MAP_ROUTE22_HNS"
+            },
+            "south": {
+              "source": [
+                11,
+                19
+              ],
+              "destination": "MAP_ROUTE26_HNS"
+            },
+            "north": {
+              "source": [
+                [
+                  10,
+                  1
+                ],
+                [
+                  11,
+                  1
+                ]
+              ],
+              "destination": "MAP_VICTORY_ROAD_HNS"
+            }
           }
         }
       ]
@@ -350,7 +848,10 @@
       "pr": 11,
       "build_requires": [],
       "map_writes": [],
-      "runtime_requires": ["HUMAN PBS compilation", "native battle and save/load testing"],
+      "runtime_requires": [
+        "HUMAN PBS compilation",
+        "native battle and save/load testing"
+      ],
       "save_state": "$PokemonGlobal @shattered_stamina; HUMAN is held in the player party.",
       "hook_claims": [
         "Battle::Battler#pbCanChooseMove?",
@@ -362,8 +863,14 @@
         "EventHandlers:on_start_battle:shattered_core_battle_hooks"
       ],
       "event_contracts": [
-        {"api": "Shattered.ensure_human", "dependency": "PBS [HUMAN]"},
-        {"api": "Shattered.befriend", "dependency": "genuine HUMAN party member for dojo starter"}
+        {
+          "api": "Shattered.ensure_human",
+          "dependency": "PBS [HUMAN]"
+        },
+        {
+          "api": "Shattered.befriend",
+          "dependency": "genuine HUMAN party member for dojo starter"
+        }
       ]
     },
     {
@@ -371,19 +878,45 @@
       "name": "Shattered World Links",
       "version": "0.1.0",
       "pr": 13,
-      "build_requires": [10, 12],
-      "map_writes": [
-        {"slot": "reception_gate", "mode": "modify"},
-        {"slot": "route22", "mode": "modify"},
-        {"slot": "viridian_city", "mode": "modify"},
-        {"slot": "viridian_center", "mode": "modify"},
-        {"slot": "dojo_room", "mode": "modify"}
+      "build_requires": [
+        10,
+        12
       ],
-      "runtime_requires": ["reviewed source-to-target mapping", "existing target maps", "native transfer/passability tests"],
+      "map_writes": [
+        {
+          "slot": "reception_gate",
+          "mode": "modify"
+        },
+        {
+          "slot": "route22",
+          "mode": "modify"
+        },
+        {
+          "slot": "viridian_city",
+          "mode": "modify"
+        },
+        {
+          "slot": "viridian_center",
+          "mode": "modify"
+        },
+        {
+          "slot": "dojo_room",
+          "mode": "modify"
+        }
+      ],
+      "runtime_requires": [
+        "reviewed source-to-target mapping",
+        "existing target maps",
+        "native transfer/passability tests"
+      ],
       "save_state": "Native RPG::Event transfer commands; no plugin save state.",
       "hook_claims": [],
       "event_contracts": [
-        {"api": "pbInstallShatteredWorldLinks", "event_prefix": "SHATTERED_LINK:", "transfer_command": 201}
+        {
+          "api": "pbInstallShatteredWorldLinks",
+          "event_prefix": "SHATTERED_LINK:",
+          "transfer_command": 201
+        }
       ]
     },
     {
@@ -391,16 +924,37 @@
       "name": "Shattered Gate Story",
       "version": "0.1.0",
       "pr": 14,
-      "build_requires": [10, 11, 13],
-      "map_writes": [{"slot": "reception_gate", "mode": "modify"}],
-      "runtime_requires": ["Gate Key PBS", "licensed Aipom sprite/cry and six SE files", "reviewed original south transfer"],
+      "build_requires": [
+        10,
+        11,
+        13
+      ],
+      "map_writes": [
+        {
+          "slot": "reception_gate",
+          "mode": "modify"
+        }
+      ],
+      "runtime_requires": [
+        "Gate Key PBS",
+        "licensed Aipom sprite/cry and six SE files",
+        "reviewed original south transfer"
+      ],
       "save_state": "$PokemonGlobal @shattered_gate_story.",
       "hook_claims": [],
       "event_contracts": [
         {
           "api": "pbInstallShatteredGateStory",
-          "event_names": ["SHATTERED_GATE:collapse", "SHATTERED_GATE:aipom", "SHATTERED_GATE:johto_block"],
-          "dependencies": ["Shattered HnS Gate map", "PBS [SHATTEREDGATEKEY]", "local art/audio"]
+          "event_names": [
+            "SHATTERED_GATE:collapse",
+            "SHATTERED_GATE:aipom",
+            "SHATTERED_GATE:johto_block"
+          ],
+          "dependencies": [
+            "Shattered HnS Gate map",
+            "PBS [SHATTEREDGATEKEY]",
+            "local art/audio"
+          ]
         }
       ]
     },
@@ -409,17 +963,45 @@
       "name": "Shattered Route22",
       "version": "0.1.0",
       "pr": 15,
-      "build_requires": [11, 13],
-      "map_writes": [{"slot": "route22", "mode": "modify"}],
-      "runtime_requires": ["RATTATA PBS", "locally licensed Rattata sprite", "reviewed switch IDs and outcome variable"],
+      "build_requires": [
+        11,
+        13
+      ],
+      "map_writes": [
+        {
+          "slot": "route22",
+          "mode": "modify"
+        }
+      ],
+      "runtime_requires": [
+        "RATTATA PBS",
+        "locally licensed Rattata sprite",
+        "reviewed switch IDs and outcome variable"
+      ],
       "save_state": "$PokemonGlobal @shattered_route22_rattata.",
       "hook_claims": [],
       "event_contracts": [
         {
           "api": "pbInstallShatteredRoute22",
           "event_prefix": "SHATTERED_ROUTE22:",
-          "event_names": ["rattata_0..2", "trigger_0..2"],
-          "source_trigger_positions": [[36, 16], [36, 17], [36, 18]],
+          "event_names": [
+            "rattata_0..2",
+            "trigger_0..2"
+          ],
+          "source_trigger_positions": [
+            [
+              36,
+              16
+            ],
+            [
+              36,
+              17
+            ],
+            [
+              36,
+              18
+            ]
+          ],
           "battle": "WildBattle.start(:RATTATA, 5); disablePokeBalls; outcome 1 advances"
         }
       ]
@@ -429,17 +1011,53 @@
       "name": "Shattered Viridian",
       "version": "0.1.0",
       "pr": 16,
-      "build_requires": [13, 15],
-      "map_writes": [{"slot": "viridian_city", "mode": "modify"}, {"slot": "viridian_center", "mode": "modify"}],
-      "runtime_requires": ["reviewed city/Center map IDs and SHA256", "licensed guard/Nidoran sprites", "distinct reviewed switches and passable route"],
+      "build_requires": [
+        13,
+        15
+      ],
+      "map_writes": [
+        {
+          "slot": "viridian_city",
+          "mode": "modify"
+        },
+        {
+          "slot": "viridian_center",
+          "mode": "modify"
+        }
+      ],
+      "runtime_requires": [
+        "reviewed city/Center map IDs and SHA256",
+        "licensed guard/Nidoran sprites",
+        "distinct reviewed switches and passable route"
+      ],
       "save_state": "$PokemonGlobal @shattered_viridian_entry.",
       "hook_claims": [],
       "event_contracts": [
         {
           "api": "pbInstallShatteredViridian",
           "event_prefix": "SHATTERED_VIRIDIAN:",
-          "event_roles": ["guard", "nidoran", "entry", "finish", "rain", "center"],
-          "source_entry_positions": [[0, 17], [0, 18], [0, 19]]
+          "event_roles": [
+            "guard",
+            "nidoran",
+            "entry",
+            "finish",
+            "rain",
+            "center"
+          ],
+          "source_entry_positions": [
+            [
+              0,
+              17
+            ],
+            [
+              0,
+              18
+            ],
+            [
+              0,
+              19
+            ]
+          ]
         }
       ]
     },
@@ -448,9 +1066,22 @@
       "name": "Shattered Dojo",
       "version": "0.1.0",
       "pr": 17,
-      "build_requires": [11, 13, 16],
-      "map_writes": [{"slot": "dojo_room", "mode": "modify"}],
-      "runtime_requires": ["HUMAN party member", "Shattered.befriend", "reviewed dojo map and licensed instructor sprite"],
+      "build_requires": [
+        11,
+        13,
+        16
+      ],
+      "map_writes": [
+        {
+          "slot": "dojo_room",
+          "mode": "modify"
+        }
+      ],
+      "runtime_requires": [
+        "HUMAN party member",
+        "Shattered.befriend",
+        "reviewed dojo map and licensed instructor sprite"
+      ],
       "save_state": "$PokemonGlobal @shattered_dojo_starter; starter award tagged on Pokemon.",
       "hook_claims": [],
       "event_contracts": [
@@ -458,8 +1089,15 @@
           "api": "pbInstallShatteredDojo",
           "event_name": "SHATTERED_DOJO:questionnaire",
           "runtime_api": "ShatteredDojo.run_quiz",
-          "source_anchors": ["5.2:npc:1", "5.2:npc:2"],
-          "recruitment": ["VULPIX", "STARYU", "EXEGGCUTE"]
+          "source_anchors": [
+            "5.2:npc:1",
+            "5.2:npc:2"
+          ],
+          "recruitment": [
+            "VULPIX",
+            "STARYU",
+            "EXEGGCUTE"
+          ]
         }
       ]
     },
@@ -468,9 +1106,20 @@
       "name": "Shattered Raid",
       "version": "0.1.0",
       "pr": 19,
-      "build_requires": [11],
-      "map_writes": [{"slot": "raid_map", "mode": "modify"}],
-      "runtime_requires": ["HUMAN and BEEDRILL PBS", "reviewed map/anchors/switches/outcome variable", "licensed local sprites"],
+      "build_requires": [
+        11
+      ],
+      "map_writes": [
+        {
+          "slot": "raid_map",
+          "mode": "modify"
+        }
+      ],
+      "runtime_requires": [
+        "HUMAN and BEEDRILL PBS",
+        "reviewed map/anchors/switches/outcome variable",
+        "licensed local sprites"
+      ],
       "save_state": "$PokemonGlobal @shattered_raid_state; progression reconciled to reviewed event switches.",
       "hook_claims": [
         "EventHandlers:on_game_map_setup:shattered_raid_switch_sync",
@@ -492,9 +1141,21 @@
       "version": "0.1.0",
       "pr": 24,
       "scope": "later",
-      "build_requires": [11, 12, 13],
-      "map_writes": [{"slot": "viridian_rescue", "mode": "modify"}],
-      "runtime_requires": ["MURKROW PBS", "reviewed local target map/event, sprite, reward, and map hash"],
+      "build_requires": [
+        11,
+        12,
+        13
+      ],
+      "map_writes": [
+        {
+          "slot": "viridian_rescue",
+          "mode": "modify"
+        }
+      ],
+      "runtime_requires": [
+        "MURKROW PBS",
+        "reviewed local target map/event, sprite, reward, and map hash"
+      ],
       "save_state": "$PokemonGlobal ShatteredMurKrow rescue quest flags.",
       "hook_claims": [],
       "event_contracts": [
@@ -503,7 +1164,10 @@
           "event_prefix": "SHATTERED_MURKROW_RESCUE:",
           "switch_ids": [],
           "variable_ids": [],
-          "battle_hooks": ["pbWildBattle", "pbTrainerBattle"]
+          "battle_hooks": [
+            "pbWildBattle",
+            "pbTrainerBattle"
+          ]
         }
       ]
     },
@@ -513,9 +1177,15 @@
       "version": "0.1.0",
       "pr": 25,
       "scope": "later",
-      "build_requires": [11],
+      "build_requires": [
+        11
+      ],
       "map_writes": [],
-      "runtime_requires": ["Shattered Core 0.2.2 battle hooks", "native configured item IDs", "native Essentials battle test"],
+      "runtime_requires": [
+        "Shattered Core 0.2.2 battle hooks",
+        "native configured item IDs",
+        "native Essentials battle test"
+      ],
       "save_state": "HUMAN equipment slots; no item PBS is included.",
       "hook_claims": [
         "Battle::Battler#pbInitPokemon",
@@ -524,37 +1194,175 @@
       "event_contracts": [
         {
           "api": "ShatteredEquipment.equip",
-          "battle_moves": ["SLASH", "EMBER", "ROCKTHROW", "BUBBLE", "DEFENSECURL"],
-          "native_items": ["KNIFE", "BRAZIER", "SLING", "SPRAYGUN", "BUCKLER"]
+          "battle_moves": [
+            "SLASH",
+            "EMBER",
+            "ROCKTHROW",
+            "BUBBLE",
+            "DEFENSECURL"
+          ],
+          "native_items": [
+            "KNIFE",
+            "BRAZIER",
+            "SLING",
+            "SPRAYGUN",
+            "BUCKLER"
+          ]
         }
       ]
     }
   ],
   "asset_requirements": [
-    {"id": "hns_reception_gate_tileset", "kind": "converted_tileset_image", "required": true, "rights_status": "unverified_upstream_permission", "expected_local_input": "assets/tilesets/ReceptionGate.png"},
-    {"id": "hns_reception_gate_mapping", "kind": "reviewed_metatile_collision_mapping", "required": true, "rights_status": "operator_authored", "expected_local_input": "sources/hns/reception_gate_mapping.json"},
-    {"id": "aipom_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/characters/Aipom.png"},
-    {"id": "aipom_cry", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/AipomCry.ogg"},
-    {"id": "gate_collapse_se_1", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse1.ogg"},
-    {"id": "gate_collapse_se_2", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse2.ogg"},
-    {"id": "gate_collapse_se_3", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse3.ogg"},
-    {"id": "gate_collapse_se_4", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse4.ogg"},
-    {"id": "gate_collapse_se_5", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse5.ogg"},
-    {"id": "gate_collapse_se_6", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse6.ogg"},
-    {"id": "route22_rattata_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/characters/Rattata.png"},
-    {"id": "viridian_guard_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
-    {"id": "viridian_nidoran_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
-    {"id": "dojo_instructor_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
-    {"id": "raid_event_sprites", "kind": "reviewed_character_sprites", "required": true, "rights_status": "not_provided"}
+    {
+      "id": "hns_reception_gate_tileset",
+      "kind": "converted_tileset_image",
+      "required": true,
+      "rights_status": "unverified_upstream_permission",
+      "expected_local_input": "assets/tilesets/ReceptionGate.png"
+    },
+    {
+      "id": "hns_reception_gate_mapping",
+      "kind": "reviewed_metatile_collision_mapping",
+      "required": true,
+      "rights_status": "operator_authored",
+      "expected_local_input": "sources/hns/reception_gate_mapping.json"
+    },
+    {
+      "id": "aipom_sprite",
+      "kind": "character_sprite",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/characters/Aipom.png"
+    },
+    {
+      "id": "aipom_cry",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/AipomCry.ogg"
+    },
+    {
+      "id": "gate_collapse_se_1",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/GateCollapse1.ogg"
+    },
+    {
+      "id": "gate_collapse_se_2",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/GateCollapse2.ogg"
+    },
+    {
+      "id": "gate_collapse_se_3",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/GateCollapse3.ogg"
+    },
+    {
+      "id": "gate_collapse_se_4",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/GateCollapse4.ogg"
+    },
+    {
+      "id": "gate_collapse_se_5",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/GateCollapse5.ogg"
+    },
+    {
+      "id": "gate_collapse_se_6",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/GateCollapse6.ogg"
+    },
+    {
+      "id": "route22_rattata_sprite",
+      "kind": "character_sprite",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/characters/Rattata.png"
+    },
+    {
+      "id": "viridian_guard_sprite",
+      "kind": "character_sprite",
+      "required": true,
+      "rights_status": "not_provided"
+    },
+    {
+      "id": "viridian_nidoran_sprite",
+      "kind": "character_sprite",
+      "required": true,
+      "rights_status": "not_provided"
+    },
+    {
+      "id": "dojo_instructor_sprite",
+      "kind": "character_sprite",
+      "required": true,
+      "rights_status": "not_provided"
+    },
+    {
+      "id": "raid_event_sprites",
+      "kind": "reviewed_character_sprites",
+      "required": true,
+      "rights_status": "not_provided"
+    }
   ],
   "target_map_slots": {
-    "reception_gate": {"source_uuid": "84748cae-c12e-4d42-ab11-c735471977e4", "dimensions": [22, 21], "status": "not_imported"},
-    "route22": {"source_uuid": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2", "dimensions": [48, 24], "status": "target_map_id_unassigned"},
-    "viridian_city": {"source_uuid": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e", "dimensions": [48, 40], "status": "target_map_id_unassigned"},
-    "viridian_center": {"source_uuid": null, "dimensions": null, "status": "source_identity_unverified"},
-    "dojo_room": {"source_uuid": "b1d081d6-6600-4c9e-a280-a38a162831b1", "dimensions": [10, 9], "status": "target_map_id_unassigned"},
-    "raid_map": {"source_uuid": null, "dimensions": null, "status": "requires_reviewed_local_map"},
-    "viridian_rescue": {"source_uuid": null, "dimensions": null, "status": "requires_reviewed_local_map"}
+    "reception_gate": {
+      "source_uuid": "84748cae-c12e-4d42-ab11-c735471977e4",
+      "dimensions": [
+        22,
+        21
+      ],
+      "status": "not_imported"
+    },
+    "route22": {
+      "source_uuid": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+      "dimensions": [
+        48,
+        24
+      ],
+      "status": "target_map_id_unassigned"
+    },
+    "viridian_city": {
+      "source_uuid": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+      "dimensions": [
+        48,
+        40
+      ],
+      "status": "target_map_id_unassigned"
+    },
+    "viridian_center": {
+      "source_uuid": null,
+      "dimensions": null,
+      "status": "source_identity_unverified"
+    },
+    "dojo_room": {
+      "source_uuid": "b1d081d6-6600-4c9e-a280-a38a162831b1",
+      "dimensions": [
+        10,
+        9
+      ],
+      "status": "target_map_id_unassigned"
+    },
+    "raid_map": {
+      "source_uuid": null,
+      "dimensions": null,
+      "status": "requires_reviewed_local_map"
+    },
+    "viridian_rescue": {
+      "source_uuid": null,
+      "dimensions": null,
+      "status": "requires_reviewed_local_map"
+    }
   },
   "runtime_resources": {
     "target_map_ids": null,
@@ -576,19 +1384,61 @@
     "note": "All IDs in feature PR installation examples are placeholders, not approved allocations. The caller must reserve unique IDs from the actual target project."
   },
   "pbs_requirements": {
-    "species": ["HUMAN", "RATTATA", "BEEDRILL"],
-    "items": ["SHATTEREDGATEKEY"]
+    "species": [
+      "HUMAN",
+      "RATTATA",
+      "BEEDRILL"
+    ],
+    "items": [
+      "SHATTEREDGATEKEY"
+    ]
   },
   "acceptance_gates": [
-    {"id": "source_refs", "tier": "static", "status": "pinned_live_pr_heads_only"},
-    {"id": "rights", "tier": "staging", "status": "blocked_until_local_rights_review"},
-    {"id": "plugins", "tier": "staging", "status": "blocked_until_verified_archives_or_exact_base_install"},
-    {"id": "maps_and_resources", "tier": "staging", "status": "blocked_until_target_maps_ids_switches_and_variables_are_reviewed"},
-    {"id": "plugin_load_order_runtime", "tier": "native", "status": "not_run"},
-    {"id": "pbs_compile", "tier": "native", "status": "not_run"},
-    {"id": "script_compile_and_game_boot", "tier": "native", "status": "not_run"},
-    {"id": "story_playthrough_and_save_reload", "tier": "native", "status": "not_run"},
-    {"id": "android_joiplay_naviaxp", "tier": "android", "status": "not_run"}
+    {
+      "id": "source_refs",
+      "tier": "static",
+      "status": "pinned_live_pr_heads_only"
+    },
+    {
+      "id": "rights",
+      "tier": "staging",
+      "status": "blocked_until_local_rights_review"
+    },
+    {
+      "id": "plugins",
+      "tier": "staging",
+      "status": "blocked_until_verified_archives_or_exact_base_install"
+    },
+    {
+      "id": "maps_and_resources",
+      "tier": "staging",
+      "status": "blocked_until_target_maps_ids_switches_and_variables_are_reviewed"
+    },
+    {
+      "id": "plugin_load_order_runtime",
+      "tier": "native",
+      "status": "not_run"
+    },
+    {
+      "id": "pbs_compile",
+      "tier": "native",
+      "status": "not_run"
+    },
+    {
+      "id": "script_compile_and_game_boot",
+      "tier": "native",
+      "status": "not_run"
+    },
+    {
+      "id": "story_playthrough_and_save_reload",
+      "tier": "native",
+      "status": "not_run"
+    },
+    {
+      "id": "android_joiplay_naviaxp",
+      "tier": "android",
+      "status": "not_run"
+    }
   ],
   "non_goals": [
     "No editing of development/integration_queue.json, development/plugin_manifest.json, feature plugins, or scripts/stage_essentials.py.",
