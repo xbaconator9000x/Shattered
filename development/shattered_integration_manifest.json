@@ -89,7 +89,7 @@
       "id": 14,
       "title": "Reception-gate story events",
       "branch": "feat/se016-gate-story-state-and-events",
-      "head": "9762d028c9efc962c018114c8954dc975057313d",
+      "head": "3de3168601a28c5a67c62dda28bbe43d5fcce463",
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
