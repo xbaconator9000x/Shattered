@@ -1,9 +1,10 @@
 # frozen_string_literal: true
-# Shattered Core v0.2.1 — Pokémon Essentials 21.1.
+# Shattered Core v0.2.2 — Pokémon Essentials 21.1.
 # Does not override Pokemon#calc_stats. Battle hooks use Essentials v21.1 APIs.
 module Shattered
   HUMAN_SPECIES = :HUMAN
   STRUGGLE = :STRUGGLE
+  class HumanPartyFullError < ArgumentError; end
   BASE_STAMINA = 60
   STAMINA_PER_10_LEVELS = 5
   STAMINA_CAP = 100
@@ -41,7 +42,7 @@ module Shattered
       end
       raise ArgumentError, "party exceeds six members" if party.length > 6
       return found if found
-      raise ArgumentError, "party full; unable to add HUMAN" if party.length >= 6
+      raise HumanPartyFullError, "party full; unable to add HUMAN" if party.length >= 6
       raise ArgumentError, "Pokemon class unavailable" unless defined?(Pokemon)
       battler = Pokemon.new(HUMAN_SPECIES, level)
       battler.name = "HUMAN" if battler.respond_to?(:name=)
@@ -77,7 +78,21 @@ module Shattered
     def ensure_human_if_player_available
       return false unless defined?($player) && $player && $player.respond_to?(:party)
       ensure_human($player)
+      @human_setup_diagnostic = nil
       true
+    rescue HumanPartyFullError => error
+      @human_setup_diagnostic = error.message
+      false
+    end
+
+    def human_setup_diagnostic
+      @human_setup_diagnostic
+    end
+
+    def recover_human(player = $player, level = 5)
+      human = ensure_human(player, level)
+      @human_setup_diagnostic = nil
+      human
     end
 
     def max_stamina(level)

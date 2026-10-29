@@ -193,6 +193,34 @@ class ShatteredCoreTest < Minitest::Test
     assert Shattered.human?(@player.party.first)
   end
 
+  def test_loaded_full_party_without_human_is_recoverable_on_map_setup
+    @player.party = Array.new(6) { |i| Pokemon.new(:"SPECIES_#{i}", i + 1) }
+    original_party = @player.party.dup
+    assert_equal :loaded, SaveData.load_all_values(:player => @player)
+    assert_equal original_party, @player.party
+    assert_equal 6, @player.party.length
+
+    assert_silent { setup_game_map }
+    assert_equal original_party, @player.party
+    assert_equal 6, @player.party.length
+    assert_equal "party full; unable to add HUMAN", Shattered.human_setup_diagnostic
+    assert_equal 0, @player.party.count { |pkmn| Shattered.human?(pkmn) }
+  end
+
+  def test_full_party_human_setup_can_be_explicitly_retried_after_making_room
+    @player.party = Array.new(6) { |i| Pokemon.new(:"SPECIES_#{i}", i + 1) }
+    SaveData.load_all_values(:player => @player)
+    setup_game_map
+    @player.party.pop
+
+    human = Shattered.recover_human
+
+    assert Shattered.human?(human)
+    assert_equal 6, @player.party.length
+    assert_equal 1, @player.party.count { |pkmn| Shattered.human?(pkmn) }
+    assert_nil Shattered.human_setup_diagnostic
+  end
+
   def test_load_lifecycle_restores_exactly_one_human
     human = Pokemon.new(:HUMAN, 7)
     @player.party = [Pokemon.new(:PIKACHU, 3), human, Pokemon.new(:HUMAN, 8)]
