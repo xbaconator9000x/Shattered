@@ -123,8 +123,8 @@ class ViridianInstallerTest < Minitest::Test
     assert_equal [2,2], entry.pages.map(&:trigger)
     assert_equal [236,209,209,210,355,0], entry.pages[0].list.map(&:code)
     assert_equal [1,6,20], entry.pages[0].list.first.parameters
-    assert_equal [3,1], entry.pages[0].list[1].parameters[1].list.map(&:code)
-    assert_equal [2,2,0], entry.pages[0].list[2].parameters[1].list.map(&:code)
+    assert_equal [3,1,0], entry.pages[0].list[1].parameters[1].list.map(&:code)
+    assert_equal [2,1,0], entry.pages[0].list[2].parameters[1].list.map(&:code)
     assert_equal 101, entry.pages[1].condition.switch1_id
     rain=city.events.values.find { |e| e.name.end_with?(":rain") }
     assert_equal 4, rain.pages[1].trigger
