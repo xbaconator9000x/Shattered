@@ -243,7 +243,7 @@
     {
       "id": "SE-019",
       "title": "Complete Viridian raid, rescue, dojo tutorial and starter-choice events",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-018",
         "SE-008",
@@ -253,7 +253,11 @@
         "Murkrow rescue, Beedrill attack/chase without stacked encounters, NPC enters Center",
         "Dojo/befriending tutorial and starter questionnaire producing usable Vulpix, Staryu or Exeggcute companion",
         "Quest flags, starter uniqueness, recovery/resume and story lockout checks with game runtime"
-      ]
+      ],
+      "evidence": [
+        "Draft SE-019 native dojo questionnaire/starter plugin and guarded RMXP installer on feat/se019-dojo-starter-native; isolated tests only, source dialogue/NPC role and real Essentials gameplay unverified."
+      ],
+      "blocker": "Quest system, native map identity/passability, source questionnaire parity, follower and full game runtime not verified."
     },
     {
       "id": "SE-020",
