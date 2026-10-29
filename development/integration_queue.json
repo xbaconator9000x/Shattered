@@ -179,7 +179,7 @@
       ],
       "evidence": [
         "Authorised original xx0.77 PokéBacon map export inspected privately: 23 maps, 656 event markers (77 NPC, 156 triggers, 423 signs), 567 placed objects and 36 map links; no raw user project file or asset uploaded.",
-        "Sanitised development/demo_parity_reference.json records 123 source event anchors across 7 scene groups, map/warp coordinates and source addresses without original scripts/dialogue/graphics.",
+        "Sanitised development/demo_parity_reference.json records 123 tagged references to 115 unique source events across 7 scene groups, map/warp coordinates and source addresses without original scripts/dialogue/graphics.",
         "scripts/extract_demo_parity.py + 10 new Python tests pass in GitHub Actions (19 total Python tests) and 5 Ruby tests/16 assertions pass; source event -> real RPG Maker XP event ID mapping and native playback remain OPEN.",
         "Extractor now records source script control identifiers (set/clear flags, written vars, audio cues, movement and warp counts) without copying original event source; regeneration from original raw file is required to enrich the committed reference."
       ]
