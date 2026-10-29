@@ -202,7 +202,7 @@
     {
       "id": "SE-017",
       "title": "Connect Route 22 and implement mandatory Rattata encounter",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-013",
         "SE-015",
@@ -212,7 +212,13 @@
         "Faithful Route 22 layered map and eastern gate transfer to correct warp",
         "Scatter encounter group then mandatory lv5 Rattata battle using real HUMAN battler",
         "Test victory/flee/blackout/return save flags and collision"
-      ]
+      ],
+      "evidence": [
+        "PR #13 stacked on SE-015 PR #12: rights-safe source-indexed link compiler and native RMXP transfer event installer, no original assets committed",
+        "Explicit target map/doorway/landing mapping required; no guessed warp destinations, no player landing on transfer triggers",
+        "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN"
+      ],
+      "blocker": "Real target Essentials map IDs, geometry, door triggers and collision/passability must be verified against installed maps before an actual link plan can be run."
     },
     {
       "id": "SE-018",
