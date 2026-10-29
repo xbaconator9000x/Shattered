@@ -18,10 +18,12 @@ module RPG
     end
 
     class Page
-      attr_accessor :graphic, :condition, :trigger, :priority_type, :list
+      attr_accessor :graphic, :condition, :trigger, :through, :always_on_top, :list
       def initialize
         @graphic = Graphic.new
         @condition = Condition.new
+        @through = false
+        @always_on_top = false
         @list = []
       end
 
@@ -211,6 +213,16 @@ class ShatteredRaidTest < Minitest::Test
       assert_equal 355, raid_events[0].pages[0].list[0].code
       assert_match(/ShatteredRaid\.trigger\(0, /, raid_events[0].pages[0].list[0].parameters[0])
       assert raid_events[0].pages[1].condition.switch1_valid
+      raid_events.each do |event|
+        active, cleared = event.pages
+        assert_equal 0, active.trigger
+        refute active.through
+        refute active.always_on_top
+        assert cleared.through, "cleared Beedrill must not block player movement"
+        refute cleared.always_on_top
+        refute_respond_to active, :priority_type
+        refute_respond_to cleared, :priority_type
+      end
       assert_equal :already_installed, ShatteredRaid.install_staged(root, config, passability)
       assert_equal installed_bytes, File.open(map_path(root, 301), "rb") { |file| file.read }
     end

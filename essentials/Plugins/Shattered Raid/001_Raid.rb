@@ -350,7 +350,8 @@ module ShatteredRaid
       page.graphic.character_name = entry["sprite_name"]
       page.graphic.character_hue = entry["sprite_hue"]
       page.trigger = 0
-      page.priority_type = 1
+      page.through = false
+      page.always_on_top = false
       page.list = [
         RPG::EventCommand.new(355, 0, [runtime_script(entry["index"], config)]),
         RPG::EventCommand.new(0, 0, [])
@@ -364,7 +365,8 @@ module ShatteredRaid
       page.condition.switch1_id = switch_id
       page.graphic.character_name = ""
       page.trigger = 0
-      page.priority_type = 0
+      page.through = true
+      page.always_on_top = false
       page.list = [RPG::EventCommand.new(0, 0, [])]
       page
     end
