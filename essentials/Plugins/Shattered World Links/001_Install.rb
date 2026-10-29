@@ -114,7 +114,8 @@ module ShatteredWorldLinks
       event.name = name
       page = RPG::Event::Page.new
       page.trigger = 1 # Player touch
-      page.priority_type = 0 # Below characters, allowing player to step onto door
+      page.through = false
+      page.always_on_top = false # Native RMXP Page flags; blank graphic = below player
       page.list = [
         RPG::EventCommand.new(201, 0, [0, dest["map_id"], dest["x"], dest["y"],
                                          dest["direction"], dest["fade"]]),
