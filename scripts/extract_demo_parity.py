@@ -24,6 +24,35 @@ SCENES = {
 }
 
 
+
+def extract_script_ops(script):
+    """Return only control/FX identifiers, never original script lines or dialogue."""
+    flags_set, flags_cleared, vars_written, audio = set(), set(), set(), set()
+    warps = movements = 0
+    for line in (script or "").splitlines():
+        tokens = line.strip().split()
+        if len(tokens) < 2:
+            continue
+        opcode, operand = tokens[0].lower(), tokens[1].rstrip(",")
+        if not re.fullmatch(r"0x[0-9a-fA-F]+|[0-9]+", operand):
+            continue
+        if opcode == "setflag":
+            flags_set.add(operand.upper())
+        elif opcode == "clearflag":
+            flags_cleared.add(operand.upper())
+        elif opcode == "setvar":
+            vars_written.add(operand.upper())
+        elif opcode in ("playse", "playmoncry", "playbgm"):
+            audio.add(f"{opcode}:{operand.upper()}")
+        elif opcode == "warp":
+            warps += 1
+        elif opcode == "applymovement":
+            movements += 1
+    return {"flags_set": sorted(flags_set), "flags_cleared": sorted(flags_cleared),
+            "vars_written": sorted(vars_written), "audio_cues": sorted(audio),
+            "warp_commands": warps, "movement_commands": movements}
+
+
 def require_point(point, map_info, label):
     if not isinstance(point, dict) or not all(isinstance(point.get(k), int) and not isinstance(point[k], bool) for k in ("x", "y")):
         raise ValueError(f"{label}: missing or noninteger x/y")
@@ -65,6 +94,7 @@ def extract(data, source_name, source_sha256):
                         "source_rom_address": rom.get("address") if isinstance(rom.get("address"), int) else None,
                         "script_length": len(rom.get("scriptSource") or ""),
                         "dialogue_entries": len(rom.get("dialogue") or []),
+                        "script_ops": extract_script_ops(rom.get("scriptSource")),
                     })
 
     links = []
