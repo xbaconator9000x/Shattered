@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "project": "Shattered Essentials minimal prototype",
+  "estimated_total_completion_percent": 70,
+  "estimate_basis": "Real-source complete game folder and ZIP assembled; static validation passed. Android runtime and exact Victory Road layout unverified.",
+  "tasks": [
+    {
+      "id": "SET-001",
+      "title": "Extract and inspect two supplied source archives",
+      "status": "done",
+      "evidence": [
+        "FRLG 221 maps; Johto map pack 153 map infos"
+      ]
+    },
+    {
+      "id": "SET-002",
+      "title": "Assemble 3-location prototype and HUMAN placeholder",
+      "status": "done",
+      "evidence": [
+        "New Johto-style cave map 222; actual Kanto Route 22 map 16 and Viridian map 10; 6 events; 159 MB test ZIP"
+      ]
+    },
+    {
+      "id": "SET-003",
+      "title": "Static integrity and event validation",
+      "status": "done",
+      "evidence": [
+        "5 tests / 28 assertions; real-source walkable tile and event checks; ZIP CRC pass"
+      ]
+    },
+    {
+      "id": "SET-004",
+      "title": "Android gameplay smoke test",
+      "status": "todo",
+      "depends_on": [
+        "SET-003"
+      ],
+      "acceptance": [
+        "Game starts in JoiPlay or NaviaXP",
+        "Key, Rattata battle, Viridian transfer work",
+        "Save/reload works"
+      ]
+    },
+    {
+      "id": "SET-005",
+      "title": "Replace placeholder with actual Johto Victory Road",
+      "status": "blocked",
+      "depends_on": [
+        "SET-002"
+      ],
+      "blocker": "Johto pack lacks Victory Road; actual Shattered map not supplied"
+    },
+    {
+      "id": "SET-006",
+      "title": "Polish regional sprite and human battle after runtime success",
+      "status": "todo",
+      "depends_on": [
+        "SET-004"
+      ]
+    }
+  ]
+}
