@@ -112,7 +112,7 @@ def stage(project, output, archives=(), overwrite=False):
             raise ValueError('plugin ZIP file missing: ' + name)
     # Explicit upstream deps must be supplied with this staging or exist in base project.
     base_meta = list((project / 'Plugins').glob('*/meta.txt')) if (project / 'Plugins').is_dir() else []
-    known_names = [f.read_text(errors='replace') for f in base_meta]
+    known_names = [f.read_text(encoding='utf-8-sig', errors='replace') for f in base_meta]
     for key in requested:
         for dep in known[key]['dependencies']:
             if dep in requested:
