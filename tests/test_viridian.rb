@@ -37,6 +37,10 @@ def save_data(value,path); File.binwrite(path, Marshal.dump(value)); end
 load File.expand_path("../essentials/Plugins/Shattered Viridian/001_Entry.rb",__dir__)
 load File.expand_path("../essentials/Plugins/Shattered Viridian/002_Install.rb",__dir__)
 
+MovingNPC = Struct.new(:x,:y) do
+  def moveto(x,y); self.x=x; self.y=y; end
+end
+
 class ViridianStateTest < Minitest::Test
   def setup
     $PokemonGlobal=Object.new
@@ -69,6 +73,20 @@ class ViridianStateTest < Minitest::Test
     refute ShatteredViridian.center!(103,104)
     refute $game_switches[102]
     refute $game_switches[103]
+  end
+  def test_escort_only_starts_when_both_npcs_reach_destination
+    guard=MovingNPC.new(10,17)
+    nidoran=MovingNPC.new(17,9)
+    $game_map=OpenStruct.new(:events=>{11=>guard,12=>nidoran})
+    refute ShatteredViridian.complete_route!(11,12,[9,16],[18,9],[10,17],[17,10],101,104)
+    assert_equal [9,16],[guard.x,guard.y]
+    assert_equal [18,9],[nidoran.x,nidoran.y]
+    refute $game_switches[101]
+    guard.moveto(10,17)
+    nidoran.moveto(17,10)
+    assert ShatteredViridian.complete_route!(11,12,[9,16],[18,9],[10,17],[17,10],101,104)
+    assert $game_switches[101]
+    assert $game_switches[104]
   end
   def test_corrupt_state_refuses_to_reset_and_duplicate_switches_rejected
     $PokemonGlobal.instance_variable_set(:@shattered_viridian_entry,{:version=>1,:started=>"yes",:arrived=>false,:center=>false})
@@ -121,6 +139,14 @@ class ViridianInstallerTest < Minitest::Test
     assert_equal 1, center.events.size
     entry=city.events.values.find { |e| e.name.end_with?(":entry") }
     assert_equal [2,2], entry.pages.map(&:trigger)
+    refute entry.pages[0].through
+    assert entry.pages[1].through
+    assert city.events.values.find { |e| e.name.end_with?(":guard") }.pages[0].through == false
+    assert entry.pages[0].list[1].parameters[1].skippable
+    assert_match(/complete_route!/,entry.pages[0].list[4].parameters[0])
+    finish=city.events.values.find { |e| e.name.end_with?(":finish") }
+    refute finish.pages[1].through
+    assert finish.pages[2].through
     assert_equal [236,209,209,210,355,0], entry.pages[0].list.map(&:code)
     assert_equal [1,6,20], entry.pages[0].list.first.parameters
     assert_equal [3,1,0], entry.pages[0].list[1].parameters[1].list.map(&:code)
