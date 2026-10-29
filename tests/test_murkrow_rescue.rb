@@ -197,6 +197,46 @@ class MurkrowRescueTest < Minitest::Test
     end
   end
 
+  def test_installer_rejects_switch_and_variable_reservations
+    with_staged_project do |root, plan|
+      plan["switch_ids"] = [42]
+      assert_raises(ArgumentError) { Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) } }
+      plan["switch_ids"] = []
+      plan["variable_ids"] = [17]
+      assert_raises(ArgumentError) { Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) } }
+      assert_equal 1, load_data(File.join(root, "Data/Map001.rxdata")).events.length
+    end
+  end
+
+  def test_installer_rejects_changed_destination_warp
+    with_staged_project do |root, plan|
+      path = File.join(root, "Data/Map001.rxdata")
+      map = load_data(path)
+      map.events[3].pages.first.list.first.parameters[2] = 4
+      save_data(map, path)
+      plan["expected_map_sha256"] = Digest::SHA256.file(path).hexdigest
+
+      assert_raises(RuntimeError) { Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) } }
+      assert_equal 1, load_data(path).events.length
+    end
+  end
+
+  def test_installer_rejects_occupied_event_id
+    with_staged_project do |root, plan|
+      map = load_data(File.join(root, "Data/Map001.rxdata"))
+      occupied = RPG::Event.new(2, 2)
+      occupied.id = plan["event_id"]
+      occupied.name = "Existing"
+      map.events[plan["event_id"]] = occupied
+      path = File.join(root, "Data/Map001.rxdata")
+      save_data(map, path)
+      plan["expected_map_sha256"] = Digest::SHA256.file(path).hexdigest
+
+      assert_raises(RuntimeError) { Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) } }
+      assert_equal 2, load_data(path).events.length
+    end
+  end
+
   def test_installer_is_idempotent_and_builds_native_event_commands
     with_staged_project do |root, plan|
       result = Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
@@ -300,6 +340,8 @@ class MurkrowRescueTest < Minitest::Test
         "sprite_reviewed" => true,
         "switch_ids" => [],
         "variable_ids" => [],
+        "battle_reviewed" => true,
+        "reward_reviewed" => true,
         "destination_warp" => {
           "reviewed" => true,
           "event_id" => 3,

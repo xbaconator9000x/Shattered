@@ -71,6 +71,8 @@ module ShatteredMurkrowRescue
     raise ArgumentError, "Character role needs user review" unless plan["sprite_reviewed"] == true
     raise ArgumentError, "This plugin uses saved quest flags, not RMXP switches or variables" unless
       plan["switch_ids"] == [] && plan["variable_ids"] == []
+    raise ArgumentError, "Battle and reward details need user review" unless
+      plan["battle_reviewed"] == true && plan["reward_reviewed"] == true
     warp = plan["destination_warp"]
     raise ArgumentError, "Reviewed destination warp required" unless warp.is_a?(Hash) &&
       warp["reviewed"] == true && warp["event_id"].instance_of?(Integer) &&

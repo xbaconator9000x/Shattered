@@ -200,7 +200,15 @@ module ShatteredMurkrowRescue
     discover!
     return false unless Object.new.respond_to?(:pbMessage, true) &&
       Object.new.respond_to?(:pbConfirmMessage, true)
-    Object.new.send(:pbMessage, "A Murkrow needs help!")
+    unless defined?(Shattered) && Shattered.respond_to?(:befriend) &&
+           Object.new.respond_to?(:pbReceiveItem, true) &&
+           Object.new.respond_to?(plan["battle"]["hook"].to_sym, true)
+      Object.new.send(:pbMessage, "The rescue cannot continue until its game integrations are available.")
+      return false
+    end
+    stage = state[:stage]
+    message = stage == :discovered ? "A Murkrow needs help!" : "Murkrow is safe now."
+    Object.new.send(:pbMessage, message)
     if state[:stage] == :discovered
       return false unless Object.new.send(:pbConfirmMessage, "Will you step in?")
       begin_battle!
