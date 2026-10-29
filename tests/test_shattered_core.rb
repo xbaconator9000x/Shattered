@@ -333,12 +333,99 @@ class ShatteredCoreTest < Minitest::Test
     Shattered.restore_stamina(human, @store)
     begin_battle
     battler = Battle::Battler.new(human)
+    assert_equal 0, battler.base_try_calls
+    assert_equal 60, Shattered.stamina(human, @store)
+
     battler.base_result = false
     move = MoveStub.new(:POUND, "Pound", 10)
     refute battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
     current = Shattered.stamina(human, @store)
     assert_equal 60, current
     assert_equal current, Shattered.stamina(human, @store)
+  end
+
+  def test_route22_rattata_battle_contract_and_retry_after_failed_attempt
+    SaveData.next_player = @player
+    assert_equal :new_game, SaveData.load_new_game_values
+    human = @player.party.first
+    rattata = Pokemon.new(:RATTATA, 5)
+    assert_equal 5, rattata.level
+    assert_equal 1, @player.party.count { |pkmn| Shattered.human?(pkmn) }
+    Shattered.restore_stamina(human, @store)
+    begin_battle
+
+    rattata_battler = Battle::Battler.new(rattata)
+    rattata_move = MoveStub.new(:TACKLE, "Tackle", 35)
+    assert rattata_battler.pbTryUseMove(
+      [:UseMove, 0, rattata_move], rattata_move, false, false
+    )
+    assert_equal 34, rattata_move.pp
+
+    first_attempt = Battle::Battler.new(human)
+    failed_move = MoveStub.new(:POUND, "Pound", 10)
+    first_attempt.base_result = false
+    assert first_attempt.pbCanChooseMove?(failed_move, true, false)
+    refute first_attempt.pbTryUseMove([:UseMove, 0, failed_move], failed_move, false, false)
+    assert_equal 60, Shattered.stamina(human, @store)
+    assert_equal 10, failed_move.pp
+
+    loaded_player = PlayerStub.new(@player.party.dup)
+    assert_equal :loaded, SaveData.load_all_values(:player => loaded_player)
+    human = loaded_player.party.first
+    assert_equal 1, loaded_player.party.count { |pkmn| Shattered.human?(pkmn) }
+
+    2.times { begin_battle }
+    retry_battler = Battle::Battler.new(human)
+    retry_move = MoveStub.new(:POUND, "Pound", 10)
+    assert retry_battler.pbCanChooseMove?(retry_move, true, false)
+    assert retry_battler.pbTryUseMove([:UseMove, 0, retry_move], retry_move, false, false)
+    assert_equal 59, Shattered.stamina(human, @store)
+    assert_equal 10, retry_move.pp
+    assert_equal 1, retry_battler.base_try_calls
+
+    @store.instance_variable_set(:@shattered_stamina, 0)
+    exhausted_battler = Battle::Battler.new(human)
+    refute exhausted_battler.pbCanChooseMove?(retry_move, true, false)
+    struggle = MoveStub.new(:STRUGGLE, "Struggle", -1)
+    assert exhausted_battler.pbCanChooseMove?(struggle, true, false)
+    assert exhausted_battler.pbTryUseMove([:UseMove, 0, struggle], struggle, false, false)
+    assert_equal 0, Shattered.stamina(human, @store)
+    assert_equal(-1, struggle.pp)
+
+    companion = Shattered.befriend(:AIPOM, 5, loaded_player)
+    companion_battler = Battle::Battler.new(companion)
+    companion_move = MoveStub.new(:QUICKATTACK, "Quick Attack", 10)
+    assert companion_battler.pbTryUseMove(
+      [:UseMove, 0, companion_move], companion_move, false, false
+    )
+    assert_equal 9, companion_move.pp
+    assert_equal 0, Shattered.stamina(human, @store)
+
+    scene = BattleStub.new
+    assert_equal false, ItemHandlers::CanUseInBattle.trigger(
+      :POKEBALL, nil, nil, nil, true, nil, scene, true
+    )
+    assert_equal true, ItemHandlers::CanUseInBattle.trigger(
+      :POTION, nil, nil, nil, true, nil, scene, true
+    )
+  end
+
+  def test_equipment_granted_move_uses_shared_core_stamina_contract_once
+    human = Shattered.ensure_human(@player, 5)
+    Shattered.restore_stamina(human, @store)
+    2.times { begin_battle }
+    move = MoveStub.new(:SLASH, "Slash", 10)
+
+    assert_equal 3, Shattered.stamina_cost(move.id)
+    assert Shattered.can_spend_stamina?(human, move.id, @store)
+    assert_equal 60, Shattered.stamina(human, @store)
+
+    battler = Battle::Battler.new(human)
+    assert battler.pbCanChooseMove?(move, true, false)
+    assert battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
+    assert_equal 57, Shattered.stamina(human, @store)
+    assert_equal 10, move.pp
+    assert_equal 1, battler.base_try_calls
   end
 
   def test_normal_pokemon_retains_normal_pp_behavior
