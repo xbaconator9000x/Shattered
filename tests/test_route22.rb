@@ -1,0 +1,202 @@
+require "minitest/autorun"
+require "tmpdir"
+require "fileutils"
+require "ostruct"
+require "digest"
+
+module GameData
+  module Species
+    def self.exists?(species); species == :RATTATA; end
+  end
+end
+module Shattered
+  def self.human?(pokemon); pokemon == :HUMAN; end
+end
+module WildBattle
+  def self.start(species, level)
+    ($battle_calls ||= []) << [species, level]
+    raise "battle interrupted" if $battle_raises
+    $game_variables[$battle_outcome_var] = $battle_outcome
+  end
+end
+class Object
+  private
+  def setBattleRule(rule, value = nil)
+    ($rules ||= []) << [rule, value]
+    $battle_outcome_var = value if rule == "outcome"
+  end
+end
+module RPG
+  class Event
+    attr_accessor :id, :name, :x, :y, :pages
+    def initialize(x,y); @id = 0; @x=x; @y=y; @name=""; @pages=[]; end
+    class Page
+      attr_accessor :trigger, :through, :always_on_top, :list, :graphic, :condition
+      def initialize
+        @trigger=0; @through=false; @always_on_top=false; @list=[]
+        @graphic=OpenStruct.new(:character_name=>"")
+        @condition=OpenStruct.new(:switch1_valid=>false,:switch1_id=>1)
+      end
+    end
+  end
+  class EventCommand
+    attr_accessor :code, :indent, :parameters
+    def initialize(code, indent, parameters); @code=code; @indent=indent; @parameters=parameters; end
+  end
+  class MoveRoute
+    attr_accessor :repeat, :skippable, :list
+    def initialize; @repeat=true; @skippable=false; @list=[]; end
+  end
+  class MoveCommand
+    attr_accessor :code, :parameters
+    def initialize(code, parameters=[]); @code=code; @parameters=parameters; end
+  end
+end
+MapStub = Struct.new(:width, :height, :events)
+def load_data(path); Marshal.load(File.binread(path)); end
+def save_data(data, path); File.binwrite(path, Marshal.dump(data)); end
+
+def pbMessage(message); ($messages ||= []) << message; end
+def _INTL(message); message; end
+load File.expand_path("../essentials/Plugins/Shattered Route22/001_Route22.rb", __dir__)
+load File.expand_path("../essentials/Plugins/Shattered Route22/002_Install.rb", __dir__)
+
+class Route22BattleTest < Minitest::Test
+  def setup
+    $PokemonGlobal=Object.new
+    $game_variables=Hash.new(0)
+    $game_switches=Hash.new(false)
+    $player=OpenStruct.new(:party=>[:HUMAN])
+    $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false
+  end
+  def test_win_sets_both_persistent_state_and_switch
+    assert ShatteredRoute22.encounter(91,92)
+    assert ShatteredRoute22.cleared?
+    assert $game_switches[92]
+    assert_equal [[:RATTATA,5]], $battle_calls
+    assert_equal [["disablePokeBalls",nil],["outcome",91]], $rules
+    assert ShatteredRoute22.encounter(91,92)
+    assert_equal 1, $battle_calls.size
+    $PokemonGlobal=Marshal.load(Marshal.dump($PokemonGlobal))
+    $game_switches[92]=false
+    assert ShatteredRoute22.reconcile(92)
+    assert $game_switches[92]
+  end
+  def test_nonvictory_remains_mandatory
+    [0,2,3,5].each do |result|
+      $battle_outcome=result
+      refute ShatteredRoute22.encounter(91,92)
+      refute ShatteredRoute22.cleared?
+      refute $game_switches[92]
+    end
+    assert_equal 4, $battle_calls.length
+    $battle_outcome=1
+    assert ShatteredRoute22.encounter(91,92)
+  end
+  def test_capture_is_detected_and_never_clears
+    $battle_outcome=4
+    refute ShatteredRoute22.encounter(91,92)
+    assert ShatteredRoute22.capture_violation?
+    refute ShatteredRoute22.cleared?
+  end
+  def test_missing_human_cannot_start
+    $player.party=[:RATTATA]
+    assert_raises(RuntimeError) { ShatteredRoute22.encounter(91,92) }
+    assert_empty $battle_calls
+  end
+  def test_battle_exception_leaves_retryable_state
+    $battle_raises=true
+    assert_raises(RuntimeError) { ShatteredRoute22.encounter(91,92) }
+    refute ShatteredRoute22.cleared?
+    $battle_raises=false
+    assert ShatteredRoute22.encounter(91,92)
+  end
+  def test_bad_ids_rejected_before_battle
+    [0,-1,10000,"91",true].each do |id|
+      assert_raises(ArgumentError) { ShatteredRoute22.encounter(id,92) }
+    end
+  end
+end
+
+class Route22InstallerTest < Minitest::Test
+  def setup
+    @old=Dir.pwd
+    @tmp=Dir.mktmpdir
+    Dir.chdir(@tmp)
+    FileUtils.mkdir_p(["Data", "Graphics/Characters"])
+    File.write("SHATTERED_STAGING_REPORT.json","{}")
+    File.write("Graphics/Characters/Rattata.png", "local-test-only")
+    save_data({42=>true},"Data/MapInfos.rxdata")
+    save_data(MapStub.new(48,24,{}),"Data/Map042.rxdata")
+    @config={"schema_version"=>1,"source_map_uuid"=>ShatteredRoute22::SOURCE_UUID,
+      "map_id"=>42,"expected_map_sha256"=>Digest::SHA256.file("Data/Map042.rxdata").hexdigest,
+      "outcome_variable"=>91,"scatter_switch"=>92,"cleared_switch"=>93,
+      "rattata_character"=>"Rattata"}
+  end
+  def teardown
+    Dir.chdir(@old)
+    FileUtils.remove_entry(@tmp)
+  end
+  def test_installs_six_native_events_and_repeated_install_is_byte_identical
+    assert_equal 6, ShatteredRoute22.install(@config)["installed"]
+    map=load_data("Data/Map042.rxdata")
+    assert_equal 6, map.events.size
+    assert_equal ShatteredRoute22::TRIGGERS.sort,
+      map.events.values.select { |e| e.name.include?("trigger_") }.map { |e| [e.x,e.y] }.sort
+    trigger=map.events.values.find { |e| e.name.end_with?("trigger_1") }
+    assert_equal [2,2,2], trigger.pages.map(&:trigger)
+    assert_equal [false,true,true], trigger.pages.map { |p| p.condition.switch1_valid }
+    assert_equal [355,209,209,209,210,121,355,0], trigger.pages[0].list.map(&:code)
+    assert_equal [355,0], trigger.pages[1].list.map(&:code)
+    assert_equal [0], trigger.pages[2].list.map(&:code)
+    assert_equal [3,4,1], trigger.pages[0].list.select { |c| c.code == 209 }.map { |c| c.parameters[1].list[0].code }
+    assert_equal [92,92,0], trigger.pages[0].list.find { |c| c.code == 121 }.parameters
+    assert_equal 93, trigger.pages[2].condition.switch1_id
+    assert_equal 92, trigger.pages[1].condition.switch1_id
+    before=File.binread("Data/Map042.rxdata")
+    assert_equal 6, ShatteredRoute22.install(@config)["unchanged"]
+    assert_equal before, File.binread("Data/Map042.rxdata")
+    refute File.exist?("Data/Map042.rxdata.shattered_route22.bak")
+  end
+  def test_wrong_source_hash_cannot_mutate_map
+    @config["expected_map_sha256"]="0"*64
+    before=File.binread("Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+  def test_occupied_trigger_refused_without_mutation
+    map=load_data("Data/Map042.rxdata")
+    existing=RPG::Event.new(36,17); existing.id=1; existing.name="Existing"
+    map.events[1]=existing
+    save_data(map,"Data/Map042.rxdata")
+    @config["expected_map_sha256"]=Digest::SHA256.file("Data/Map042.rxdata").hexdigest
+    before=File.binread("Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+  def test_partial_installation_refused
+    map=load_data("Data/Map042.rxdata")
+    e=RPG::Event.new(38,17);e.id=1;e.name=ShatteredRoute22::PREFIX+"rattata_0"
+    map.events[1]=e
+    save_data(map,"Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+  end
+  def test_no_staging_marker_or_sprite_refused
+    File.delete("SHATTERED_STAGING_REPORT.json")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    File.write("SHATTERED_STAGING_REPORT.json","{}")
+    File.delete("Graphics/Characters/Rattata.png")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+  end
+  def test_wrong_dimensions_refused
+    save_data(MapStub.new(47,24,{}),"Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+  end
+  def test_rejects_nonmatching_or_duplicate_switches
+    @config["scatter_switch"]=93
+    assert_raises(ArgumentError) { ShatteredRoute22.install(@config) }
+    @config["scatter_switch"]=92
+    @config["source_map_uuid"]="other"
+    assert_raises(ArgumentError) { ShatteredRoute22.install(@config) }
+  end
+end
