@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Shattered Core v0.1 — Pokémon Essentials 21.1.
+# Shattered Core v0.2 — Pokémon Essentials 21.1.
 # Does not override Pokemon#calc_stats. Battle hooks use Essentials v21.1 APIs.
 module Shattered
   HUMAN_SPECIES = :HUMAN
@@ -38,6 +38,7 @@ module Shattered
           false
         end
       end
+      raise ArgumentError, "party exceeds six members" if party.length > 6
       return found if found
       raise ArgumentError, "party full; unable to add HUMAN" if party.length >= 6
       raise ArgumentError, "Pokemon class unavailable" unless defined?(Pokemon)
@@ -136,6 +137,7 @@ module Shattered
         alias_method :shattered_core_original_pb_can_choose_move, :pbCanChooseMove?
         alias_method :shattered_core_original_pb_try_use_move, :pbTryUseMove
         alias_method :shattered_core_original_pb_reduce_pp, :pbReducePP
+        alias_method :shattered_core_original_pb_reduce_pp_other, :pbReducePPOther
 
         def pbCanChooseMove?(move, commandPhase, showMessages = true, specialUsage = false)
           allowed = shattered_core_original_pb_can_choose_move(
@@ -161,6 +163,11 @@ module Shattered
           shattered_core_original_pb_reduce_pp(move)
         end
 
+        def pbReducePPOther(move)
+          return true if Shattered.human?(instance_variable_get(:@pokemon))
+          shattered_core_original_pb_reduce_pp_other(move)
+        end
+
         def pbTryUseMove(choice, move, specialUsage, skipAccuracyCheck)
           human = instance_variable_get(:@pokemon)
           result = shattered_core_original_pb_try_use_move(
@@ -179,15 +186,18 @@ module Shattered
 
     def befriend(species, level = 5, player = $player)
       raise ArgumentError, "player party unavailable" unless player && player.respond_to?(:party)
+      party = player.party
+      raise ArgumentError, "player party unavailable" unless party.respond_to?(:find) && party.respond_to?(:length)
       raise ArgumentError, "species must be a Symbol or String" unless species.respond_to?(:to_sym)
       species = species.to_sym
       raise ArgumentError, "cannot recruit a HUMAN" if species == HUMAN_SPECIES
-      existing = player.party.find { |pkmn| pkmn.respond_to?(:species) && pkmn.species == species }
+      existing = party.find { |pkmn| pkmn.respond_to?(:species) && pkmn.species == species }
       return existing if existing
-      raise ArgumentError, "party full; unable to add companion" if player.party.length >= 6
+      raise ArgumentError, "party exceeds six members" if party.length > 6
+      raise ArgumentError, "party full; unable to add companion" if party.length >= 6
       raise ArgumentError, "Pokemon class unavailable" unless defined?(Pokemon)
       friend = Pokemon.new(species, level)
-      player.party << friend
+      party << friend
       friend
     end
 

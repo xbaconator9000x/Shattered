@@ -101,6 +101,9 @@ module Battle
       move.pp -= 1
       true
     end
+    def pbReducePPOther(move)
+      move.pp -= 1 if move.pp > 0
+    end
     def pbTryUseMove(choice, move, specialUsage, skipAccuracyCheck)
       @base_try_calls += 1
       return false unless pbCanChooseMove?(move, false, true, specialUsage)
@@ -204,6 +207,8 @@ class ShatteredCoreTest < Minitest::Test
     assert battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
     assert_equal 62, Shattered.stamina(human, @store)
     assert_equal 10, move.pp
+    battler.pbReducePPOther(move)
+    assert_equal 10, move.pp
     assert_equal 1, battler.base_try_calls
   end
 
@@ -256,6 +261,8 @@ class ShatteredCoreTest < Minitest::Test
     assert battler.pbCanChooseMove?(move, true, false)
     assert battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
     assert_equal 9, move.pp
+    battler.pbReducePPOther(move)
+    assert_equal 8, move.pp
     assert_equal before, Shattered.stamina(@player.party.first, @store)
   end
 
