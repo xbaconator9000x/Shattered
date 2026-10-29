@@ -91,6 +91,11 @@ module ShatteredRoute22
     validate_config(config)
     raise "Refusing to modify non-staged project" unless File.file?("SHATTERED_STAGING_REPORT.json")
     map_path = format("Data/Map%03d.rxdata", config["map_id"])
+    # An interrupted replacement may leave a recoverable backup. Never silently
+    # accept a partial transaction as an idempotent installation.
+    raise "Stale Route22 installer backup/temp; recover manually" if
+      File.exist?(map_path + ".shattered_route22.tmp") ||
+      File.exist?(map_path + ".shattered_route22.bak")
     raise "Route22 map missing" unless File.file?(map_path)
     infos = load_data("Data/MapInfos.rxdata")
     raise "Route22 MapInfo missing" unless infos[config["map_id"]]

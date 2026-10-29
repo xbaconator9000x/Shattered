@@ -158,6 +158,13 @@ class Route22InstallerTest < Minitest::Test
     assert_equal before, File.binread("Data/Map042.rxdata")
     refute File.exist?("Data/Map042.rxdata.shattered_route22.bak")
   end
+  def test_stale_backup_blocks_even_if_installed_events_exist
+    ShatteredRoute22.install(@config)
+    File.write("Data/Map042.rxdata.shattered_route22.bak", "recovery")
+    before=File.binread("Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
   def test_wrong_source_hash_cannot_mutate_map
     @config["expected_map_sha256"]="0"*64
     before=File.binread("Data/Map042.rxdata")
