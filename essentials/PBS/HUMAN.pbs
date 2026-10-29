@@ -1,0 +1,22 @@
+# One append-only species section for the project's PBS/pokemon.txt.
+# Shattered's special resistances and equipment are NOT applied by this PBS file.
+[HUMAN]
+Name = Human
+Types = NORMAL
+BaseStats = 120,35,60,70,30,60
+GenderRatio = Genderless
+GrowthRate = Medium
+BaseExp = 80
+EVs = HP,1
+CatchRate = 0
+Happiness = 70
+Abilities = INNERFOCUS
+Moves = 1,POUND,1,DEFENSECURL,5,QUICKATTACK,9,ROCKTHROW
+EggGroups = Undiscovered
+HatchSteps = 5120
+Height = 1.8
+Weight = 85.0
+Color = Brown
+Shape = Bipedal
+Category = Human
+Pokedex = A survivor relying on equipment and technique rather than a Poke Ball.

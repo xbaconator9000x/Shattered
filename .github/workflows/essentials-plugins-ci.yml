@@ -1,0 +1,44 @@
+name: Shattered Essentials plugins CI
+on:
+  push:
+    paths:
+      - 'essentials/**'
+      - 'development/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/essentials-plugins-ci.yml'
+  pull_request:
+    paths:
+      - 'essentials/**'
+      - 'development/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - '.github/workflows/essentials-plugins-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate queue and plugin version manifest
+        run: python3 scripts/validate_integration.py
+      - name: Test safe installer and queue
+        run: python3 -m unittest discover -s tests -v
+      - name: Ruby syntax check
+        run: ruby -c 'essentials/Plugins/Shattered Core/001_Core.rb'
+      - name: Shattered HUMAN API unit tests
+        run: ruby tests/test_shattered_core.rb
+      - name: Smoke test staged project output
+        run: |
+          mkdir -p /tmp/base/PBS
+          printf '[Game]\nTitle=Test\n' > /tmp/base/Game.ini
+          printf '[PIKACHU]\nName = Pikachu\n' > /tmp/base/PBS/pokemon.txt
+          python3 scripts/stage_essentials.py --project /tmp/base --output /tmp/staged
+          test -f '/tmp/staged/Plugins/Shattered Core/001_Core.rb'
+          grep -q '^\[HUMAN\]' /tmp/staged/PBS/pokemon.txt
