@@ -69,5 +69,37 @@ class ParityTests(unittest.TestCase):
         self.assertEqual(json.dumps(first, sort_keys=True), json.dumps(second, sort_keys=True))
 
 
+
+class CommittedReferenceTests(unittest.TestCase):
+    def setUp(self):
+        path = Path(__file__).resolve().parents[1] / "development" / "demo_parity_reference.json"
+        self.reference = json.loads(path.read_text(encoding="utf-8"))
+
+    def test_source_reference_is_metadata_only_and_matches_inspected_counts(self):
+        doc = self.reference
+        self.assertEqual(doc["summary"], {
+            "map_count": 23, "marker_count": 656,
+            "marker_kinds": {"event": 156, "npc": 77, "sign": 423},
+            "object_count": 567, "link_count": 36,
+        })
+        self.assertEqual(sum(len(scene["anchors"]) for scene in doc["scenes"].values()), 123)
+        self.assertTrue(all(scene["status"] == "source_reference_only" and
+                            scene["essentials_map_id"] is None for scene in doc["scenes"].values()))
+        self.assertIsNone(doc["source"]["sha256"])
+        for field in ('"scriptSource"', '"dialogue":', '"layers":', '"assets":'):
+            self.assertNotIn(field, json.dumps(doc))
+
+    def test_committed_anchor_and_link_coordinates_are_in_bounds(self):
+        maps = {m["id"]: m for m in self.reference["maps"]}
+        self.assertEqual(len(maps), 23)
+        for scene in self.reference["scenes"].values():
+            for anchor in scene["anchors"]:
+                mod.require_point(anchor, maps[anchor["map_id"]], anchor["source_event_id"])
+        for link in self.reference["links"]:
+            mod.require_point(link["from"], maps[link["from"]["mapId"]], link["id"])
+            mod.require_point(link["to"], maps[link["to"]["mapId"]], link["id"])
+
+
+
 if __name__ == "__main__":
     unittest.main()
