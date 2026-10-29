@@ -225,7 +225,7 @@
     {
       "id": "SE-018",
       "title": "Implement Viridian walls, escort, interiors, doors and weather state",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-017"
       ],
@@ -233,7 +233,11 @@
         "Walled Viridian and guard/Nidoran escort, Center, farm, bunkhouse, guardhouse, kitchen and dojo entrances",
         "Door directions, stairs, furniture collision, weather until Center and correct rain SFX",
         "Smoke map transitions, NPC pathing and persisted story flags"
-      ]
+      ],
+      "evidence": [
+        "Draft SE-018 PR: native RPG Maker XP entry/guard/Nidoran/arrival/rain/Center events and PokemonGlobal persisted state, 2-map transactional staged installer, source-marker checks, Ruby state/install/failure tests; not native Essentials compiled or Android-tested. Actual guard/Nidoran identities, licensed sprites, map IDs, paths and tile passability require source review."
+      ],
+      "blocker": "Actual target Viridian and Center RMXP map IDs, approved NPC identities and walkable path/transfer coordinates, source-licensed sprites, native Essentials save/warp/rain test and Android validation are still open. Synthetic test fixture is not a playable map."
     },
     {
       "id": "SE-019",
