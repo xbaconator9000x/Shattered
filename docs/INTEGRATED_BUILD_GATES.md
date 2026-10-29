@@ -1,12 +1,11 @@
 # SE-024 integrated build and compatibility gate
 
 This is a deterministic **source/export and private staging gate**, not a
-prebuilt game. Its manifest records the live heads of PRs #10–#17 and #19 and
-the different ancestry of those branches. The stack is not one installed
-project: #12 → #13 → #15 → #16 → #17 is stacked, while #10, #11, #14, and #19
-are based on `main`. The PR head/base SHAs are pinned in
-`development/shattered_integration_manifest.json`; update those pins only after
-reviewing new live PR heads.
+prebuilt game. It records current main and live heads for PRs #6, #10–#17, #19,
+#24, and #25, including their exact bases and ancestry. PRs #6 and #10 are
+merged into the pinned main. The stack is #12 → #13 → #15 → #16 → #17;
+#10, #11, #14, #19, #24, and #25 are main-based. The manifest is updated only
+after inspecting live PR heads, changed files, and base ancestry.
 
 The manifest and harness do not edit the integration queue, plugin manifest,
 feature plugin files, or `scripts/stage_essentials.py`. They export only the
@@ -23,38 +22,67 @@ available or that a game can be staged:
 python3 scripts/shattered_integration.py validate-manifest
 ```
 
-For source export, provide a local Git repository with `main`, every listed PR
-branch (or `refs/pull/<number>/head`), the pinned commits, and their ancestry
-available. The exporter makes no network requests:
+The CI contract fetches the pinned PR refs, exports allow-listed files, assembles
+all first-party plugins and PBS fragments into a temporary synthetic tree, checks
+compatibility declarations, and runs each listed Python/Ruby suite in a separate
+process. It prints exact source SHAs and does not include game data or copyrighted
+assets:
+
+```sh
+python3 scripts/shattered_integration_contract.py \
+ --git-repo /local/full/Shattered-checkout
+```
+
+To export the initial slice only, provide a full local checkout with pinned
+history and PR refs. This does not fetch files or make network requests:
 
 ```sh
 python3 scripts/shattered_integration.py export-sources \
-  --git-repo /local/full/Shattered-checkout \
-  --output /local/private/Shattered-pinned-sources
+ --profile initial_slice \
+ --git-repo /local/full/Shattered-checkout \
+ --output /local/private/Shattered-initial-slice-sources
 ```
 
-It verifies fetched branch heads and base ancestry, reads each allow-listed
-file with `git show <pinned-head>:<path>`, writes only those files to a fresh
-source bundle, and records their SHA256 values in
-`.shattered-integration-source.json`. Missing or changed refs fail before
-export.
+### First private initial-slice staging attempt
 
-To stage, create a **private** plan and input directory, then provide an
-authorised Essentials v21.1 project. The project directory must contain
-`Game.ini`, `Data/Scripts.rxdata`, `Data/MapInfos.rxdata`, `PBS/pokemon.txt`,
-`PBS/items.txt`, and reviewed target `Data/MapNNN.rxdata` files. The output
-must be a new, separate directory:
+The profile is limited to the requested thin slice:
+**new game → genuine HUMAN → gate collapse → Aipom key → mandatory Lv5 Route22
+Rattata → save/close/reload**. It does not require Viridian, dojo, raid,
+Murkrow/quest, Following Pokémon EX, Modern Quest System, or optional Feral Tank.
+It still stages only; it cannot verify that route in the game engine.
+
+Preflight reports all known blockers and exact expected local paths:
+
+```sh
+python3 scripts/shattered_integration.py preflight \
+ --profile initial_slice \
+ --project /local/authorised/Essentials21.1 \
+ --sources /local/private/Shattered-initial-slice-sources \
+ --inputs /local/private/Shattered-build-inputs \
+ --plan /local/private/Shattered-build-plan.json
+```
+
+Run the same arguments with `stage` and a fresh `--output` after preflight is
+unblocked. This is the single private initial-slice staging command:
 
 ```sh
 python3 scripts/shattered_integration.py stage \
-  --project /local/authorised/Essentials21.1 \
-  --sources /local/private/Shattered-pinned-sources \
-  --inputs /local/private/Shattered-build-inputs \
-  --plan /local/private/Shattered-build-plan.json \
-  --output /local/private/Shattered-staged
+ --profile initial_slice \
+ --project /local/authorised/Essentials21.1 \
+ --sources /local/private/Shattered-initial-slice-sources \
+ --inputs /local/private/Shattered-build-inputs \
+ --plan /local/private/Shattered-build-plan.json \
+ --output /local/private/Shattered-staged
 ```
 
-The plan/input files stay outside this repository. The plan must include:
+The minimum authorized project files are `Game.ini`, `Data/Scripts.rxdata`,
+`Data/MapInfos.rxdata`, `PBS/pokemon.txt`, `PBS/items.txt`, the reviewed target
+maps `Data/MapNNN.rxdata` for Reception Gate and Route 22, and corresponding
+MapInfos entries. Map IDs and event resource IDs are intentionally unassigned;
+the real project owner must review and reserve them. The plan/input files remain
+outside this repository.
+
+The initial-slice plan must include:
 
 - `authorization`: `"engine_version": "21.1"`, `"source_authorized": true`,
   and a SHA256-pinned local JSON rights record (`rights_record`,
@@ -62,23 +90,35 @@ The plan/input files stay outside this repository. The plan must include:
   `essentials_project`, and records a non-empty source, license, and basis.
 - `map_targets`: one distinct positive actual map ID, target map file SHA256,
   source dimensions/UUID where known, `"reviewed": true`, and
-  `"map_info_reviewed": true` for each of the six manifest slots. IDs shown in
-  feature-PR examples are placeholders and are rejected as source evidence.
-- `switch_ids` and `variable_ids`: each exact key in the manifest, with
-  distinct positive IDs within each global resource class. IDs from Viridian,
-  Route 22, and the raid must be reserved against the actual project.
-- `assets`: every required asset ID, its relative path under `--inputs`, SHA256,
-  safe `Audio/` or `Graphics/` destination (or `null` for a non-staged mapping
-  input), and a SHA256-pinned local rights JSON record. Records require an
-  explicit source, license, basis, and `rights_cleared: true`.
-- `archives`: verified local archives for any required third-party plugin not
-  already installed at the exact required version. Each archive requires its
-  hash, `"license_reviewed": true`, and a corresponding local rights record.
-  Add `reviewed_hooks` as the source-reviewed list of hook claims for that
-  archive. The gate also scans Ruby archives and installed plugins for known
-  HUMAN battle, capture, and stat override signatures. The archive's actual
-  `meta.txt` name/version and declared dependency order are checked.
-  Unverified or missing archives fail closed.
+  `"map_info_reviewed": true` for `reception_gate` and `route22`.
+- `switch_ids`: `route22_scatter` and `route22_cleared`; `variable_ids`:
+  `route22_outcome`. Each needs a unique positive ID of its resource class,
+  allocated against the actual project.
+- `source_projects.hns_reception_gate`: a SHA256-pinned local rights record
+  (`type: "source_project"`, `rights_cleared: true`) and local files matching the
+  pinned HnS source hashes: `sources/hns/data/maps/ReceptionGate_hns/map.json`,
+  `sources/hns/data/layouts/layouts.json`, and
+  `sources/hns/data/layouts/ReceptionGate_hns/map.bin`. Also provide the
+  operator-authored `sources/hns/reception_gate_mapping.json` and document its
+  rights basis. The upstream repository had no explicit license grant; without
+  an actual permission/rights basis this is a hard blocker.
+- `assets`: exactly the initial profile IDs. Required inputs include
+  `assets/tilesets/ReceptionGate.png`, `assets/characters/Aipom.png`,
+  `assets/characters/Rattata.png`, the Aipom cry, six gate-collapse SE files,
+  and the reviewed metatile/collision mapping. Each needs its source, SHA256,
+  staged destination where applicable, and a SHA256-pinned rights record.
+  The input filename conventions are in the manifest; the event installer must
+  use the matching local asset basenames.
+- `archives`: verified local archives for Hotfixes 1.0.9, Deluxe Battle Kit
+  1.3.1, and Enhanced Battle UI 2.1.1 if the exact versions are not already
+  installed. The manifest lists expected local ZIP paths. No archive is
+  downloaded automatically; each requires license review, SHA256 and a rights
+  record. Following Pokémon EX and Modern Quest System are not initial-slice
+  dependencies and remain independently unreviewed.
+- `assets`: each input has a safe `Audio/` or `Graphics/` destination (or
+  `null` for a non-staged mapping input), SHA256, and a SHA256-pinned local
+  rights JSON record. Records require an explicit source, license, basis, and
+  `rights_cleared: true`.
 
 The staged output contains only the copied Essentials project, the manifest's
 allow-listed first-party plugin files, local rights-cleared assets, approved
@@ -95,15 +135,15 @@ RMXP event installers or compile Essentials.
 
 ## Recorded source and compatibility contracts
 
-- Plugin order: Hotfixes → Deluxe Battle Kit → Enhanced Battle UI, followed by
-  independently reviewed Following Pokémon EX and Modern Quest System, then
-  Shattered Core and the scene plugins. Feral Tank is excluded until its
-  `Pokemon#calc_stats`/HUMAN compatibility audit.
+- Plugin order: Hotfixes → Deluxe Battle Kit → Enhanced Battle UI → Shattered
+  Core → slice plugins. Following Pokémon EX and Modern Quest System remain
+  independently evaluated and are not initial-slice dependencies. Feral Tank is
+  excluded until its `Pokemon#calc_stats`/HUMAN compatibility audit.
 - Shattered Core's pinned PR #11 claims the HUMAN battler methods, Poké Ball
   `ItemHandlers::CanUseInBattle` block, and two event-handler IDs. The raid
   claims its own distinct map-setup event key and `disablePokeBalls` battle
-  rule. Duplicate claims, including capture or future gear claims, fail static
-  validation. No equipment battle hook is currently claimed or implemented.
+  rule. The Equipment PR's `pbInitPokemon` and battle-start hook are inventoried;
+  duplicate claims, including capture or gear hooks, fail static validation.
 - Event/installer APIs, event prefixes, map source UUIDs and dimensions, PBS
   fragments, party/save-state fields, per-component map writes, and required
   dependencies are recorded per component in the JSON manifest.
@@ -123,7 +163,8 @@ RMXP event installers or compile Essentials.
 Run the harness fixtures:
 
 ```sh
-python3 -m unittest tests.test_shattered_integration -v
+python3 -m unittest tests/test_shattered_integration.py -v
+python3 scripts/shattered_integration_contract.py --git-repo /local/full/Shattered-checkout
 ```
 
 The fixtures deliberately use synthetic project/map bytes, fake plugin
@@ -131,8 +172,9 @@ archives, and non-game art placeholders. They exercise source preservation,
 PBS conflicts, duplicate queue/plugin/event-hook/resource claims, wrong branch
 ancestry, overlapping map writers, missing source/assets/archives, map
 collisions, hashes, dependency order, and safe staging. Passing them proves
-only the Python harness behavior. The regular repository CI also runs these
-tests via unittest discovery.
+only harness/source-contract behavior. The contract command separately reports
+all pinned source SHAs and runs 15 Python/Ruby component test commands. It does
+not compile PBS, launch Essentials, or establish gameplay/save/reload acceptance.
 
 Evidence must be reported at the tier actually run:
 
@@ -148,21 +190,24 @@ Evidence must be reported at the tier actually run:
 
 ## Open gates before a playable release
 
-- Review and combine the pinned draft PR sources without losing their ancestry;
-  obtain missing Hotfixes, DBK, Enhanced Battle UI, Following Pokémon EX, and
-  quest plugin archives with versions and licences verified.
+- Resolve missing source permission for the HnS map files, mapping, and
+  converted tileset; provide rights-cleared Aipom/Rattata art and cry/SE files.
+- Obtain local Hotfixes, DBK, and Enhanced Battle UI archives at pinned versions
+  with verified licences, unless those exact versions are already in the
+  authorized project. Following Pokémon EX and Modern Quest System are
+  independent later evaluations, not initial-slice blockers.
 - Resolve HnS map/tile rights, provide a rights-cleared conversion mapping and
   image, and create real target maps with reviewed collision, passability,
   exits, event positions, and MapInfos entries.
-- Assign actual map IDs and unique global switch/variable IDs; review every
-  source-to-target mapping, role, sprite/audio licence, and PBS species/item
-  prerequisite. No sample IDs are allocations.
+- Assign actual Reception Gate/Route 22 map IDs and Route 22 switches/variable;
+  review source-to-target mapping, event passability, and existing RATTATA PBS.
 - Compile PBS and all plugins in an authorised native Essentials v21.1 project.
   Test HUMAN battle, Poké Ball denial, Rattata/Beedrill progression, event
   recovery, followers/quests, and save/close/reopen.
 - Run the complete Johto gate → Route 22 → Viridian → raid/rescue/dojo/starter
   route on desktop and Android. Capture logs, results, and project hashes.
 
-The repository currently has no authorised native Essentials project or
-Android runtime in this task environment. No full gameplay or mobile acceptance
-is claimed.
+The repository currently has no authorised native Essentials project, licensed
+HnS/art inputs, verified plugin archives, or Android runtime in this task
+environment. Runtime status remains **BLOCKED**. No full gameplay or mobile
+acceptance is claimed.

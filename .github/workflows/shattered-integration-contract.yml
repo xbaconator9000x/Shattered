@@ -1,0 +1,46 @@
+name: Shattered synthetic integration contract
+
+on:
+  pull_request:
+    paths:
+      - "development/shattered_integration_manifest.json"
+      - "scripts/shattered_integration.py"
+      - "scripts/shattered_integration_contract.py"
+      - "tests/test_shattered_integration*.py"
+      - "docs/INTEGRATED_BUILD_GATES.md"
+      - ".github/workflows/shattered-integration-contract.yml"
+  push:
+    paths:
+      - "development/shattered_integration_manifest.json"
+      - "scripts/shattered_integration.py"
+      - "scripts/shattered_integration_contract.py"
+      - "tests/test_shattered_integration*.py"
+      - "docs/INTEGRATED_BUILD_GATES.md"
+      - ".github/workflows/shattered-integration-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.1"
+      - name: Fetch current main and pinned PR heads
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          for pr in 6 10 11 12 13 14 15 16 17 19 24 25; do
+            git fetch --no-tags origin \
+              "+refs/pull/${pr}/head:refs/remotes/integration/pr-${pr}"
+          done
+      - name: Assemble pinned sources and run every component suite
+        run: python3 scripts/shattered_integration_contract.py --git-repo "$GITHUB_WORKSPACE"
+      - name: Run integration harness regression tests
+        run: python3 -m unittest tests/test_shattered_integration.py -v

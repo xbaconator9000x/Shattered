@@ -56,7 +56,7 @@
       "id": 11,
       "title": "HUMAN lifecycle and battle hooks",
       "branch": "copilot/shattered-queue-se-004-human-species-apis",
-      "head": "9b5772251d9251349f282f5984006a186eeb5e7f",
+      "head": "fdb6a7401ab0fac061c50718306932caac7ee605",
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
@@ -171,15 +171,24 @@
       "source_files": [
         {
           "path": "data/maps/ReceptionGate_hns/map.json",
+          "input": "sources/hns/data/maps/ReceptionGate_hns/map.json",
           "sha256": "98a04926dd4ae012bb0ea0abe4653cfc060797496dd119a04cffbd8ce38618ab"
         },
         {
           "path": "data/layouts/layouts.json",
+          "input": "sources/hns/data/layouts/layouts.json",
           "sha256": "3b548d055a81dbffb2348d3435077006e8b46aa19df1f2bd5798df218fba5ea3"
         },
         {
           "path": "data/layouts/ReceptionGate_hns/map.bin",
+          "input": "sources/hns/data/layouts/ReceptionGate_hns/map.bin",
           "sha256": "121ddb32e6327f14469b7d7168900c2ee131bb822cccc0cb0139d5fd4168f3a7"
+        },
+        {
+          "path": "operator-authored ReceptionGate metatile mapping",
+          "input": "sources/hns/reception_gate_mapping.json",
+          "sha256": null,
+          "rights_review_required": true
         }
       ],
       "license_status": "No explicit license grant was found in the reviewed repository. Do not redistribute source map, graphics, palettes, or converted art without permission or a rights review."
@@ -195,7 +204,6 @@
     }
   ],
   "required_source_files": [
-    {"pr": 6, "path": "development/plugin_manifest.json", "stage": false},
     {"pr": 6, "path": "scripts/validate_integration.py", "stage": false},
     {"pr": 6, "path": "tests/test_manifest.py", "stage": false},
     {"pr": 10, "path": "essentials/Plugins/Shattered HnS Gate/001_Import.rb", "stage": true},
@@ -246,20 +254,60 @@
     {"pr": 25, "path": "essentials/Plugins/Shattered Equipment/meta.txt", "stage": true},
     {"pr": 25, "path": "tests/test_equipment.rb", "stage": false}
   ],
+  "contract_test_suites": [
+    {"pr": 6, "support_from_main": ["development/plugin_manifest.json"], "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_manifest.py", "-v"]]},
+    {"pr": 10, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_hns_gate_conversion.py", "-v"], ["ruby", "tests/test_hns_gate_import.rb"]]},
+    {"pr": 11, "commands": [["ruby", "tests/test_shattered_core.rb"]]},
+    {"pr": 12, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_demo_parity.py", "-v"]]},
+    {"pr": 13, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_world_links.py", "-v"], ["ruby", "tests/test_world_links.rb"]]},
+    {"pr": 14, "commands": [["python3", "-m", "unittest", "discover", "-s", "tests", "-p", "test_gate_key_pbs.py", "-v"], ["ruby", "tests/test_gate_story.rb"]]},
+    {"pr": 15, "commands": [["ruby", "tests/test_route22.rb"]]},
+    {"pr": 16, "commands": [["ruby", "tests/test_viridian.rb"]]},
+    {"pr": 17, "commands": [["ruby", "tests/test_dojo.rb"]]},
+    {"pr": 19, "commands": [["ruby", "tests/test_shattered_raid.rb"]]},
+    {"pr": 24, "commands": [["ruby", "tests/test_murkrow_rescue.rb"]]},
+    {"pr": 25, "commands": [["ruby", "tests/test_equipment.rb"]]}
+  ],
+  "profiles": {
+    "initial_slice": {
+      "components": ["hns_gate", "shattered_core", "world_links", "gate_story", "route22"],
+      "source_prs": [10, 11, 12, 13, 14, 15],
+      "map_slots": ["reception_gate", "route22"],
+      "archives": ["hotfixes", "deluxe_battle_kit", "enhanced_battle_ui"],
+      "assets": [
+        "hns_reception_gate_tileset",
+        "hns_reception_gate_mapping",
+        "aipom_sprite",
+        "aipom_cry",
+        "gate_collapse_se_1",
+        "gate_collapse_se_2",
+        "gate_collapse_se_3",
+        "gate_collapse_se_4",
+        "gate_collapse_se_5",
+        "gate_collapse_se_6",
+        "route22_rattata_sprite"
+      ],
+      "source_projects": ["hns_reception_gate"],
+      "pbs_species": ["HUMAN", "RATTATA"],
+      "pbs_items": ["SHATTEREDGATEKEY"],
+      "switch_ids": ["route22_scatter", "route22_cleared"],
+      "variable_ids": ["route22_outcome"],
+      "acceptance_target": "new game -> genuine HUMAN -> gate collapse -> Aipom key -> mandatory Lv5 Route22 Rattata -> save/close/reload",
+      "runtime_status": "BLOCKED until native Essentials build and private save/reload playthrough"
+    }
+  },
   "plugin_archives": [
-    {"id": "hotfixes", "name": "v21.1 Hotfixes", "version": "1.0.9", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/1376/"},
-    {"id": "deluxe_battle_kit", "name": "Deluxe Battle Kit", "version": "1.3.1", "depends_on": ["hotfixes"], "required": true, "source": "https://eeveeexpo.com/resources/1470/"},
-    {"id": "enhanced_battle_ui", "name": "Enhanced Battle UI", "version": "2.1.1", "depends_on": ["deluxe_battle_kit"], "required": true, "source": "https://eeveeexpo.com/resources/1472/"},
-    {"id": "following_pokemon_ex", "name": "Following Pokemon EX", "version": "2.5.1", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/516/"},
-    {"id": "modern_quest_system", "name": "Modern Quest System + UI", "version": "1.1.0", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/709/"},
+    {"id": "hotfixes", "name": "v21.1 Hotfixes", "version": "1.0.9", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/1376/", "expected_local_input": "archives/v21.1-hotfixes.zip"},
+    {"id": "deluxe_battle_kit", "name": "Deluxe Battle Kit", "version": "1.3.1", "depends_on": ["hotfixes"], "required": true, "source": "https://eeveeexpo.com/resources/1470/", "expected_local_input": "archives/deluxe-battle-kit.zip"},
+    {"id": "enhanced_battle_ui", "name": "Enhanced Battle UI", "version": "2.1.1", "depends_on": ["deluxe_battle_kit"], "required": true, "source": "https://eeveeexpo.com/resources/1472/", "expected_local_input": "archives/enhanced-battle-ui.zip"},
+    {"id": "following_pokemon_ex", "name": "Following Pokemon EX", "version": "2.5.1", "depends_on": [], "required": false, "install": false, "source": "https://eeveeexpo.com/resources/516/", "blocker": "Independent compatibility evaluation required; not needed by the initial slice."},
+    {"id": "modern_quest_system", "name": "Modern Quest System + UI", "version": "1.1.0", "depends_on": [], "required": false, "install": false, "source": "https://eeveeexpo.com/resources/709/", "blocker": "Independent compatibility evaluation required; not needed by the initial slice."},
     {"id": "feral_tank", "name": "Feral Tank", "version": "1.1.9", "depends_on": [], "required": false, "source": "https://eeveeexpo.com/resources/2011/", "install": false, "blocker": "Optional only; audit Pokemon#calc_stats and HUMAN compatibility before any install."}
   ],
   "load_order": [
     "v21.1 Hotfixes",
     "Deluxe Battle Kit",
     "Enhanced Battle UI",
-    "Following Pokemon EX",
-    "Modern Quest System + UI",
     "Shattered Core",
     "Shattered HnS Gate",
     "Shattered World Links",
@@ -483,10 +531,17 @@
     }
   ],
   "asset_requirements": [
-    {"id": "hns_reception_gate_tileset", "kind": "converted_tileset_image", "required": true, "rights_status": "unverified_upstream_permission"},
-    {"id": "hns_reception_gate_mapping", "kind": "reviewed_metatile_collision_mapping", "required": true, "rights_status": "operator_authored"},
-    {"id": "gate_story_art_audio", "kind": "aipom_sprite_cry_and_six_sound_effects", "required": true, "rights_status": "not_provided"},
-    {"id": "route22_rattata_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
+    {"id": "hns_reception_gate_tileset", "kind": "converted_tileset_image", "required": true, "rights_status": "unverified_upstream_permission", "expected_local_input": "assets/tilesets/ReceptionGate.png"},
+    {"id": "hns_reception_gate_mapping", "kind": "reviewed_metatile_collision_mapping", "required": true, "rights_status": "operator_authored", "expected_local_input": "sources/hns/reception_gate_mapping.json"},
+    {"id": "aipom_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/characters/Aipom.png"},
+    {"id": "aipom_cry", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/AipomCry.ogg"},
+    {"id": "gate_collapse_se_1", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse1.ogg"},
+    {"id": "gate_collapse_se_2", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse2.ogg"},
+    {"id": "gate_collapse_se_3", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse3.ogg"},
+    {"id": "gate_collapse_se_4", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse4.ogg"},
+    {"id": "gate_collapse_se_5", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse5.ogg"},
+    {"id": "gate_collapse_se_6", "kind": "sound_effect", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/audio/SE/GateCollapse6.ogg"},
+    {"id": "route22_rattata_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided", "expected_local_input": "assets/characters/Rattata.png"},
     {"id": "viridian_guard_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
     {"id": "viridian_nidoran_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
     {"id": "dojo_instructor_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
@@ -498,7 +553,8 @@
     "viridian_city": {"source_uuid": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e", "dimensions": [48, 40], "status": "target_map_id_unassigned"},
     "viridian_center": {"source_uuid": null, "dimensions": null, "status": "source_identity_unverified"},
     "dojo_room": {"source_uuid": "b1d081d6-6600-4c9e-a280-a38a162831b1", "dimensions": [10, 9], "status": "target_map_id_unassigned"},
-    "raid_map": {"source_uuid": null, "dimensions": null, "status": "requires_reviewed_local_map"}
+    "raid_map": {"source_uuid": null, "dimensions": null, "status": "requires_reviewed_local_map"},
+    "viridian_rescue": {"source_uuid": null, "dimensions": null, "status": "requires_reviewed_local_map"}
   },
   "runtime_resources": {
     "target_map_ids": null,

@@ -22,10 +22,10 @@ class ShatteredIntegrationTests(unittest.TestCase):
 
     def test_manifest_pins_live_prs_and_compatibility_order(self):
         result = integration.validate_manifest(self.manifest)
-        self.assertEqual(9, result["pull_requests"])
-        self.assertEqual(8, result["components"])
-        self.assertEqual(6, result["map_slots"])
-        self.assertEqual("Shattered Core", result["load_order"][5])
+        self.assertEqual(12, result["pull_requests"])
+        self.assertEqual(10, result["components"])
+        self.assertEqual(7, result["map_slots"])
+        self.assertEqual("Shattered Core", result["load_order"][3])
 
     def test_wrong_stacked_branch_ancestry_fails(self):
         manifest = copy.deepcopy(self.manifest)
@@ -140,6 +140,25 @@ class ShatteredIntegrationTests(unittest.TestCase):
         plan["map_targets"]["route22"]["id"] = plan["map_targets"]["reception_gate"]["id"]
         with self.assertRaisesRegex(integration.IntegrationError, "target map ID missing or duplicated"):
             integration._validate_plan(plan, self.manifest, project, inputs)
+
+    def test_initial_slice_preflight_reports_exact_unavailable_inputs(self):
+        project = self.root / "missing-project"
+        sources = self.root / "missing-sources"
+        inputs = self.root / "missing-inputs"
+        report = integration.diagnose_preflight(
+            project, sources, inputs, {}, self.manifest, "initial_slice"
+        )
+        self.assertEqual("BLOCKED", report["status"])
+        self.assertIn(
+            "missing required plugin archive hotfixes v1.0.9: archives/v21.1-hotfixes.zip",
+            report["blockers"],
+        )
+        self.assertIn(
+            "missing asset input hns_reception_gate_tileset: assets/tilesets/ReceptionGate.png",
+            report["blockers"],
+        )
+        self.assertTrue(any("source permission" in item for item in report["blockers"]))
+        self.assertIn("missing Essentials project file: Game.ini", report["blockers"])
 
     def test_missing_source_and_modified_source_hash_fail(self):
         project, source_root, inputs, plan, lock = self._fixture()
