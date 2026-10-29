@@ -4,6 +4,7 @@
 Never modifies original. Doesn't compile plugin scripts or test Android runtime.
 """
 import argparse
+import binascii
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -90,7 +91,73 @@ def install_shattered_core(dest):
     return {'core': str(target.relative_to(dest)), 'human_pbs': 'appended'}
 
 
-def stage(project, output, archives=(), overwrite=False):
+def install_hns_gate(dest, gate_data, gate_image):
+    data = Path(gate_data)
+    image = Path(gate_image)
+    bundle = json.loads(data.read_text(encoding="utf-8"))
+    if bundle.get("format") != "shattered-hns-rmxp-map" or bundle.get("format_version") != 1:
+        raise ValueError("unsupported HnS reception gate bundle")
+    image_name = bundle.get("target", {}).get("tileset_image")
+    if not isinstance(image_name, str) or not re.fullmatch(r"[A-Za-z0-9_-]+\.png", image_name):
+        raise ValueError("invalid HnS gate tileset image name")
+    image_bytes = image.read_bytes()
+    width, height = png_dimensions(image_bytes)
+    if width != 256 or height == 0 or height % 32:
+        raise ValueError("HnS gate tileset PNG must be 256 pixels wide and a multiple of 32 high")
+    plugin_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate" / "001_Import.rb"
+    meta_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate" / "meta.txt"
+    plugin_target = dest / "Plugins" / "Shattered HnS Gate"
+    graphics_target = dest / "Graphics" / "Tilesets" / image_name
+    if plugin_target.exists() or graphics_target.exists():
+        raise ValueError("HnS gate import would overwrite existing project files")
+    plugin_target.mkdir(parents=True)
+    shutil.copyfile(plugin_source, plugin_target / "001_Import.rb")
+    shutil.copyfile(meta_source, plugin_target / "meta.txt")
+    shutil.copyfile(data, plugin_target / "reception_gate.json")
+    graphics_target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(image, graphics_target)
+    return {
+        "plugin": str((plugin_target / "001_Import.rb").relative_to(dest)),
+        "bundle": str((plugin_target / "reception_gate.json").relative_to(dest)),
+        "tileset_image": str(graphics_target.relative_to(dest)),
+        "native_map_generated": False,
+    }
+
+
+def png_dimensions(data):
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("HnS gate tileset must be a PNG")
+    offset = 8
+    width = height = 0
+    saw_idat = saw_iend = False
+    while offset + 12 <= len(data):
+        length = int.from_bytes(data[offset:offset + 4], "big")
+        kind = data[offset + 4:offset + 8]
+        end = offset + 12 + length
+        if end > len(data):
+            raise ValueError("invalid/truncated HnS gate PNG")
+        chunk = data[offset + 4:end - 4]
+        expected_crc = int.from_bytes(data[end - 4:end], "big")
+        if binascii.crc32(chunk) & 0xFFFFFFFF != expected_crc:
+            raise ValueError("invalid HnS gate PNG chunk checksum")
+        payload = data[offset + 8:end - 4]
+        if offset == 8:
+            if kind != b"IHDR" or length != 13:
+                raise ValueError("invalid HnS gate PNG header")
+            width = int.from_bytes(payload[:4], "big")
+            height = int.from_bytes(payload[4:8], "big")
+        elif kind == b"IDAT":
+            saw_idat = True
+        elif kind == b"IEND":
+            saw_iend = length == 0 and end == len(data)
+            break
+        offset = end
+    if not width or not height or not saw_idat or not saw_iend:
+        raise ValueError("invalid/incomplete HnS gate PNG")
+    return width, height
+
+
+def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None):
     project = Path(project).resolve()
     output = Path(output).resolve()
     if not (project / 'Game.ini').is_file() or not (project / 'PBS' / 'pokemon.txt').is_file():
@@ -99,6 +166,8 @@ def stage(project, output, archives=(), overwrite=False):
         raise ValueError('input/output must be separate directories, not nested')
     if output.exists():
         raise ValueError('output exists; choose a fresh staging directory')
+    if (gate_data is None) != (gate_image is None):
+        raise ValueError("HnS gate staging requires both --gate-data and --gate-tileset-image")
     known = plugins_by_id()
     requested = {}
     for item in archives:
@@ -130,6 +199,11 @@ def stage(project, output, archives=(), overwrite=False):
                   'caveats': ['Requires Essentials debug compilation of PluginScripts.rxdata',
                               'JoiPlay/NaviaXP testing not done',
                               'Plugin version/license/manual conflict review required']}
+        if gate_data is not None:
+            report["hns_gate"] = install_hns_gate(target, gate_data, gate_image)
+            report["caveats"].append(
+                "Run pbInstallShatteredHNSReceptionGate in Essentials to create native map data; "
+                "engine compilation and warp/collision playtest remain required")
         for key, archive in requested.items():
             report['plugin_archives'][key] = safe_zip_install(archive, target, key, overwrite)
         (target / 'SHATTERED_STAGING_REPORT.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -143,8 +217,11 @@ def main():
     p.add_argument('--output', required=True)
     p.add_argument('--archive', action='append', default=[], help='pluginid=/local/verified.zip')
     p.add_argument('--allow-overwrite', action='store_true', help='only after reviewing collisions')
+    p.add_argument('--gate-data', help='converted SE-013 reception gate JSON bundle')
+    p.add_argument('--gate-tileset-image', help='rights-cleared 256px-wide XP tileset PNG')
     a = p.parse_args()
-    print(json.dumps(stage(a.project, a.output, a.archive, a.allow_overwrite), indent=2))
+    print(json.dumps(stage(a.project, a.output, a.archive, a.allow_overwrite,
+                           a.gate_data, a.gate_tileset_image), indent=2))
 
 
 if __name__ == '__main__':
