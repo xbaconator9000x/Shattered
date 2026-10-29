@@ -127,6 +127,7 @@ module ShatteredViridian
   def self.npc(name, config, started)
     record = config[name]
     visible = page
+    visible.through = false # NPC must obey normal map collision
     visible.graphic.character_name = record["character"]
     visible.list = [command(0)]
     hidden = page(started)
@@ -156,6 +157,7 @@ module ShatteredViridian
     nidoran = npc("nidoran", config, started)
     entry = page
     entry.trigger = 2 # player touch
+    entry.through = false # RMXP player-touch event must have collision
     entry.list = [
       command(236, [1, 6, 20]), # RMXP rain, power 6, 20 frames
       command(209, [guard_id, move_route(config["guard_path"])]),
@@ -168,6 +170,7 @@ module ShatteredViridian
     entry_done.list = [command(0)]
     entry_event = event("entry", config["entry_trigger"], [entry, entry_done])
     finish_page = page(started, 2)
+    finish_page.through = false
     finish_page.list = [command(355, ["ShatteredViridian.arrive!(#{arrived})"]), command(0)]
     finish_done = page(arrived, 2)
     finish_done.list = [command(0)]
