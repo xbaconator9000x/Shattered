@@ -1,6 +1,5 @@
-[Shattered Route22]
-Name = Shattered Route22
-Version = 0.1.0
+Name       = Shattered Route22
+Version    = 0.1.0
 Essentials = 21.1
-Requires = Shattered Core
-Credits = xbaconator9000x
+Website    = https://github.com/xbaconator9000x/Shattered
+Credits    = Shattered contributors

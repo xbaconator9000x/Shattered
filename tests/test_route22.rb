@@ -158,6 +158,12 @@ class Route22InstallerTest < Minitest::Test
     assert_equal before, File.binread("Data/Map042.rxdata")
     refute File.exist?("Data/Map042.rxdata.shattered_route22.bak")
   end
+  def test_plugin_metadata_uses_essentials_v21_format
+    metadata=File.read(File.expand_path("../essentials/Plugins/Shattered Route22/meta.txt", __dir__))
+    assert_match(/\AName\s*=/, metadata)
+    assert_match(/^Essentials\s*= 21\.1$/, metadata)
+    refute_match(/^\[/, metadata)
+  end
   def test_stale_backup_blocks_even_if_installed_events_exist
     ShatteredRoute22.install(@config)
     File.write("Data/Map042.rxdata.shattered_route22.bak", "recovery")
