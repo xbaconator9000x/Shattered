@@ -1,0 +1,437 @@
+{
+  "schema_version": 1,
+  "product": "Shattered Essentials v21.1 integrated demo staging gate",
+  "queue_task": {
+    "id": "SE-024",
+    "title": "SE-024: Build one reproducible integrated Shattered Essentials demo staging and compatibility gate"
+  },
+  "status": "blocked",
+  "engine": {
+    "name": "Pokémon Essentials",
+    "version": "21.1",
+    "rpg_maker": "XP"
+  },
+  "base": {
+    "required_files": [
+      "Game.ini",
+      "Data/Scripts.rxdata",
+      "Data/MapInfos.rxdata",
+      "PBS/pokemon.txt",
+      "PBS/items.txt"
+    ],
+    "authorization": "The caller must supply and attest to a legally held, source-owned Essentials v21.1 project. No base project or game data is included."
+  },
+  "main": {
+    "ref": "main",
+    "commit": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c"
+  },
+  "pull_requests": [
+    {
+      "id": 10,
+      "title": "HnS reception-gate conversion pipeline",
+      "branch": "copilot/shattered-queue-se-013",
+      "head": "8368df33c795c6c3d327e599f4b51f88184a7b3d",
+      "base_ref": "main",
+      "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
+      "ancestry_parent": null,
+      "build_requires": [],
+      "state": "open_draft"
+    },
+    {
+      "id": 11,
+      "title": "HUMAN lifecycle and battle hooks",
+      "branch": "copilot/shattered-queue-se-004-human-species-apis",
+      "head": "9b5772251d9251349f282f5984006a186eeb5e7f",
+      "base_ref": "main",
+      "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
+      "ancestry_parent": null,
+      "build_requires": [],
+      "state": "open_draft"
+    },
+    {
+      "id": 12,
+      "title": "Source-grounded demo parity index",
+      "branch": "feat/se015-source-parity-extractor",
+      "head": "199ce2b5a97da6e8c18a9f7f33f3d888a07a416b",
+      "base_ref": "main",
+      "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
+      "ancestry_parent": null,
+      "build_requires": [],
+      "state": "open_draft"
+    },
+    {
+      "id": 13,
+      "title": "Source-indexed RMXP world transfers",
+      "branch": "feat/se017-verified-world-links",
+      "head": "66022f04497a5562cee52191a0d952123f8f1877",
+      "base_ref": "feat/se015-source-parity-extractor",
+      "base": "199ce2b5a97da6e8c18a9f7f33f3d888a07a416b",
+      "ancestry_parent": 12,
+      "build_requires": [12],
+      "state": "open_draft"
+    },
+    {
+      "id": 14,
+      "title": "Reception-gate story events",
+      "branch": "feat/se016-gate-story-state-and-events",
+      "head": "9762d028c9efc962c018114c8954dc975057313d",
+      "base_ref": "main",
+      "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
+      "ancestry_parent": null,
+      "build_requires": [10, 11, 13],
+      "state": "open_draft"
+    },
+    {
+      "id": 15,
+      "title": "Route 22 Rattata encounter events",
+      "branch": "feat/se017-route22-rattata-native-events",
+      "head": "947d542be37d9f2df9102ec418bbd9cbce3f33a2",
+      "base_ref": "feat/se017-verified-world-links",
+      "base": "66022f04497a5562cee52191a0d952123f8f1877",
+      "ancestry_parent": 13,
+      "build_requires": [11, 13],
+      "state": "open_draft"
+    },
+    {
+      "id": 16,
+      "title": "Viridian entry, escort, and weather events",
+      "branch": "feat/se018-viridian-escort-weather-native",
+      "head": "8f72ca12280895aeafbcdbc8052cf251b8de8af2",
+      "base_ref": "feat/se017-route22-rattata-native-events",
+      "base": "947d542be37d9f2df9102ec418bbd9cbce3f33a2",
+      "ancestry_parent": 15,
+      "build_requires": [13, 15],
+      "state": "open_draft"
+    },
+    {
+      "id": 17,
+      "title": "Dojo questionnaire and starter recruitment",
+      "branch": "feat/se019-dojo-starter-native",
+      "head": "1179accaa14fe9d310d55f9f834908db37784e82",
+      "base_ref": "feat/se018-viridian-escort-weather-native",
+      "base": "8f72ca12280895aeafbcdbc8052cf251b8de8af2",
+      "ancestry_parent": 16,
+      "build_requires": [11, 13, 16],
+      "state": "open_draft"
+    },
+    {
+      "id": 19,
+      "title": "Non-stacking Beedrill raid encounters",
+      "branch": "copilot/se-019b-implement-non-stacking-beedrill-raids",
+      "head": "826770aa30bf9f4eb937d777281f64f31d87459b",
+      "base_ref": "main",
+      "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
+      "ancestry_parent": null,
+      "build_requires": [11],
+      "state": "open_draft"
+    }
+  ],
+  "source_projects": [
+    {
+      "id": "hns_reception_gate",
+      "repository": "PokemonHnS-Development/pokehns-expansion",
+      "commit": "167aa6d537b109bb229c231ddce4616974c4da71",
+      "source_files": [
+        {
+          "path": "data/maps/ReceptionGate_hns/map.json",
+          "sha256": "98a04926dd4ae012bb0ea0abe4653cfc060797496dd119a04cffbd8ce38618ab"
+        },
+        {
+          "path": "data/layouts/layouts.json",
+          "sha256": "3b548d055a81dbffb2348d3435077006e8b46aa19df1f2bd5798df218fba5ea3"
+        },
+        {
+          "path": "data/layouts/ReceptionGate_hns/map.bin",
+          "sha256": "121ddb32e6327f14469b7d7168900c2ee131bb822cccc0cb0139d5fd4168f3a7"
+        }
+      ],
+      "license_status": "No explicit license grant was found in the reviewed repository. Do not redistribute source map, graphics, palettes, or converted art without permission or a rights review."
+    },
+    {
+      "id": "shattered_source_parity",
+      "repository": "xbaconator9000x/Shattered",
+      "commit": "199ce2b5a97da6e8c18a9f7f33f3d888a07a416b",
+      "source_files": [
+        "development/demo_parity_reference.json"
+      ],
+      "license_status": "Sanitised anchor index only. Original PokéBacon project, ROM data, art, dialogue, and scripts are not included."
+    }
+  ],
+  "required_source_files": [
+    {"pr": 10, "path": "essentials/Plugins/Shattered HnS Gate/001_Import.rb", "stage": true},
+    {"pr": 10, "path": "essentials/Plugins/Shattered HnS Gate/meta.txt", "stage": true},
+    {"pr": 10, "path": "scripts/convert_hns_reception_gate.py", "stage": false},
+    {"pr": 11, "path": "essentials/Plugins/Shattered Core/001_Core.rb", "stage": true},
+    {"pr": 11, "path": "essentials/Plugins/Shattered Core/meta.txt", "stage": true},
+    {"pr": 11, "path": "essentials/PBS/HUMAN.pbs", "stage": false, "pbs_target": "PBS/pokemon.txt"},
+    {"pr": 12, "path": "development/demo_parity_reference.json", "stage": false},
+    {"pr": 12, "path": "scripts/extract_demo_parity.py", "stage": false},
+    {"pr": 13, "path": "essentials/Plugins/Shattered World Links/001_Install.rb", "stage": true},
+    {"pr": 13, "path": "essentials/Plugins/Shattered World Links/meta.txt", "stage": true},
+    {"pr": 13, "path": "scripts/build_world_links.py", "stage": false},
+    {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/001_GateStory.rb", "stage": true},
+    {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/002_Install.rb", "stage": true},
+    {"pr": 14, "path": "essentials/Plugins/Shattered Gate Story/meta.txt", "stage": true},
+    {"pr": 14, "path": "essentials/PBS/SHATTEREDGATEKEY.pbs", "stage": false, "pbs_target": "PBS/items.txt"},
+    {"pr": 14, "path": "scripts/install_gate_key_pbs.py", "stage": false},
+    {"pr": 15, "path": "essentials/Plugins/Shattered Route22/001_Route22.rb", "stage": true},
+    {"pr": 15, "path": "essentials/Plugins/Shattered Route22/002_Install.rb", "stage": true},
+    {"pr": 15, "path": "essentials/Plugins/Shattered Route22/meta.txt", "stage": true},
+    {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/001_Entry.rb", "stage": true},
+    {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/002_Install.rb", "stage": true},
+    {"pr": 16, "path": "essentials/Plugins/Shattered Viridian/meta.txt", "stage": true},
+    {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/001_Starter.rb", "stage": true},
+    {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/002_Install.rb", "stage": true},
+    {"pr": 17, "path": "essentials/Plugins/Shattered Dojo/meta.txt", "stage": true},
+    {"pr": 19, "path": "essentials/Plugins/Shattered Raid/001_Raid.rb", "stage": true},
+    {"pr": 19, "path": "essentials/Plugins/Shattered Raid/meta.txt", "stage": true}
+  ],
+  "plugin_archives": [
+    {"id": "hotfixes", "name": "v21.1 Hotfixes", "version": "1.0.9", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/1376/"},
+    {"id": "deluxe_battle_kit", "name": "Deluxe Battle Kit", "version": "1.3.1", "depends_on": ["hotfixes"], "required": true, "source": "https://eeveeexpo.com/resources/1470/"},
+    {"id": "enhanced_battle_ui", "name": "Enhanced Battle UI", "version": "2.1.1", "depends_on": ["deluxe_battle_kit"], "required": true, "source": "https://eeveeexpo.com/resources/1472/"},
+    {"id": "following_pokemon_ex", "name": "Following Pokemon EX", "version": "2.5.1", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/516/"},
+    {"id": "modern_quest_system", "name": "Modern Quest System + UI", "version": "1.1.0", "depends_on": [], "required": true, "source": "https://eeveeexpo.com/resources/709/"},
+    {"id": "feral_tank", "name": "Feral Tank", "version": "1.1.9", "depends_on": [], "required": false, "source": "https://eeveeexpo.com/resources/2011/", "install": false, "blocker": "Optional only; audit Pokemon#calc_stats and HUMAN compatibility before any install."}
+  ],
+  "load_order": [
+    "v21.1 Hotfixes",
+    "Deluxe Battle Kit",
+    "Enhanced Battle UI",
+    "Following Pokemon EX",
+    "Modern Quest System + UI",
+    "Shattered Core",
+    "Shattered HnS Gate",
+    "Shattered World Links",
+    "Shattered Gate Story",
+    "Shattered Route22",
+    "Shattered Viridian",
+    "Shattered Dojo",
+    "Shattered Raid"
+  ],
+  "components": [
+    {
+      "id": "hns_gate",
+      "name": "Shattered HnS Gate",
+      "version": "0.1.0",
+      "pr": 10,
+      "build_requires": [],
+      "map_writes": [{"slot": "reception_gate", "mode": "create"}],
+      "runtime_requires": ["rights-cleared tileset/mapping", "HnS source map conversion", "native map/warp review"],
+      "save_state": "No gameplay state is claimed by the importer.",
+      "hook_claims": [],
+      "event_contracts": [
+        {
+          "api": "pbInstallShatteredHNSReceptionGate",
+          "map_source": "MAP_RECEPTION_GATE_HNS / LAYOUT_RECEPTION_GATE_HNS",
+          "exits": {
+            "west": {"source": [1, 9], "destination": "MAP_ROUTE28_HNS"},
+            "east": {"source": [20, 9], "destination": "MAP_ROUTE22_HNS"},
+            "south": {"source": [11, 19], "destination": "MAP_ROUTE26_HNS"},
+            "north": {"source": [[10, 1], [11, 1]], "destination": "MAP_VICTORY_ROAD_HNS"}
+          }
+        }
+      ]
+    },
+    {
+      "id": "shattered_core",
+      "name": "Shattered Core",
+      "version": "0.2.2",
+      "pr": 11,
+      "build_requires": [],
+      "map_writes": [],
+      "runtime_requires": ["HUMAN PBS compilation", "native battle and save/load testing"],
+      "save_state": "$PokemonGlobal @shattered_stamina; HUMAN is held in the player party.",
+      "hook_claims": [
+        "Battle::Battler#pbCanChooseMove?",
+        "Battle::Battler#pbTryUseMove",
+        "Battle::Battler#pbReducePP",
+        "Battle::Battler#pbReducePPOther",
+        "ItemHandlers::CanUseInBattle:POKEBALL",
+        "EventHandlers:on_game_map_setup:shattered_core_ensure_human",
+        "EventHandlers:on_start_battle:shattered_core_battle_hooks"
+      ],
+      "event_contracts": [
+        {"api": "Shattered.ensure_human", "dependency": "PBS [HUMAN]"},
+        {"api": "Shattered.befriend", "dependency": "genuine HUMAN party member for dojo starter"}
+      ]
+    },
+    {
+      "id": "world_links",
+      "name": "Shattered World Links",
+      "version": "0.1.0",
+      "pr": 13,
+      "build_requires": [10, 12],
+      "map_writes": [
+        {"slot": "reception_gate", "mode": "modify"},
+        {"slot": "route22", "mode": "modify"},
+        {"slot": "viridian_city", "mode": "modify"},
+        {"slot": "viridian_center", "mode": "modify"},
+        {"slot": "dojo_room", "mode": "modify"}
+      ],
+      "runtime_requires": ["reviewed source-to-target mapping", "existing target maps", "native transfer/passability tests"],
+      "save_state": "Native RPG::Event transfer commands; no plugin save state.",
+      "hook_claims": [],
+      "event_contracts": [
+        {"api": "pbInstallShatteredWorldLinks", "event_prefix": "SHATTERED_LINK:", "transfer_command": 201}
+      ]
+    },
+    {
+      "id": "gate_story",
+      "name": "Shattered Gate Story",
+      "version": "0.1.0",
+      "pr": 14,
+      "build_requires": [10, 11, 13],
+      "map_writes": [{"slot": "reception_gate", "mode": "modify"}],
+      "runtime_requires": ["Gate Key PBS", "licensed Aipom sprite/cry and six SE files", "reviewed original south transfer"],
+      "save_state": "$PokemonGlobal @shattered_gate_story.",
+      "hook_claims": [],
+      "event_contracts": [
+        {
+          "api": "pbInstallShatteredGateStory",
+          "event_names": ["SHATTERED_GATE:collapse", "SHATTERED_GATE:aipom", "SHATTERED_GATE:johto_block"],
+          "dependencies": ["Shattered HnS Gate map", "PBS [SHATTEREDGATEKEY]", "local art/audio"]
+        }
+      ]
+    },
+    {
+      "id": "route22",
+      "name": "Shattered Route22",
+      "version": "0.1.0",
+      "pr": 15,
+      "build_requires": [11, 13],
+      "map_writes": [{"slot": "route22", "mode": "modify"}],
+      "runtime_requires": ["RATTATA PBS", "locally licensed Rattata sprite", "reviewed switch IDs and outcome variable"],
+      "save_state": "$PokemonGlobal @shattered_route22_rattata.",
+      "hook_claims": [],
+      "event_contracts": [
+        {
+          "api": "pbInstallShatteredRoute22",
+          "event_prefix": "SHATTERED_ROUTE22:",
+          "event_names": ["rattata_0..2", "trigger_0..2"],
+          "source_trigger_positions": [[36, 16], [36, 17], [36, 18]],
+          "battle": "WildBattle.start(:RATTATA, 5); disablePokeBalls; outcome 1 advances"
+        }
+      ]
+    },
+    {
+      "id": "viridian",
+      "name": "Shattered Viridian",
+      "version": "0.1.0",
+      "pr": 16,
+      "build_requires": [13, 15],
+      "map_writes": [{"slot": "viridian_city", "mode": "modify"}, {"slot": "viridian_center", "mode": "modify"}],
+      "runtime_requires": ["reviewed city/Center map IDs and SHA256", "licensed guard/Nidoran sprites", "distinct reviewed switches and passable route"],
+      "save_state": "$PokemonGlobal @shattered_viridian_entry.",
+      "hook_claims": [],
+      "event_contracts": [
+        {
+          "api": "pbInstallShatteredViridian",
+          "event_prefix": "SHATTERED_VIRIDIAN:",
+          "event_roles": ["guard", "nidoran", "entry", "finish", "rain", "center"],
+          "source_entry_positions": [[0, 17], [0, 18], [0, 19]]
+        }
+      ]
+    },
+    {
+      "id": "dojo",
+      "name": "Shattered Dojo",
+      "version": "0.1.0",
+      "pr": 17,
+      "build_requires": [11, 13, 16],
+      "map_writes": [{"slot": "dojo_room", "mode": "modify"}],
+      "runtime_requires": ["HUMAN party member", "Shattered.befriend", "reviewed dojo map and licensed instructor sprite"],
+      "save_state": "$PokemonGlobal @shattered_dojo_starter; starter award tagged on Pokemon.",
+      "hook_claims": [],
+      "event_contracts": [
+        {
+          "api": "pbInstallShatteredDojo",
+          "event_name": "SHATTERED_DOJO:questionnaire",
+          "runtime_api": "ShatteredDojo.run_quiz",
+          "source_anchors": ["5.2:npc:1", "5.2:npc:2"],
+          "recruitment": ["VULPIX", "STARYU", "EXEGGCUTE"]
+        }
+      ]
+    },
+    {
+      "id": "beedrill_raid",
+      "name": "Shattered Raid",
+      "version": "0.1.0",
+      "pr": 19,
+      "build_requires": [11],
+      "map_writes": [{"slot": "raid_map", "mode": "modify"}],
+      "runtime_requires": ["HUMAN and BEEDRILL PBS", "reviewed map/anchors/switches/outcome variable", "licensed local sprites"],
+      "save_state": "$PokemonGlobal @shattered_raid_state; progression reconciled to reviewed event switches.",
+      "hook_claims": [
+        "EventHandlers:on_game_map_setup:shattered_raid_switch_sync",
+        "BattleRule:disablePokeBalls"
+      ],
+      "event_contracts": [
+        {
+          "api": "ShatteredRaid.install_staged",
+          "runtime_api": "ShatteredRaid.trigger(index, config)",
+          "event_prefix": "ShatteredRaid:BEEDRILL:",
+          "encounters": 3,
+          "progression": "Only victory outcome 1 advances; flee/defeat/abort are retryable."
+        }
+      ]
+    }
+  ],
+  "asset_requirements": [
+    {"id": "hns_reception_gate_tileset", "kind": "converted_tileset_image", "required": true, "rights_status": "unverified_upstream_permission"},
+    {"id": "hns_reception_gate_mapping", "kind": "reviewed_metatile_collision_mapping", "required": true, "rights_status": "operator_authored"},
+    {"id": "gate_story_art_audio", "kind": "aipom_sprite_cry_and_six_sound_effects", "required": true, "rights_status": "not_provided"},
+    {"id": "route22_rattata_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
+    {"id": "viridian_guard_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
+    {"id": "viridian_nidoran_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
+    {"id": "dojo_instructor_sprite", "kind": "character_sprite", "required": true, "rights_status": "not_provided"},
+    {"id": "raid_event_sprites", "kind": "reviewed_character_sprites", "required": true, "rights_status": "not_provided"}
+  ],
+  "target_map_slots": {
+    "reception_gate": {"source_uuid": "84748cae-c12e-4d42-ab11-c735471977e4", "dimensions": [22, 21], "status": "not_imported"},
+    "route22": {"source_uuid": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2", "dimensions": [48, 24], "status": "target_map_id_unassigned"},
+    "viridian_city": {"source_uuid": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e", "dimensions": [48, 40], "status": "target_map_id_unassigned"},
+    "viridian_center": {"source_uuid": null, "dimensions": null, "status": "source_identity_unverified"},
+    "dojo_room": {"source_uuid": "b1d081d6-6600-4c9e-a280-a38a162831b1", "dimensions": [10, 9], "status": "target_map_id_unassigned"},
+    "raid_map": {"source_uuid": null, "dimensions": null, "status": "requires_reviewed_local_map"}
+  },
+  "runtime_resources": {
+    "target_map_ids": null,
+    "switch_ids": {
+      "route22_scatter": null,
+      "route22_cleared": null,
+      "viridian_started": null,
+      "viridian_arrived": null,
+      "viridian_center": null,
+      "viridian_rain": null,
+      "raid_encounter_0": null,
+      "raid_encounter_1": null,
+      "raid_encounter_2": null
+    },
+    "variable_ids": {
+      "route22_outcome": null,
+      "raid_outcome": null
+    },
+    "note": "All IDs in feature PR installation examples are placeholders, not approved allocations. The caller must reserve unique IDs from the actual target project."
+  },
+  "pbs_requirements": {
+    "species": ["HUMAN", "RATTATA", "BEEDRILL"],
+    "items": ["SHATTEREDGATEKEY"]
+  },
+  "acceptance_gates": [
+    {"id": "source_refs", "tier": "static", "status": "pinned_live_pr_heads_only"},
+    {"id": "rights", "tier": "staging", "status": "blocked_until_local_rights_review"},
+    {"id": "plugins", "tier": "staging", "status": "blocked_until_verified_archives_or_exact_base_install"},
+    {"id": "maps_and_resources", "tier": "staging", "status": "blocked_until_target_maps_ids_switches_and_variables_are_reviewed"},
+    {"id": "plugin_load_order_runtime", "tier": "native", "status": "not_run"},
+    {"id": "pbs_compile", "tier": "native", "status": "not_run"},
+    {"id": "script_compile_and_game_boot", "tier": "native", "status": "not_run"},
+    {"id": "story_playthrough_and_save_reload", "tier": "native", "status": "not_run"},
+    {"id": "android_joiplay_naviaxp", "tier": "android", "status": "not_run"}
+  ],
+  "non_goals": [
+    "No editing of development/integration_queue.json, development/plugin_manifest.json, feature plugins, or scripts/stage_essentials.py.",
+    "No merge to main, no third-party archive or Pokémon game asset distribution, and no claim of native or Android acceptance from synthetic tests.",
+    "No Feral Tank installation until Pokemon#calc_stats and HUMAN compatibility are audited."
+  ]
+}
