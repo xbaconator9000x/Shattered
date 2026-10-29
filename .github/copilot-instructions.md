@@ -2,6 +2,8 @@
 
 This is the PRIVATE source-control hub for the **Pokémon Shattered Essentials v21.1 prototype**, not the original FireRed ROM patch project or the separate Essentials Studio Mobile editor.
 
+**Primary product specification:** Read `docs/SHATTERED_ESSENTIALS_FULL_REMAKE_ACCEPTANCE.md` before taking new implementation tasks. The goal is one fully integrated, playable and saveable Shattered demo, not a collection of separate successful plugin tests.
+
 ## Project truth
 - GitHub `main` is authoritative for `development/integration_queue.json` and `development/plugin_manifest.json`.
 - Keep independent source changes in focused PRs. Do not silently edit or merge an unrelated existing branch/PR.
