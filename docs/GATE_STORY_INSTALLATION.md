@@ -12,6 +12,7 @@ This is a **testable partial implementation**, not a playable scene or completed
 ```json
 {
   "schema_version": 1,
+  "flag_plan": "shattered_gate_story_v1",
   "map_id": 10,
   "positions": {
     "collapse": {"x": 9, "y": 11},
@@ -19,13 +20,14 @@ This is a **testable partial implementation**, not a playable scene or completed
     "johto_block": {"x": 11, "y": 19}
   },
   "collapse_sounds": ["rum1", "rum2", "rum3", "rum4", "rum5", "rum6"],
+  "final_roar_sound": "roar",
   "aipom_cry": "cry",
   "aipom_character": "Aipom",
   "expected_south_transfer": [0, 20, 10, 1, 2, 0]
 }
 ```
 
-5. In the staged project's **actual** RPG Maker XP/Essentials debug runtime, invoke `pbInstallShatteredGateStory("/absolute/path/to/private-config.json")` once, after the HnS gate importer and after local art/audio installation. It preflights the 22×21 map, map info, south transfer command, event coordinates, key PBS and local assets before writing, and uses a temporary file plus rollback backup. Running twice with identical config is idempotent. Do not run on an original project.
+5. In the staged project's **actual** RPG Maker XP/Essentials debug runtime, invoke `pbInstallShatteredGateStory("/absolute/path/to/private-config.json")` once, after the HnS gate importer and after local art/audio installation. It preflights the 22×21 map and MapInfo, map tileset passability, event IDs, south transfer command, event coordinates, key PBS and local assets before writing, and uses a temporary file plus rollback backup. The fixed `flag_plan` identifies the saved-state contract; unsupported plans are rejected. The collapse event plays six impacts and a final roar, with the third-impact Johto warning and final roar each persisted against duplicate replay. Running twice with identical config is idempotent. Do not run on an original project.
 6. Start a **new game** and test south blocked exit, six timed sounds, Aipom key award, repeated interactions, save/close/reopen, interrupted scene recovery, native map/event render, no duplicate item and Android JoiPlay/NaviaXP. Verify actual collision and all other directions separately. The synthetic tests below **do not** count as these gates.
 
 ## Tests

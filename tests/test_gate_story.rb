@@ -28,8 +28,32 @@ module RPG
     attr_accessor :code, :indent, :parameters
     def initialize(code, indent, parameters); @code,@indent,@parameters = code,indent,parameters; end
   end
+  class Table
+    attr_reader :xsize, :ysize, :zsize
+    def initialize(xsize, ysize, zsize)
+      @xsize, @ysize, @zsize = xsize, ysize, zsize
+      @tiles = Hash.new(0)
+    end
+    def [](x, y, z); @tiles[[x, y, z]]; end
+    def []=(x, y, z, value); @tiles[[x, y, z]] = value; end
+  end
+  class Map
+    attr_accessor :width, :height, :tileset_id, :data, :events
+    def initialize(width, height)
+      @width, @height, @tileset_id = width, height, 1
+      @data, @events = Table.new(width, height, 3), {}
+      width.times { |x| height.times { |y| @data[x, y, 0] = 1 } }
+    end
+  end
+  class Tileset
+    attr_accessor :passages
+    def initialize; @passages = Array.new(256, 0); end
+  end
+  class MapInfo
+    attr_accessor :name, :parent_id, :order, :expanded, :scroll_x, :scroll_y
+    def initialize(name); @name = name; end
+  end
 end
-MapStub = Struct.new(:width, :height, :events)
 def load_data(path); Marshal.load(File.binread(path)); end
 def save_data(value, path); File.binwrite(path, Marshal.dump(value)); end
 
@@ -52,12 +76,19 @@ class GateStoryTest < Minitest::Test
     2.times { ShatteredGateStory.impact! }
     assert_equal 2, ShatteredGateStory.state[:impacts]
     Marshal.load(Marshal.dump($PokemonGlobal)).tap { |loaded| $PokemonGlobal = loaded }
-    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6])
-    assert_equal %w[rum3 rum4 rum5 rum6], $sounds
+    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6], "roar")
+    assert_equal %w[rum3 rum4 rum5 rum6 roar], $sounds
     assert ShatteredGateStory.collapsed?
     assert_equal 6, ShatteredGateStory.state[:impacts]
-    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6])
-    assert_equal 4, $sounds.length
+    assert ShatteredGateStory.state[:final_roar]
+    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6], "roar")
+    assert_equal 5, $sounds.length
+    assert_equal 1, $messages.count { |message| message.include?("blocked") }
+  end
+  def test_resume_announces_johto_blocked_after_saved_third_impact
+    3.times { ShatteredGateStory.impact! }
+    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6], "roar")
+    assert_equal 1, $messages.count { |message| message.include?("blocked") }
   end
   def test_clue_required_and_key_only_added_once
     refute ShatteredGateStory.clue!
@@ -104,19 +135,31 @@ class GateInstallerTest < Minitest::Test
     FileUtils.mkdir_p(%w[Data PBS Audio/SE Graphics/Characters])
     File.write("SHATTERED_STAGING_REPORT.json", "{}")
     File.write("PBS/items.txt", "[SHATTEREDGATEKEY]\nName = Shattered Gate Key\n")
-    %w[rum1 rum2 rum3 rum4 rum5 rum6 cry].each { |n| File.write("Audio/SE/#{n}.ogg", "private") }
+    %w[rum1 rum2 rum3 rum4 rum5 rum6 cry roar].each { |n| File.write("Audio/SE/#{n}.ogg", "private") }
     File.write("Graphics/Characters/Aipom.png", "private")
-    save_data({10=>true}, "Data/MapInfos.rxdata")
+    save_data({10=>RPG::MapInfo.new("Reception Gate")}, "Data/MapInfos.rxdata")
+    save_data({1=>RPG::Tileset.new}, "Data/Tilesets.rxdata")
     south = RPG::Event.new(11,19)
     south.id = 1
     south.name = "Exit south"
     page = RPG::Event::Page.new
+    page.trigger = 1
     page.list = [RPG::EventCommand.new(201,0,[0,20,10,1,2,0]), RPG::EventCommand.new(0,0,[])]
     south.pages = [page]
-    save_data(MapStub.new(22,21,{1=>south}), "Data/Map010.rxdata")
+    north = RPG::Event.new(11,1)
+    north.id = 2
+    north.name = "Exit north"
+    north_page = RPG::Event::Page.new
+    north_page.list = [RPG::EventCommand.new(201,0,[0,21,10,11,19,0]), RPG::EventCommand.new(0,0,[])]
+    north.pages = [north_page]
+    map = RPG::Map.new(22,21)
+    map.events = {1=>south,2=>north}
+    save_data(map, "Data/Map010.rxdata")
     @config = {"schema_version"=>1,"map_id"=>10,
       "positions"=>{"collapse"=>{"x"=>9,"y"=>11},"aipom"=>{"x"=>11,"y"=>2},"johto_block"=>{"x"=>11,"y"=>19}},
-      "collapse_sounds"=>%w[rum1 rum2 rum3 rum4 rum5 rum6],"aipom_cry"=>"cry","aipom_character"=>"Aipom",
+      "flag_plan"=>"shattered_gate_story_v1",
+      "collapse_sounds"=>%w[rum1 rum2 rum3 rum4 rum5 rum6],"final_roar_sound"=>"roar",
+      "aipom_cry"=>"cry","aipom_character"=>"Aipom",
       "expected_south_transfer"=>[0,20,10,1,2,0]}
   end
   def teardown
@@ -127,14 +170,19 @@ class GateInstallerTest < Minitest::Test
     result = ShatteredGateStory.install(@config)
     assert_equal 3, result["installed"].length
     map = load_data("Data/Map010.rxdata")
-    assert_equal 3, map.events.size
+    assert_instance_of RPG::Map, map
+    assert_equal 4, map.events.size
     assert_equal "SHATTERED_GATE:johto_block", map.events[1].name
     assert_equal 355, map.events[1].pages[0].list[0].code
     assert_equal 1, map.events[1].pages[0].trigger
+    assert_equal [0,21,10,11,19,0], map.events[2].pages[0].list[0].parameters
+    assert_equal "Exit north", map.events[2].name
     aipom = map.events.values.find { |e| e.name == "SHATTERED_GATE:aipom" }
     assert_equal "Aipom", aipom.pages[0].graphic.character_name
     assert_equal 0, aipom.pages[0].trigger
     assert_equal 6, @config["collapse_sounds"].length
+    collapse_script = map.events.values.find { |e| e.name == "SHATTERED_GATE:collapse" }.pages[0].list[0].parameters[0]
+    assert_includes collapse_script, '"roar"'
     refute File.exist?("Data/Map010.rxdata.shattered_gate.bak")
     before = File.binread("Data/Map010.rxdata")
     assert_equal 3, ShatteredGateStory.install(@config)["unchanged"]
@@ -164,5 +212,45 @@ class GateInstallerTest < Minitest::Test
     original = File.binread("Data/Map010.rxdata")
     assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
     assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+  def test_rejects_malformed_event_ids_before_writing
+    map = load_data("Data/Map010.rxdata")
+    map.events[2].id = 20
+    save_data(map,"Data/Map010.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+  def test_rejects_impassable_story_tiles
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[1] = 0x0F
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+  def test_rejects_bad_asset_name_and_flag_plan
+    original = File.binread("Data/Map010.rxdata")
+    @config["final_roar_sound"] = "../roar"
+    assert_raises(ArgumentError) { ShatteredGateStory.install(@config) }
+    @config["final_roar_sound"] = "roar"
+    @config["flag_plan"] = "unknown"
+    assert_raises(ArgumentError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+  def test_rolls_back_original_map_and_cleans_files_after_write_failure
+    original = File.binread("Data/Map010.rxdata")
+    rename = File.method(:rename)
+    calls = 0
+    File.stub(:rename, lambda { |source, destination|
+      calls += 1
+      raise IOError, "injected rename failure" if calls == 2
+      rename.call(source, destination)
+    }) do
+      assert_raises(IOError) { ShatteredGateStory.install(@config) }
+    end
+    assert_equal original, File.binread("Data/Map010.rxdata")
+    refute File.exist?("Data/Map010.rxdata.shattered_gate.tmp")
+    refute File.exist?("Data/Map010.rxdata.shattered_gate.bak")
   end
 end
