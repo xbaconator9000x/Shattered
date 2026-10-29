@@ -1,0 +1,26 @@
+name: Shattered Viridian native escort isolated tests
+on:
+  push:
+    paths:
+      - 'essentials/Plugins/Shattered Viridian/**'
+      - 'tests/test_viridian.rb'
+      - '.github/workflows/viridian-ci.yml'
+  pull_request:
+    paths:
+      - 'essentials/Plugins/Shattered Viridian/**'
+      - 'tests/test_viridian.rb'
+      - '.github/workflows/viridian-ci.yml'
+permissions:
+  contents: read
+jobs:
+  ruby:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ruby syntax
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
+          ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
+      - name: Saved state and native RMXP installer regression tests
+        run: ruby tests/test_viridian.rb
