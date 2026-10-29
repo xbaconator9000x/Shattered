@@ -184,6 +184,8 @@ class DojoInstallerTest < Minitest::Test
     save_data(map,"Data/Map045.rxdata")
     assert_raises(RuntimeError) { ShatteredDojo.install(@plan) }
     map.events.clear
+    other=RPG::Event.new(0,0); other.id=2; other.name="NONOVERLAPPING"
+    map.events[2]=other
     save_data(map,"Data/Map045.rxdata")
     assert_raises(RuntimeError) { ShatteredDojo.install(@plan) }
   end
