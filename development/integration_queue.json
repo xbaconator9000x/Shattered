@@ -216,9 +216,11 @@
       "evidence": [
         "PR #13 stacked on SE-015 PR #12: rights-safe source-indexed link compiler and native RMXP transfer event installer, no original assets committed",
         "Explicit target map/doorway/landing mapping required; no guessed warp destinations, no player landing on transfer triggers",
-        "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN"
+        "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN",
+        "PR #15 (stacked on PR #13): six source-anchored native RMXP Rattata NPC/trigger events with one-time scatter, real WildBattle.start(:RATTATA,5) entry, Poké Ball battle rule, persistent victory-only state and retry on flee/loss/abort; synthetic 13 Ruby tests / 62 assertions passed locally.",
+        "PR #15 installer refuses unstaged, wrong-size, wrong-hash, occupied, partial/foreign Route22 maps; requires verified local sprite and reserved switch/variable IDs; no native battle, collision or Android validation yet."
       ],
-      "blocker": "Real target Essentials map IDs, geometry, door triggers and collision/passability must be verified against installed maps before an actual link plan can be run."
+      "blocker": "Map 3.41 Route22 must be faithfully staged and its event chokepoint/passability verified; PRs #11/#12/#13/#15 and battle dependencies must be integrated before native HUMAN fight and save/reload tests."
     },
     {
       "id": "SE-018",
