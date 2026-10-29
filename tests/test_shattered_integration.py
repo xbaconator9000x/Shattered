@@ -27,6 +27,16 @@ class ShatteredIntegrationTests(unittest.TestCase):
         self.assertEqual(7, result["map_slots"])
         self.assertEqual("Shattered Core", result["load_order"][3])
 
+    def test_merged_source_ledger_cannot_drift_from_pinned_main(self):
+        manifest = copy.deepcopy(self.manifest)
+        manifest["main"]["commit"] = "0" * 40
+        with self.assertRaisesRegex(integration.IntegrationError, "inspected main commit is stale"):
+            integration.validate_manifest(manifest)
+        manifest = copy.deepcopy(self.manifest)
+        manifest["pull_requests"][2]["state"] = "open_draft"
+        with self.assertRaisesRegex(integration.IntegrationError, "merged PR ledger differs"):
+            integration.validate_manifest(manifest)
+
     def test_wrong_stacked_branch_ancestry_fails(self):
         manifest = copy.deepcopy(self.manifest)
         route22 = next(pr for pr in manifest["pull_requests"] if pr["id"] == 15)
