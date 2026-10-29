@@ -1,10 +1,5 @@
 name: Shattered Viridian native escort isolated tests
 on:
-  push:
-    paths:
-      - 'essentials/Plugins/Shattered Viridian/**'
-      - 'tests/test_viridian.rb'
-      - '.github/workflows/viridian-ci.yml'
   pull_request:
     paths:
       - 'essentials/Plugins/Shattered Viridian/**'
