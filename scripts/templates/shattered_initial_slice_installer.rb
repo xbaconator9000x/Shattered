@@ -263,25 +263,54 @@ module ShatteredInitialSlice
   # Format checks cannot establish animation quality; that requires runtime.
   def self.validate_character_sheet!(character_name)
     check(character_name.is_a?(String) &&
-      character_name.match?(/\\A[A-Za-z0-9 _-]+\\z/),
+      character_name.match?(/\A[A-Za-z0-9 _-]+\z/),
       "Unsafe or missing overworld character name")
     path = File.join("Graphics", "Characters", "#{character_name}.png")
     check(File.file?(path) && !File.symlink?(path) && File.size(path).between?(70, 1024 * 1024),
       "Required overworld character sprite is missing or invalid: #{character_name}")
-    File.open(path, "rb") do |file|
-      header = file.read(33)
-      check(header && header.bytesize == 33 &&
-        header.byteslice(0, 8) == "\\x89PNG\\r\\n\\x1a\\n".b &&
-        header.byteslice(8, 4).unpack1("N") == 13 &&
-        header.byteslice(12, 4) == "IHDR" &&
-        header.byteslice(16, 8).unpack("N2") == [128, 128] &&
-        header.getbyte(24) == 8 && header.getbyte(25) == 6 &&
-        Zlib.crc32(header.byteslice(12, 17)) == header.byteslice(29, 4).unpack1("N"),
-        "Overworld character must be a 128x128 RGBA RMXP sheet: #{character_name}")
-      file.seek(-12, IO::SEEK_END)
-      check(file.read(12) == "\\x00\\x00\\x00\\x00IEND\\xaeB\\x60\\x82".b,
+
+    # Check every chunk and its CRC, not just the IHDR and final IEND marker.
+    # This is a bounded structural preflight, not an RGSS rendering test.
+    bytes = File.binread(path)
+    check(bytes.start_with?("\x89PNG\r\n\x1a\n".b),
+      "Overworld character has an invalid PNG signature: #{character_name}")
+    offset = 8
+    seen_header = false
+    seen_data = false
+    seen_end = false
+    while offset < bytes.bytesize
+      check(!seen_end && offset + 12 <= bytes.bytesize,
         "Overworld character PNG is truncated: #{character_name}")
+      size = bytes.byteslice(offset, 4).unpack1("N")
+      check(size <= bytes.bytesize - offset - 12,
+        "Overworld character PNG chunk exceeds file bounds: #{character_name}")
+      kind = bytes.byteslice(offset + 4, 4)
+      payload = bytes.byteslice(offset + 8, size)
+      actual_crc = bytes.byteslice(offset + 8 + size, 4).unpack1("N")
+      check(Zlib.crc32(kind + payload) == actual_crc,
+        "Overworld character PNG CRC mismatch: #{character_name}")
+      case kind
+      when "IHDR"
+        check(!seen_header && offset == 8 && size == 13 &&
+          payload.byteslice(0, 8).unpack("N2") == [128, 128] &&
+          payload.byteslice(8, 5).bytes == [8, 6, 0, 0, 0],
+          "Overworld character must be a 128x128 RGBA RMXP sheet: #{character_name}")
+        seen_header = true
+      when "IDAT"
+        check(seen_header && !seen_end, "Overworld character IDAT out of order")
+        seen_data = true
+      when "IEND"
+        check(seen_header && seen_data && size == 0 &&
+          offset + 12 == bytes.bytesize,
+          "Overworld character PNG has invalid IEND: #{character_name}")
+        seen_end = true
+      else
+        check(seen_header && (kind.getbyte(0) & 0x20) != 0,
+          "Overworld character contains unsupported critical PNG chunk: #{character_name}")
+      end
+      offset += size + 12
     end
+    check(seen_end, "Overworld character PNG is missing IEND: #{character_name}")
     true
   end
 
