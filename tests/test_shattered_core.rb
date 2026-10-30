@@ -83,9 +83,21 @@ module ItemHandlers
 end
 ItemHandlers::CanUseInBattle.add(:POTION, proc { true })
 
+module Effectiveness
+  NORMAL_EFFECTIVE_MULTIPLIER = 2
+end
+
 module Battle
+  class Move
+    attr_reader :native_type_calls
+    def pbCalcTypeMod(move_type, user, target)
+      @native_type_calls = (@native_type_calls || 0) + 1
+      :native_type_chart
+    end
+  end
+
   class Battler
-    attr_reader :base_try_calls, :base_pp_calls, :battle
+    attr_reader :base_try_calls, :base_pp_calls, :battle, :pokemon
     attr_accessor :base_allowed, :base_result, :disabled_move_ids
     def initialize(pokemon)
       @pokemon = pokemon
@@ -536,6 +548,43 @@ class ShatteredCoreTest < Minitest::Test
     assert_equal "0.2.3", version
     assert_equal version, entry.fetch("version")
     assert_equal false, entry.fetch("runtime_verified")
+  end
+
+  def test_human_defensive_type_chart_uses_essentials_move_calculation
+    human = Shattered.ensure_human(@player, 5)
+    human_battler = Battle::Battler.new(human)
+    companion_battler = Battle::Battler.new(Pokemon.new(:RATTATA, 5))
+    begin_battle
+    move = Battle::Move.new
+    expected = {
+      :FAIRY => 0, :GHOST => 0, :DRAGON => 0,
+      :DARK => 1, :PSYCHIC => 1, :BUG => 1,
+      :FIRE => 4, :ICE => 4, :ELECTRIC => 4,
+      :POISON => 4, :STEEL => 4, :ROCK => 4, :FIGHTING => 4,
+      :NORMAL => 2, :WATER => 2, :GRASS => 2, :GROUND => 2,
+      :FLYING => 2, :SHADOW => 2
+    }
+    expected.each do |type, multiplier|
+      assert_equal multiplier, move.pbCalcTypeMod(type, companion_battler, human_battler),
+        "HUMAN defensive modifier for #{type}"
+    end
+    assert_equal 2, move.pbCalcTypeMod(nil, companion_battler, human_battler)
+    assert_nil move.native_type_calls
+    assert_equal :native_type_chart,
+      move.pbCalcTypeMod(:GHOST, human_battler, companion_battler)
+    assert_equal 1, move.native_type_calls
+  end
+
+  def test_human_type_hook_is_idempotent_and_preserves_native_method
+    human = Shattered.ensure_human(@player, 5)
+    begin_battle
+    original = Battle::Move.instance_method(:shattered_core_original_pb_calc_type_mod)
+    begin_battle
+    assert_equal original, Battle::Move.instance_method(:shattered_core_original_pb_calc_type_mod)
+    move = Battle::Move.new
+    assert_equal 0, move.pbCalcTypeMod(:DRAGON, nil, Battle::Battler.new(human))
+    assert_equal :native_type_chart,
+      move.pbCalcTypeMod(:DRAGON, nil, Battle::Battler.new(Pokemon.new(:AIPOM, 5)))
   end
 
   def test_equipment_contract
