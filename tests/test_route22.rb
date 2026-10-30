@@ -118,6 +118,17 @@ class Route22BattleTest < Minitest::Test
   end
 end
 
+NativeRoute22Map = Struct.new(:width, :height, :events, :tileset_id, :data)
+NativeRoute22Tileset = Struct.new(:passages)
+class NativeRoute22TileData
+  def initialize(values)
+    @values = values
+  end
+  def [](x, y, layer)
+    @values.fetch([x, y, layer], 0)
+  end
+end
+
 class Route22InstallerTest < Minitest::Test
   def setup
     @old=Dir.pwd
@@ -137,6 +148,66 @@ class Route22InstallerTest < Minitest::Test
     Dir.chdir(@old)
     FileUtils.remove_entry(@tmp)
   end
+  def native_v04_fixture(blocked = nil, legacy = false)
+    positions = {
+      "triggers" => [[24, 17], [26, 17], [28, 17]],
+      "npcs" => [[25, 17], [27, 17], [29, 17]]
+    }
+    tiles = {}
+    (positions["triggers"] + positions["npcs"]).each { |x, y| tiles[[x, y, 0]] = 385 }
+    tiles[[blocked[0], blocked[1], 0]] = 384 if blocked
+    events = {}
+    if legacy
+      event = RPG::Event.new(30, 17)
+      event.id = 3
+      event.name = "SHATTERED: Rattata ambush"
+      events[3] = event
+    end
+    save_data(NativeRoute22Map.new(54, 34, events, 1, NativeRoute22TileData.new(tiles)),
+              "Data/Map042.rxdata")
+    save_data([nil, NativeRoute22Tileset.new({384 => 15, 385 => 0})],
+              "Data/Tilesets.rxdata")
+    @config["expected_map_sha256"] = Digest::SHA256.file("Data/Map042.rxdata").hexdigest
+    @config["native_dimensions"] = [54, 34]
+    @config["reviewed_native_geometry"] = true
+    @config["event_positions"] = positions
+  end
+
+  def test_native_adaptation_installs_six_and_is_idempotent
+    native_v04_fixture
+    assert_equal 6, ShatteredRoute22.install(@config)["installed"]
+    map = load_data("Data/Map042.rxdata")
+    assert_equal 6, map.events.size
+    assert_equal @config["event_positions"]["triggers"].sort,
+      map.events.values.select { |e| e.name.include?("trigger_") }.map { |e| [e.x, e.y] }.sort
+    before = File.binread("Data/Map042.rxdata")
+    assert_equal 6, ShatteredRoute22.install(@config)["unchanged"]
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_native_adaptation_rejects_blocked_and_legacy_event
+    native_v04_fixture([26, 17])
+    before = File.binread("Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_equal before, File.binread("Data/Map042.rxdata")
+    native_v04_fixture(nil, true)
+    before = File.binread("Data/Map042.rxdata")
+    error = assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_match(/duplicate mandatory battles/, error.message)
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_native_adaptation_requires_review_and_unique_coordinates
+    native_v04_fixture
+    @config.delete("reviewed_native_geometry")
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+    @config["reviewed_native_geometry"] = true
+    @config["event_positions"]["npcs"][0] = @config["event_positions"]["triggers"][0]
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+    @config["event_positions"]["npcs"][0] = [54, 17]
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+  end
+
   def test_installs_six_native_events_and_repeated_install_is_byte_identical
     assert_equal 6, ShatteredRoute22.install(@config)["installed"]
     map=load_data("Data/Map042.rxdata")
