@@ -96,9 +96,14 @@ module ShatteredGateStory
       true
     end
 
+    # Essentials keeps the original Pokemon cries under Audio/SE/Cries/.
+    # Permit that single reviewed subdirectory, never arbitrary paths.
+    def valid_cry_name?(cry)
+      cry.is_a?(String) && /\A(?:Cries\/)?[A-Za-z0-9_ -]+\z/.match?(cry)
+    end
+
     def run_aipom(cry)
-      raise ArgumentError, "invalid Aipom cry name" unless
-        cry.is_a?(String) && !cry.strip.empty? && /\A[A-Za-z0-9_ -]+\z/.match(cry)
+      raise ArgumentError, "invalid Aipom cry name" unless valid_cry_name?(cry)
       unless collapsed?
         pbMessage(_INTL("There's something shiny up ahead."))
         return false
