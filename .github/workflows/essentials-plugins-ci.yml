@@ -34,6 +34,11 @@ jobs:
         run: ruby -c 'essentials/Plugins/Shattered Core/001_Core.rb'
       - name: Shattered HUMAN API unit tests
         run: ruby tests/test_shattered_core.rb
+      - name: Native Viridian escort geometry and collision regression
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
+          ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
+          ruby tests/test_viridian.rb
       - name: World-link native installer syntax and unit tests
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'
