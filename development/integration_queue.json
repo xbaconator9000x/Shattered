@@ -455,9 +455,10 @@
       "evidence": [
         "2026-10-31 PR #44 merged as 3d645564089cd7cabb258d523a5eadb57d7a8165: rights-safe source-only exact-SHA artifact 13018303506; SHA-256 verified and staged original v0.4 privately with HUMAN PBS appended.",
         "2026-10-31 PR #45 merged as 2d8381d5436747a3935082e6e88abe30fccb340c: guarded local native-format plugin archive compiler, six Ruby tests/26 assertions, GitHub combined CI green; actual private stage compiler output sha256 24f8742ae6c960b5aa9a15b8406c68a19e7bc4ede7a1e209d8f7428348702ad2.",
-        "Official mkxp-z Linux artifact 11582675594 launched exact source-staged private project with Mesa llvmpipe/Xvfb/OpenAL null; title rendered. Instrumented Core plugin eval marker observed in separate diagnostic run. Screenshots/logs and binary/game hashes retained privately; sanitised manifest in development/native_linux_runtime_evidence_2026-10-31.json."
+        "Official mkxp-z Linux artifact 11582675594 launched exact source-staged private project with Mesa llvmpipe/Xvfb/OpenAL null; title rendered. Instrumented Core plugin eval marker observed in separate diagnostic run. Screenshots/logs and binary/game hashes retained privately; sanitised manifest in development/native_linux_runtime_evidence_2026-10-31.json.",
+        "2026-10-31 PR #47 branch fix/native-runtime-only-plugin-compilation-20261031: concrete native startup repair separates offline-only RMXP installers from compiled runtime scripts via strict allowlist, refuses unexpected files/top-level requires, removes Murkrow JSON/Base64 event runtime dependency, defers Raid Digest to offline installer; Ruby regression tests added. CI and real full-plugin mkxp-z launch still pending; this is NOT native gameplay acceptance."
       ],
-      "blocker": "Native PBS compilation not executed; injected keyboard input did not advance headless title; no New Game, HUMAN battle, save/reload, faithful HnS gate or Android runner acceptance. Official Hotfixes 1.0.9 and reviewed HnS map/asset inputs outstanding."
+      "blocker": "Full-plugin native mkxp-z startup must be retested after PR #47 source/CI review; original runtime failed at require json from offline installer. HUMAN PBS compilation, New Game input, actual HUMAN battle, save/reload, faithful HnS gate and Android still unverified. Hotfixes 1.0.9 and reviewed HnS art/map inputs outstanding."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
