@@ -1,0 +1,4 @@
+Name = Shattered Dojo
+Version = 0.1.0
+Essentials = 21.1
+Description = Saved dojo questionnaire and native no-ball starter recruitment event

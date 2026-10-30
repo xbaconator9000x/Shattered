@@ -256,14 +256,15 @@
       "evidence": [
         "2026-10-31 private original v0.4 native Map010 inspection: Viridian City is 50x40 with 23 existing vanilla events, including Center door at (26,26) and SHATTERED arrival at (25,20). Draft PR #16 assumes 48x40 ROM-source geometry and will refuse native installation; a reviewed walled map, guard/Nidoran identities and collision-safe coordinates are needed before source adoption. No original RXData uploaded.",
         "2026-10-31 PR #16 native-geometry repair branch: separate 48x40 ROM-source NPC anchor positions from explicitly reviewed native 50x40 target coordinates, native entrance review and source SHA. Added static Tilesets passage checks for every escort path/event tile, Center trigger and occupied-route collision, plus Ruby fixture tests. Original private Map010 SHA256 0fc83d0c1d55d9286727fc948759730d23d792b9e34524dbe6669f0076879b25, 23 events. This is source implementation only; actual walled Viridian, roles, sprites, gameplay, rain, save/reload and Android remain blocked.",
-        "2026-10-31 PR #16 native source contract: private original Map016 event4 at (32,17) transfers to Map010 (25,20); Center is Map011 20x15. Installer now checks the actual staged Route22 transfer command, requires reviewed NPC roles and rejects intersecting escort routes/player triggers. Source-only; native compilation, map replacement and Android remain OPEN."
+        "2026-10-31 PR #16 native source contract: private original Map016 event4 at (32,17) transfers to Map010 (25,20); Center is Map011 20x15. Installer now checks the actual staged Route22 transfer command, requires reviewed NPC roles and rejects intersecting escort routes/player triggers. Source-only; native compilation, map replacement and Android remain OPEN.",
+        "2026-10-31 PR #16 merged into canonical main at bf7033a1735df30ebf81ff31c6f7eaec1de0549e; main combined validate and handoff CI passed. Private original v0.4 already includes POKEMON_NidoranMale.png (128x128 RGBA, SHA256 be788335090dfd7c41bfca9ef2a6b500503b262c10255550a22dc3694a98653c) and POKEMON_NidoranFemale.png (128x128 RGBA, SHA256 0ec909d181273024186052df7adee3caf5026de51970795d911a57a5c8716139); no explicit guard sprite was found. No native escort run."
       ],
-      "blocker": "Reviewed walled Viridian replacement and NPC identities/paths are still missing; source checks alone do not prove playable escort, rain or Center. PR #16 remains draft until actual native installation and runtime tests."
+      "blocker": "PR #16 is merged as source-only scaffolding, but the reviewed walled Viridian map, guard/Nidoran identities, licensed art and real native/runtime escort tests remain missing."
     },
     {
       "id": "SE-019",
       "title": "Complete Viridian raid, rescue, dojo tutorial and starter-choice events",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-018",
         "SE-008",
@@ -273,7 +274,12 @@
         "Murkrow rescue, Beedrill attack/chase without stacked encounters, NPC enters Center",
         "Dojo/befriending tutorial and starter questionnaire producing usable Vulpix, Staryu or Exeggcute companion",
         "Quest flags, starter uniqueness, recovery/resume and story lockout checks with game runtime"
-      ]
+      ],
+      "evidence": [
+        "Draft PR #17 (SE-019 dojo slice): native Essentials v21.1 starter questionnaire, no-ball recruitment, saved one-time award and guarded RMXP installer. Commit c8e3b72b passed 17 Ruby tests/47 assertions (dojo CI run 40961007164) and general integration CI run 40961007188; real native Essentials/Android gameplay and source dialogue/NPC roles still OPEN.",
+        "2026-10-31 PR #17 native dojo source fix: source-ROM NPC anchor (10x9 reference) is no longer assumed to equal an RMXP map position; reviewed native dimensions and tileset passages are now required, with blocked-tile and source/native geometry regression tests. Native installation, questionnaire parity, save/reload and Android remain unverified."
+      ],
+      "blocker": "Actual dojo native map, source NPC identity, licensed instructor art, original questionnaire parity, follower/quest integration and engine/runtime acceptance are not verified."
     },
     {
       "id": "SE-020",
@@ -314,7 +320,7 @@
       ],
       "evidence": [
         "2026-10-31 original v0.4 ZIP recovered locally (SHA256 c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e), 7,675 members; native MapInfos, Tilesets, System and three target maps parsed. It contains an old scripted MACHOP named HUMAN at Crystal Map222; never accept this as genuine HUMAN. New private native audit script/tests on integration branch; licensed HnS map and plugins remain unverified, no compiled candidate.",
-        "2026-10-31 original v0.4 ZIP rechecked locally: Game.ini uses Data/Scripts.rxdata; Plugins/v21.1 Hotfixes/meta.txt declares 1.0.3 (target 1.0.9), no licensed HnS gate mapping. PR #39 merged source-only, PR #40 under review adds strict source/output sprite SHA pins and atomic private writes. No native Essentials v21.1 build compiled or executed.",
+        "2026-10-31 original v0.4 ZIP rechecked locally: Game.ini uses Data/Scripts.rxdata; Plugins/v21.1 Hotfixes/meta.txt declares 1.0.3 (target 1.0.9), no licensed HnS gate mapping. PR #39 merged source-only, PR #40 merged as source-only and adds strict source/output sprite SHA pins and atomic private writes. No native Essentials v21.1 build compiled or executed.",
         "2026-10-31 actual private v0.4 Data/Scripts.rxdata SHA256 38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05: all 402 decompressed Ruby script sections syntax-compiled with MRI Ruby 3.3.8; Data/PluginScripts.rxdata SHA256 f2974f1973356a1b577f6c01a40712400804b4364529305e48b48d665879a7c0: 2 Hotfixes 1.0.3 plugin scripts syntax-compiled; 0 syntax failures. Added read-only source-free syntax preflight with 7 regression tests/14 assertions. This is NOT native Essentials engine compilation, gameplay, save/reload or Android evidence; Hotfixes 1.0.9 and HnS map remain blocked."
       ]
     },

@@ -1,0 +1,21 @@
+name: Shattered dojo starter isolated tests
+on:
+  pull_request:
+    paths:
+      - 'essentials/Plugins/Shattered Dojo/**'
+      - 'tests/test_dojo.rb'
+      - '.github/workflows/dojo-ci.yml'
+permissions:
+  contents: read
+jobs:
+  ruby:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ruby syntax
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Dojo/001_Starter.rb'
+          ruby -c 'essentials/Plugins/Shattered Dojo/002_Install.rb'
+      - name: Saved questionnaire and native event installer
+        run: ruby tests/test_dojo.rb
