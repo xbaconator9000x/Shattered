@@ -330,24 +330,6 @@
         "Original game remains intact, full dependency manifest and reproducible patch, regression evidence and asset rights verified",
         "No release marked integrated/complete without manual device and true game-engine execution"
       ]
-    },
-    {
-      "id": "SE-024",
-      "title": "Assemble source-pinned native initial-slice installer and reproducible private staging handoff",
-      "status": "blocked",
-      "depends_on": [
-        "SE-003"
-      ],
-      "validation": [
-        "Source lock and staged plugin/PBS hashes pass on exact main ancestry",
-        "Reviewed HnS/Route22 map IDs, exits, switch/variable allocations and rights-cleared assets supplied privately",
-        "Native RMXP installer executes in real Essentials v21.1 and produces an auditable receipt; test save/reload separately"
-      ],
-      "evidence": [
-        "PR #23 integration staging/native installer handoff merged at 06898ac3; PR #26 pinned-main ancestry repair merged at 6e2790da; combined synthetic CI passed 40987926371 and 40987926372.",
-        "No compiled game artifact or real native installer receipt; rights-cleared plugin archives, HnS art/metatiles and reviewed map allocations are still missing."
-      ],
-      "blocker": "Official Hotfixes 1.0.9, DBK 1.3.1 and Enhanced UI 2.1.1 archives not available as validated private bytes; HnS art/metatile mapping and target map allocations not reviewed; native Essentials v21.1 compile and runtime execution not performed."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
