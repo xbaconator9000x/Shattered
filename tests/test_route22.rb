@@ -144,7 +144,7 @@ class Route22InstallerTest < Minitest::Test
     assert_equal ShatteredRoute22::TRIGGERS.sort,
       map.events.values.select { |e| e.name.include?("trigger_") }.map { |e| [e.x,e.y] }.sort
     trigger=map.events.values.find { |e| e.name.end_with?("trigger_1") }
-    assert_equal [2,2,2], trigger.pages.map(&:trigger)
+    assert_equal [1,1,1], trigger.pages.map(&:trigger), "all pages must be RMXP Player Touch, not Event Touch"
     assert_equal [false,true,true], trigger.pages.map { |p| p.condition.switch1_valid }
     assert_equal [355,209,209,209,210,121,355,0], trigger.pages[0].list.map(&:code)
     assert_equal [355,0], trigger.pages[1].list.map(&:code)
