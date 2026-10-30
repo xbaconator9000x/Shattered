@@ -194,6 +194,14 @@ class MurkrowRescueTest < Minitest::Test
     assert_equal 1, $reward_count
   end
 
+  def test_runtime_accepts_native_hash_without_json_or_base64_decode
+    $confirm_results = [true, true]
+    $battle_results = [1]
+    assert ShatteredMurkrowRescue.run_event(JSON.parse(runtime_plan))
+    assert_equal :complete, ShatteredMurkrowRescue.state(@store)[:stage]
+    assert_equal 1, $reward_count
+  end
+
   def test_wild_rescue_battle_enforces_no_pokeballs
     $confirm_results = [true, true]
     $battle_results = [1]
@@ -431,6 +439,9 @@ class MurkrowRescueTest < Minitest::Test
       assert_equal plan["target_position"], [event.x, event.y]
       assert_equal 355, event.pages.first.list.first.code
       assert_match(/ShatteredMurkrowRescue\.run_event/, event.pages.first.list.first.parameters.first)
+      script = event.pages.first.list.first.parameters.first
+      refute_match(/Base64|JSON/, script)
+      assert_match(/"battle"\s*=>/, script)
     end
   end
 
