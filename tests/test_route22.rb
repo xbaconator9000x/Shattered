@@ -185,6 +185,35 @@ class Route22InstallerTest < Minitest::Test
     assert_equal before, File.binread("Data/Map042.rxdata")
   end
 
+  def test_reviewed_legacy_autorun_is_disabled_atomically_and_idempotently
+    native_v04_fixture(nil, true)
+    original = load_data("Data/Map042.rxdata").events[3]
+    @config["legacy_migration"] = {
+      "event_id" => 3, "event_name" => original.name,
+      "x" => 30, "y" => 17,
+      "event_sha256" => Digest::SHA256.hexdigest(Marshal.dump(original))
+    }
+    assert_equal 6, ShatteredRoute22.install(@config)["installed"]
+    map = load_data("Data/Map042.rxdata")
+    assert_equal 7, map.events.length
+    assert_equal ShatteredRoute22::LEGACY_DISABLED, map.events[3].name
+    assert_equal [0], map.events[3].pages.first.list.map(&:code)
+    before = File.binread("Data/Map042.rxdata")
+    assert_equal 6, ShatteredRoute22.install(@config)["unchanged"]
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_wrong_legacy_event_digest_cannot_mutate_map
+    native_v04_fixture(nil, true)
+    @config["legacy_migration"] = {
+      "event_id" => 3, "event_name" => "SHATTERED: Rattata ambush",
+      "x" => 30, "y" => 17, "event_sha256" => "0" * 64
+    }
+    before = File.binread("Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
   def test_native_adaptation_rejects_blocked_and_legacy_event
     native_v04_fixture([26, 17])
     before = File.binread("Data/Map042.rxdata")
