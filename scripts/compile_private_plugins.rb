@@ -84,6 +84,8 @@ module ShatteredPrivatePluginCompiler
       check(name.match?(/\A[A-Za-z0-9 _-]+\.rb\z/), "Unsafe plugin filename")
       source = File.binread(safe_file!(File.join(directory, name)))
       check(source.valid_encoding?, "Invalid plugin script bytes")
+      check(!source.lines.any? { |line| line.match?(/\Arequire\s+["\x27]/) },
+        "Native runtime script #{folder}/#{name} loads a top-level library; review mkxp compatibility")
       [name, Zlib::Deflate.deflate(source)]
     end
     [meta[:name], meta, packed]
