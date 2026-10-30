@@ -74,8 +74,10 @@ def reject_linked_destination(dest, path, overwrite):
         target = target / part
         if target.is_symlink():
             raise ValueError(f'archive destination contains symlink: {target}')
-    if overwrite and target.is_file():
-        info = target.stat()
+    if overwrite and target.exists():
+        # is_file() is false for FIFOs, sockets and directories. Opening a FIFO
+        # for writing could hang the staging job; reject every non-regular target.
+        info = target.lstat()
         if not stat.S_ISREG(info.st_mode) or info.st_nlink > 1:
             raise ValueError(f'unsafe archive overwrite target: {path}')
 
@@ -83,6 +85,7 @@ def reject_linked_destination(dest, path, overwrite):
 def safe_zip_install(archive, dest, plugin_id, overwrite=False):
     staged = []
     seen_paths = set()
+    seen_parent_paths = set()
     with zipfile.ZipFile(archive) as z:
         members = z.infolist()
         if len(members) > MAX_ENTRIES or sum(m.file_size for m in members) > MAX_ARCHIVE_BYTES:
@@ -96,9 +99,15 @@ def safe_zip_install(archive, dest, plugin_id, overwrite=False):
             path = clean_path(member.filename)
             if path is None or member.is_dir():
                 continue
-            if path in seen_paths:
-                raise ValueError(f'duplicate archive destination: {path}')
-            seen_paths.add(path)
+            # RPG Maker projects may be staged on case-insensitive filesystems.
+            # Reject case-only duplicates and file-vs-directory conflicts before
+            # writing any member, regardless of the current host filesystem.
+            key = tuple(part.casefold() for part in path.parts)
+            if (key in seen_paths or key in seen_parent_paths or
+                    any(key[:i] in seen_paths for i in range(1, len(key)))):
+                raise ValueError(f'duplicate or conflicting archive destination: {path}')
+            seen_paths.add(key)
+            seen_parent_paths.update(key[:i] for i in range(1, len(key)))
             reject_linked_destination(dest, path, overwrite)
             if path.parts[0] == 'PBS' and path.name == 'pokemon.txt':
                 raise ValueError('refusing to replace entire PBS/pokemon.txt')
