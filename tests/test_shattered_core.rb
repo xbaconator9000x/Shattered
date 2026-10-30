@@ -96,7 +96,7 @@ module Battle
       @disabled_move_ids = []
     end
     def pbCanChooseMove?(move, commandPhase, showMessages = true, specialUsage = false)
-      @base_allowed && !@disabled_move_ids.include?(move.id)
+      @base_allowed && !@disabled_move_ids.include?(move.id) && move.pp != 0
     end
     def pbReducePP(move)
       @base_pp_calls += 1
@@ -266,6 +266,53 @@ class ShatteredCoreTest < Minitest::Test
     battler.pbReducePPOther(move)
     assert_equal 10, move.pp
     assert_equal 1, battler.base_try_calls
+  end
+
+  def test_zero_native_pp_human_technique_uses_stamina_without_mutating_pp
+    human = Shattered.ensure_human(@player, 5)
+    Shattered.restore_stamina(human, @store)
+    begin_battle
+    battler = Battle::Battler.new(human)
+    move = MoveStub.new(:POUND, "Pound", 0)
+
+    assert battler.pbCanChooseMove?(move, true, false)
+    assert_equal 0, move.pp
+    assert battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
+    assert_equal 59, Shattered.stamina(human, @store)
+    assert_equal 0, move.pp
+    assert_equal 0, battler.base_pp_calls
+
+    companion = Battle::Battler.new(Pokemon.new(:AIPOM, 5))
+    companion_move = MoveStub.new(:POUND, "Pound", 0)
+    refute companion.pbCanChooseMove?(companion_move, true, false)
+    refute companion.pbTryUseMove(
+      [:UseMove, 0, companion_move], companion_move, false, false
+    )
+    assert_equal 0, companion_move.pp
+  end
+
+  def test_zero_pp_cannot_bypass_disable_or_insufficient_stamina
+    human = Shattered.ensure_human(@player, 5)
+    Shattered.restore_stamina(human, @store)
+    begin_battle
+    battler = Battle::Battler.new(human)
+    move = MoveStub.new(:POUND, "Pound", 0)
+
+    battler.disabled_move_ids = [:POUND]
+    refute battler.pbCanChooseMove?(move, true, false)
+    assert_equal 0, move.pp
+
+    battler.disabled_move_ids = []
+    @store.instance_variable_set(:@shattered_stamina, 0)
+    refute battler.pbCanChooseMove?(move, true, false)
+    assert_equal 0, move.pp
+    refute battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
+    assert_equal 0, Shattered.stamina(human, @store)
+    assert_equal 0, move.pp
+
+    unmapped = MoveStub.new(:NOT_A_MOVE, "Unknown", 0)
+    refute battler.pbCanChooseMove?(unmapped, true, false)
+    assert_equal 0, unmapped.pp
   end
 
   def test_insufficient_stamina_refuses_human_move
