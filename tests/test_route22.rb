@@ -150,11 +150,12 @@ class Route22InstallerTest < Minitest::Test
   end
   def native_v04_fixture(blocked = nil, legacy = false)
     positions = {
-      "triggers" => [[24, 17], [26, 17], [28, 17]],
-      "npcs" => [[25, 17], [27, 17], [29, 17]]
+      "triggers" => [[27, 16], [27, 17], [27, 18]],
+      "npcs" => [[29, 17], [29, 18], [28, 18]]
     }
     tiles = {}
     (positions["triggers"] + positions["npcs"]).each { |x, y| tiles[[x, y, 0]] = 385 }
+    tiles[[30, 17, 0]] = 385 # first Rattata scatter landing
     tiles[[blocked[0], blocked[1], 0]] = 384 if blocked
     events = {}
     if legacy
@@ -171,6 +172,7 @@ class Route22InstallerTest < Minitest::Test
     @config["native_dimensions"] = [54, 34]
     @config["reviewed_native_geometry"] = true
     @config["event_positions"] = positions
+    @config["scatter_moves"] = [3, 4, 3]
   end
 
   def test_native_adaptation_installs_six_and_is_idempotent
@@ -215,7 +217,7 @@ class Route22InstallerTest < Minitest::Test
   end
 
   def test_native_adaptation_rejects_blocked_and_legacy_event
-    native_v04_fixture([26, 17])
+    native_v04_fixture([27, 17])
     before = File.binread("Data/Map042.rxdata")
     assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
     assert_equal before, File.binread("Data/Map042.rxdata")
