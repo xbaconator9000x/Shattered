@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Shattered Core v0.2.2 — Pokémon Essentials 21.1.
+# Shattered Core v0.2.3 — Pokémon Essentials 21.1.
 # Does not override Pokemon#calc_stats. Battle hooks use Essentials v21.1 APIs.
 module Shattered
   HUMAN_SPECIES = :HUMAN
@@ -152,8 +152,41 @@ module Shattered
       true
     end
 
+    # The native Essentials v21.1 Battle::Move#pbCalcTypeMod(moveType,user,target)
+    # is the standard defensive type calculation used by battle damage and AI.
+    # HUMAN is stored as a genuine species with Normal PBS typing for data
+    # compatibility, but its defensive chart is intentionally non-standard.
+    def human_type_multiplier(move_type)
+      neutral = Effectiveness::NORMAL_EFFECTIVE_MULTIPLIER
+      return neutral if move_type.nil?
+      return 0 if HUMAN_MATCHUPS[:immune].include?(move_type)
+      return neutral / 2 if HUMAN_MATCHUPS[:resist].include?(move_type)
+      return neutral * 2 if HUMAN_MATCHUPS[:weak].include?(move_type)
+      neutral
+    end
+
+    def install_type_hooks
+      return false unless defined?(Battle::Move) &&
+                          Battle::Move.method_defined?(:pbCalcTypeMod)
+      move_class = Battle::Move
+      return true if move_class.method_defined?(:shattered_core_original_pb_calc_type_mod)
+      move_class.class_eval do
+        alias_method :shattered_core_original_pb_calc_type_mod, :pbCalcTypeMod
+        def pbCalcTypeMod(move_type, user, target)
+          # Shadow moves retain the engine's special effectiveness rule.
+          if move_type != :SHADOW && target && target.respond_to?(:pokemon) &&
+             Shattered.human?(target.pokemon)
+            return Shattered.human_type_multiplier(move_type)
+          end
+          shattered_core_original_pb_calc_type_mod(move_type, user, target)
+        end
+      end
+      true
+    end
+
     def install_battle_hooks
       install_capture_protection
+      install_type_hooks
       return false unless defined?(Battle::Battler)
       battler_class = Battle::Battler
       return true if battler_class.method_defined?(:shattered_core_original_pb_try_use_move)
@@ -164,11 +197,26 @@ module Shattered
         alias_method :shattered_core_original_pb_reduce_pp_other, :pbReducePPOther
 
         def pbCanChooseMove?(move, commandPhase, showMessages = true, specialUsage = false)
-          allowed = shattered_core_original_pb_can_choose_move(
-            move, commandPhase, showMessages, specialUsage
-          )
-          return false unless allowed
           human = instance_variable_get(:@pokemon)
+          # Essentials checks native move PP before any Shattered stamina check.
+          # A HUMAN technique with zero native PP must still be selectable if
+          # shared stamina can pay for it. Borrow one PP ONLY while running the
+          # original legality checks (Disable, Encore, etc.), then restore it.
+          # Never borrow PP for a companion, an unmapped technique or Struggle.
+          borrow_pp = Shattered.human?(human) && move.respond_to?(:pp) &&
+            move.respond_to?(:pp=) && move.pp == 0 &&
+            move.id != Shattered::STRUGGLE &&
+            Shattered.can_spend_stamina?(human, move.id)
+          original_pp = move.pp if borrow_pp
+          begin
+            move.pp = 1 if borrow_pp
+            allowed = shattered_core_original_pb_can_choose_move(
+              move, commandPhase, showMessages, specialUsage
+            )
+          ensure
+            move.pp = original_pp if borrow_pp
+          end
+          return false unless allowed
           return true unless Shattered.human?(human)
           return true if Shattered.can_spend_stamina?(human, move.id)
           if showMessages

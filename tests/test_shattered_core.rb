@@ -1,4 +1,5 @@
 require "minitest/autorun"
+require "json"
 
 class Pokemon
   attr_accessor :species, :level, :name
@@ -82,9 +83,21 @@ module ItemHandlers
 end
 ItemHandlers::CanUseInBattle.add(:POTION, proc { true })
 
+module Effectiveness
+  NORMAL_EFFECTIVE_MULTIPLIER = 2
+end
+
 module Battle
+  class Move
+    attr_reader :native_type_calls
+    def pbCalcTypeMod(move_type, user, target)
+      @native_type_calls = (@native_type_calls || 0) + 1
+      :native_type_chart
+    end
+  end
+
   class Battler
-    attr_reader :base_try_calls, :base_pp_calls, :battle
+    attr_reader :base_try_calls, :base_pp_calls, :battle, :pokemon
     attr_accessor :base_allowed, :base_result, :disabled_move_ids
     def initialize(pokemon)
       @pokemon = pokemon
@@ -96,7 +109,7 @@ module Battle
       @disabled_move_ids = []
     end
     def pbCanChooseMove?(move, commandPhase, showMessages = true, specialUsage = false)
-      @base_allowed && !@disabled_move_ids.include?(move.id)
+      @base_allowed && !@disabled_move_ids.include?(move.id) && move.pp != 0
     end
     def pbReducePP(move)
       @base_pp_calls += 1
@@ -266,6 +279,53 @@ class ShatteredCoreTest < Minitest::Test
     battler.pbReducePPOther(move)
     assert_equal 10, move.pp
     assert_equal 1, battler.base_try_calls
+  end
+
+  def test_zero_native_pp_human_technique_uses_stamina_without_mutating_pp
+    human = Shattered.ensure_human(@player, 5)
+    Shattered.restore_stamina(human, @store)
+    begin_battle
+    battler = Battle::Battler.new(human)
+    move = MoveStub.new(:POUND, "Pound", 0)
+
+    assert battler.pbCanChooseMove?(move, true, false)
+    assert_equal 0, move.pp
+    assert battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
+    assert_equal 59, Shattered.stamina(human, @store)
+    assert_equal 0, move.pp
+    assert_equal 0, battler.base_pp_calls
+
+    companion = Battle::Battler.new(Pokemon.new(:AIPOM, 5))
+    companion_move = MoveStub.new(:POUND, "Pound", 0)
+    refute companion.pbCanChooseMove?(companion_move, true, false)
+    refute companion.pbTryUseMove(
+      [:UseMove, 0, companion_move], companion_move, false, false
+    )
+    assert_equal 0, companion_move.pp
+  end
+
+  def test_zero_pp_cannot_bypass_disable_or_insufficient_stamina
+    human = Shattered.ensure_human(@player, 5)
+    Shattered.restore_stamina(human, @store)
+    begin_battle
+    battler = Battle::Battler.new(human)
+    move = MoveStub.new(:POUND, "Pound", 0)
+
+    battler.disabled_move_ids = [:POUND]
+    refute battler.pbCanChooseMove?(move, true, false)
+    assert_equal 0, move.pp
+
+    battler.disabled_move_ids = []
+    @store.instance_variable_set(:@shattered_stamina, 0)
+    refute battler.pbCanChooseMove?(move, true, false)
+    assert_equal 0, move.pp
+    refute battler.pbTryUseMove([:UseMove, 0, move], move, false, false)
+    assert_equal 0, Shattered.stamina(human, @store)
+    assert_equal 0, move.pp
+
+    unmapped = MoveStub.new(:NOT_A_MOVE, "Unknown", 0)
+    refute battler.pbCanChooseMove?(unmapped, true, false)
+    assert_equal 0, unmapped.pp
   end
 
   def test_insufficient_stamina_refuses_human_move
@@ -476,6 +536,57 @@ class ShatteredCoreTest < Minitest::Test
     assert_equal 62, Shattered.stamina(human, @store)
     assert_equal 65, Shattered.restore_stamina(human, @store)
     assert_equal 65, Shattered.stamina(human, @store)
+  end
+
+  def test_core_metadata_version_matches_manifest
+    root = File.expand_path("..", __dir__)
+    metadata = File.read(File.join(root, "essentials/Plugins/Shattered Core/meta.txt"))
+    version = metadata[/^Version\s*=\s*(\S+)$/, 1]
+    manifest = JSON.parse(File.read(File.join(root, "development/plugin_manifest.json")))
+    entry = manifest.fetch("plugins").find { |item| item["id"] == "shattered_core" }
+    refute_nil entry
+    assert_equal "0.2.3", version
+    assert_equal version, entry.fetch("version")
+    assert_equal false, entry.fetch("runtime_verified")
+  end
+
+  def test_human_defensive_type_chart_uses_essentials_move_calculation
+    human = Shattered.ensure_human(@player, 5)
+    human_battler = Battle::Battler.new(human)
+    companion_battler = Battle::Battler.new(Pokemon.new(:RATTATA, 5))
+    begin_battle
+    move = Battle::Move.new
+    expected = {
+      :FAIRY => 0, :GHOST => 0, :DRAGON => 0,
+      :DARK => 1, :PSYCHIC => 1, :BUG => 1,
+      :FIRE => 4, :ICE => 4, :ELECTRIC => 4,
+      :POISON => 4, :STEEL => 4, :ROCK => 4, :FIGHTING => 4,
+      :NORMAL => 2, :WATER => 2, :GRASS => 2, :GROUND => 2,
+      :FLYING => 2
+    }
+    expected.each do |type, multiplier|
+      assert_equal multiplier, move.pbCalcTypeMod(type, companion_battler, human_battler),
+        "HUMAN defensive modifier for #{type}"
+    end
+    assert_equal 2, move.pbCalcTypeMod(nil, companion_battler, human_battler)
+    assert_nil move.native_type_calls
+    assert_equal :native_type_chart,
+      move.pbCalcTypeMod(:SHADOW, companion_battler, human_battler)
+    assert_equal :native_type_chart,
+      move.pbCalcTypeMod(:GHOST, human_battler, companion_battler)
+    assert_equal 2, move.native_type_calls
+  end
+
+  def test_human_type_hook_is_idempotent_and_preserves_native_method
+    human = Shattered.ensure_human(@player, 5)
+    begin_battle
+    original = Battle::Move.instance_method(:shattered_core_original_pb_calc_type_mod)
+    begin_battle
+    assert_equal original, Battle::Move.instance_method(:shattered_core_original_pb_calc_type_mod)
+    move = Battle::Move.new
+    assert_equal 0, move.pbCalcTypeMod(:DRAGON, nil, Battle::Battler.new(human))
+    assert_equal :native_type_chart,
+      move.pbCalcTypeMod(:DRAGON, nil, Battle::Battler.new(Pokemon.new(:AIPOM, 5)))
   end
 
   def test_equipment_contract
