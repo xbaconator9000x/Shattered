@@ -131,6 +131,35 @@ class StagingTest(unittest.TestCase):
             safe_zip_install(archive, self.project, 'following_pokemon_ex')
         self.assertFalse((self.project / 'Plugins/Following Pokemon EX').exists())
 
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'POSIX FIFO support required')
+    def test_archive_overwrite_fifo_rejected_before_open(self):
+        fifo = self.project / 'Plugins' / 'blocked_pipe'
+        os.mkfifo(fifo)
+        archive = self.root / 'fifo.zip'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('Plugins/blocked_pipe', 'must not block')
+        with self.assertRaisesRegex(ValueError, 'unsafe archive overwrite target'):
+            safe_zip_install(archive, self.project, 'hotfixes', overwrite=True)
+        self.assertTrue(fifo.exists())
+
+    def test_case_only_archive_destination_collision_rejected_before_writes(self):
+        archive = self.root / 'casefold.zip'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('Plugins/Follower/meta.txt', 'first')
+            z.writestr('plugins/follower/META.TXT', 'second')
+        with self.assertRaisesRegex(ValueError, 'duplicate archive destination'):
+            safe_zip_install(archive, self.project, 'following_pokemon_ex')
+        self.assertFalse((self.project / 'Plugins/Follower').exists())
+
+    def test_file_directory_archive_collision_rejected_before_writes(self):
+        archive = self.root / 'parent-conflict.zip'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('Plugins/Blocked', 'first')
+            z.writestr('Plugins/Blocked/meta.txt', 'second')
+        with self.assertRaisesRegex(ValueError, 'duplicate archive destination'):
+            safe_zip_install(archive, self.project, 'following_pokemon_ex')
+        self.assertFalse((self.project / 'Plugins/Blocked').exists())
+
     def test_clean_plugin_archive_and_dependency(self):
         p = self.root / 'follower.zip'
         with zipfile.ZipFile(p, 'w') as z:
