@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Shattered Core v0.2.2 — Pokémon Essentials 21.1.
+# Shattered Core v0.2.3 — Pokémon Essentials 21.1.
 # Does not override Pokemon#calc_stats. Battle hooks use Essentials v21.1 APIs.
 module Shattered
   HUMAN_SPECIES = :HUMAN
