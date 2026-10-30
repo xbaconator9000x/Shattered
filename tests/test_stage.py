@@ -146,7 +146,7 @@ class StagingTest(unittest.TestCase):
         archive = self.root / 'casefold.zip'
         with zipfile.ZipFile(archive, 'w') as z:
             z.writestr('Plugins/Follower/meta.txt', 'first')
-            z.writestr('plugins/follower/META.TXT', 'second')
+            z.writestr('Plugins/follower/META.TXT', 'second')
         with self.assertRaisesRegex(ValueError, 'duplicate archive destination'):
             safe_zip_install(archive, self.project, 'following_pokemon_ex')
         self.assertFalse((self.project / 'Plugins/Follower').exists())
