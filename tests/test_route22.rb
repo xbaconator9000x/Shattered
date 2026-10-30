@@ -303,7 +303,7 @@ class Route22InstallerTest < Minitest::Test
     assert_equal [false,true,true], trigger.pages.map { |p| p.condition.switch1_valid }
     assert_equal [355,209,209,209,210,121,355,0], trigger.pages[0].list.map(&:code)
     assert_equal [355,0], trigger.pages[1].list.map(&:code)
-    assert_equal [0], trigger.pages[2].list.map(&:code)
+    assert_equal [355,0], trigger.pages[2].list.map(&:code)
     assert_equal [3,4,1], trigger.pages[0].list.select { |c| c.code == 209 }.map { |c| c.parameters[1].list[0].code }
     assert_equal [92,92,0], trigger.pages[0].list.find { |c| c.code == 121 }.parameters
     assert_equal 93, trigger.pages[2].condition.switch1_id
