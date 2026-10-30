@@ -187,7 +187,7 @@
     {
       "id": "SE-016",
       "title": "Implement Johto collapse cinematic, Aipom key and persistent blocked entrance",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-013",
         "SE-015",
@@ -197,7 +197,12 @@
         "Recreate timed tremors/roars/impacts, falling rock blocker and correct directional messages",
         "Aipom with shiny held key, facing/cry/exclamation, event interaction, item pickup and stable state",
         "Test revisit, interruptions, save/restore, no duplicated rewards or softlocks"
-      ]
+      ],
+      "evidence": [
+        "Draft PR SE-016 gate story: native RMXP event installer for verified south exit, six resumable sound beats, persistent Aipom key flag, original key-item PBS staging, Ruby synthetic map tests (10 tests/42 assertions) and Python PBS tests (4); in-engine and Android tests OPEN.",
+        "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified."
+      ],
+      "blocker": "Requires PR #10 HnS map conversion and actual licensed tiles/audio/sprite, verified south exit coordinates, native Essentials v21.1 compilation and device playtest; cannot yet install on original or call scene complete."
     },
     {
       "id": "SE-017",
