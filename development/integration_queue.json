@@ -322,6 +322,24 @@
         "Original game remains intact, full dependency manifest and reproducible patch, regression evidence and asset rights verified",
         "No release marked integrated/complete without manual device and true game-engine execution"
       ]
+    },
+    {
+      "id": "SE-030",
+      "title": "Pin and install the reviewed HnS New Game spawn in native RPG::System",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-013"
+      ],
+      "validation": [
+        "Private System.rxdata baseline hash matches reviewed input",
+        "Native HnS tile passability and event occupancy checked",
+        "System.rxdata included in rollback and installed-file receipt",
+        "Actual native New Game spawn, movement and save/reload verified"
+      ],
+      "evidence": [
+        "PR #31: source-level handoff and native installer transaction changes; Python/Ruby fixture tests; native execution not yet verified"
+      ],
+      "blocker": "Requires real rights-cleared v0.4 System.rxdata, attested HnS landing tile and native Essentials runtime to confirm movement/collision and save persistence."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
