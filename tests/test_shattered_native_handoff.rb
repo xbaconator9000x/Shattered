@@ -181,7 +181,7 @@ class ShatteredNativeHandoffTest < Minitest::Test
     @plan = {
       "map_targets" => {
         "reception_gate" => {"id" => @gate_id},
-        "route22" => {"id" => @route_id}
+        "route22" => {"id" => @route_id, "dimensions" => [48, 24]}
       },
       "route22_reserved_positions" => ShatteredInitialSlice::ROUTE22_RESERVED,
       "new_game_spawn" => {"map_id" => @gate_id, "x" => 5, "y" => 5,
