@@ -43,6 +43,10 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Equipment/001_Equipment.rb'
           ruby tests/test_equipment.rb
           ruby tests/test_equipment_core_integration.rb
+      - name: Private native RMXP inventory regression (synthetic fixtures only)
+        run: |
+          ruby -c scripts/audit_native_project.rb
+          ruby tests/test_native_project_audit.rb
       - name: World-link native installer syntax and unit tests
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'
