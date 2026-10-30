@@ -1,0 +1,32 @@
+name: Shattered Murkrow rescue native-source tests
+
+on:
+  push:
+    paths:
+      - 'essentials/Plugins/Shattered Murkrow Rescue/**'
+      - 'essentials/Plugins/Shattered Core/**'
+      - 'tests/test_murkrow_rescue.rb'
+      - '.github/workflows/murkrow-ci.yml'
+  pull_request:
+    paths:
+      - 'essentials/Plugins/Shattered Murkrow Rescue/**'
+      - 'essentials/Plugins/Shattered Core/**'
+      - 'tests/test_murkrow_rescue.rb'
+      - '.github/workflows/murkrow-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  murkrow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Murkrow plugin syntax
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Murkrow Rescue/001_Quest.rb'
+          ruby -c 'essentials/Plugins/Shattered Murkrow Rescue/002_Install.rb'
+      - name: Run Murkrow rescue state, no-capture and native installer regressions
+        run: ruby tests/test_murkrow_rescue.rb
