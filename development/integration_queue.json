@@ -370,6 +370,20 @@
         "PR #25: opt-in stage_essentials --include-equipment fails closed when gear/move PBS IDs are missing and preserves original project"
       ],
       "blocker": "Default gear item PBS definitions and rights-cleared base not verified in native project; no actual compiled Essentials battle, equipment UI, item ownership or save/reload evidence."
+    },
+    {
+      "id": "SE-019B",
+      "title": "Integrate retryable non-stacking Beedrill raid source with real HUMAN Core",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-004",
+        "SE-018"
+      ],
+      "evidence": [
+        "PR #19 raid source and isolated Ruby tests rebased onto canonical main with genuine Core compatibility regression, not native engine validation",
+        "Pending source CI and native Viridian map/quest acceptance"
+      ],
+      "blocker": "Requires reviewed Viridian 48x40 map, sprites, native event installation, actual HUMAN battle, save/reload and Android execution. Source-only Ruby tests cannot close gameplay gates."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
