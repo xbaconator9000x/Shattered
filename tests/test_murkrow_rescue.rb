@@ -67,6 +67,8 @@ def pbConfirmMessage(_message)
 end
 
 def pbWildBattle(*_arguments)
+  raise "Wild battle was started without the no-capture rule" unless
+    $battle_rules.include?("disablePokeBalls")
   result = $battle_results.shift
   raise "fixture battle interruption" if result == :raise
   result
@@ -76,6 +78,11 @@ def pbTrainerBattle(*_arguments)
   result = $battle_results.shift
   raise "fixture battle interruption" if result == :raise
   result
+end
+
+def setBattleRule(rule)
+  raise "fixture battle-rule failure" if $fail_battle_rule
+  $battle_rules << rule
 end
 
 def pbReceiveItem(_item, _quantity)
@@ -96,6 +103,8 @@ class MurkrowRescueTest < Minitest::Test
     $confirm_results = []
     $reward_count = 0
     $fail_map_save = false
+    $battle_rules = []
+    $fail_battle_rule = false
   end
 
   def test_loss_flee_and_interruption_leave_encounter_retryable
@@ -153,6 +162,25 @@ class MurkrowRescueTest < Minitest::Test
     assert ShatteredMurkrowRescue.run_event(runtime_plan)
     assert_equal 1, @player.party.count { |pokemon| pokemon.species == :MURKROW }
     assert_equal 1, $reward_count
+  end
+
+  def test_wild_rescue_battle_enforces_no_pokeballs
+    $confirm_results = [true, true]
+    $battle_results = [true]
+    assert ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal ["disablePokeBalls"], $battle_rules
+  end
+
+  def test_failed_battle_rule_does_not_start_rescue_or_complete_it
+    $confirm_results = [true]
+    $battle_results = [true]
+    $fail_battle_rule = true
+    refute ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    assert_empty $battle_rules
+    assert_equal [true], $battle_results
+    assert_equal 0, $reward_count
+    assert_equal 1, @player.party.length
   end
 
   def test_event_battle_loss_or_abort_can_be_retried
