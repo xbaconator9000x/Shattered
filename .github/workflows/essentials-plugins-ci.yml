@@ -65,6 +65,10 @@ jobs:
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'
           ruby tests/test_world_links.rb
+      - name: Private native-format PluginScripts archive compiler regressions
+        run: |
+          ruby -c scripts/compile_private_plugins.rb
+          ruby tests/test_private_plugin_compiler.rb
       - name: Smoke test staged project output
         run: |
           mkdir -p /tmp/base/PBS
