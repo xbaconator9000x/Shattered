@@ -68,6 +68,20 @@ class PrivatePluginCompilerTest < Minitest::Test
     end
   end
 
+  def test_refuses_top_level_runtime_require_before_any_archive_write
+    with_stage do |root|
+      source = File.join(root, "Plugins/Shattered Core/001_Core.rb")
+      File.write(source, "require 'json'\nmodule Shattered; end\n")
+      target = File.join(root, "Data/PluginScripts.rxdata")
+      before = File.binread(target)
+      error = assert_raises(RuntimeError) do
+        ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      end
+      assert_match(/top-level library/, error.message)
+      assert_equal before, File.binread(target)
+    end
+  end
+
   def test_refuses_unreviewed_runtime_source_file
     with_stage do |root|
       File.write(File.join(root, "Plugins/Shattered Core/002_Unknown.rb"), "raise 'unsafe'\n")
