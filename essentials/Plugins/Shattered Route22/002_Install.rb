@@ -32,12 +32,12 @@ module ShatteredRoute22
     %w[triggers npcs].each do |kind|
       points = positions[kind]
       raise ArgumentError, "Route22 requires exactly three #{kind}" unless
-        points.is_a?(Array) && points.length == 3 && points.all? do |point|
+        points.is_a?(Array) && points.length == 3 && points.all? { |point|
           point.is_a?(Array) && point.length == 2 &&
             point[0].instance_of?(Integer) && point[1].instance_of?(Integer) &&
             point[0].between?(0, dimensions[0] - 1) &&
             point[1].between?(0, dimensions[1] - 1)
-        end
+        }
     end
     all = positions["triggers"] + positions["npcs"]
     raise ArgumentError, "duplicate Route22 event position" unless all.uniq.length == 6
