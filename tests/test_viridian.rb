@@ -133,7 +133,7 @@ class ViridianInstallerTest < Minitest::Test
       "nidoran"=>{"source_event_id"=>"3.1:npc:8","source_position"=>[18,9],"x"=>18,"y"=>9,"character"=>"Nidoran"},
       "guard_path"=>[[9,16],[10,16],[10,17]],
       "nidoran_path"=>[[18,9],[17,9],[17,10]],
-      "entry_source_marker"=>[0,17],"entry_trigger"=>[2,17],
+      "entry_source_marker"=>[0,17],"entry_trigger"=>[2,17], "native_warp_landing"=>[1,17],
       "finish_trigger"=>[12,16],"rain_controller"=>[3,3],
       "center_trigger"=>[7,5],
       "switches"=>{"started"=>101,"arrived"=>102,"center"=>103,"rain"=>104}
@@ -189,6 +189,7 @@ class ViridianInstallerTest < Minitest::Test
     @config["guard_path"] = [[27,20],[28,20],[28,19]]
     @config["nidoran_path"] = [[28,21],[29,21],[29,20]]
     @config["entry_trigger"] = [25,20]
+    @config["native_warp_landing"] = [24,20]
     @config["finish_trigger"] = [30,20]
     assert_equal 6, ShatteredViridian.install(@config)["installed"]
     city = load_data("Data/Map041.rxdata")
@@ -202,6 +203,13 @@ class ViridianInstallerTest < Minitest::Test
     @config["native_entrance_reviewed"] = true
     @config["native_city_dimensions"] = [48,40]
     assert_raises(RuntimeError) { ShatteredViridian.install(@config) }
+  end
+  def test_player_touch_entry_cannot_be_on_warp_landing
+    @config["native_warp_landing"] = @config["entry_trigger"].dup
+    error=assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
+    assert_match(/adjacent to/,error.message)
+    @config["native_warp_landing"] = [40,20]
+    assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
   end
   def test_bad_route_and_unreviewed_passability_rejected
     @config["guard_path"]=[[9,16],[12,16]]
