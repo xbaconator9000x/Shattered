@@ -8,7 +8,9 @@ module ShatteredMurkrowRescue
   SPECIES = :MURKROW
   STAGES = [:undiscovered, :discovered, :battle_pending, :befriending,
             :recruited, :complete].freeze
-  BATTLE_HOOKS = ["pbWildBattle", "pbTrainerBattle"].freeze
+  # Essentials v21.1 uses WildBattle/TrainerBattle.start_core for numeric outcomes.
+  # The obsolete pbWildBattle/pbTrainerBattle event APIs do not exist in v21.1.
+  BATTLE_HOOKS = ["WildBattle.start_core", "TrainerBattle.start_core"].freeze
   ITEM_PATTERN = /\A[A-Z][A-Z0-9_]*\z/
   SYMBOL_PATTERN = /\A[A-Z][A-Z0-9_]*\z/
   STATE_IVAR = :@shattered_murkrow_rescue
@@ -155,6 +157,12 @@ module ShatteredMurkrowRescue
       BATTLE_HOOKS.include?(battle["hook"]) && battle["arguments"].is_a?(Array) &&
       battle["arguments"].length.between?(1, 10)
     battle["arguments"].each { |argument| validate_battle_argument!(argument) }
+    if battle["hook"] == "WildBattle.start_core"
+      args = battle["arguments"]
+      raise ArgumentError, "Wild rescue must battle Murkrow at a reviewed level" unless
+        args.length == 2 && args[0] == { "symbol" => "MURKROW" } &&
+        args[1].instance_of?(Integer) && args[1].between?(1, 100)
+    end
     true
   end
 
@@ -181,22 +189,31 @@ module ShatteredMurkrowRescue
     end
   end
 
+  def self.battle_receiver(battle)
+    case battle["hook"]
+    when "WildBattle.start_core"
+      return WildBattle if defined?(WildBattle) && WildBattle.respond_to?(:start_core)
+    when "TrainerBattle.start_core"
+      return TrainerBattle if defined?(TrainerBattle) && TrainerBattle.respond_to?(:start_core)
+    end
+    nil
+  end
+
   def self.run_battle!(battle)
     validate_battle!(battle)
-    hook = battle["hook"].to_sym
-    receiver = Object.new
-    raise "Essentials battle hook unavailable: #{battle['hook']}" unless
-      receiver.respond_to?(hook, true)
+    receiver = battle_receiver(battle)
+    raise "Essentials v21.1 battle entry unavailable: #{battle['hook']}" unless receiver
     arguments = battle["arguments"].map { |argument| decode_battle_argument(argument) }
-    # No-Pokéball Shattered encounters must never fall back to ordinary wild
-    # battles when the Essentials battle-rule hook is missing. The rule is
-    # applied immediately before starting the battle, not at quest discovery.
-    if hook == :pbWildBattle
+    if battle["hook"] == "WildBattle.start_core"
+      rules = Object.new
       raise "Essentials no-capture battle rule unavailable" unless
-        receiver.respond_to?(:setBattleRule, true)
-      receiver.send(:setBattleRule, "disablePokeBalls")
+        rules.respond_to?(:setBattleRule, true)
+      rules.send(:setBattleRule, "disablePokeBalls")
     end
-    receiver.send(hook, *arguments)
+    # start_core returns the actual Essentials decision (1 victory, 2 loss,
+    # 3 escape, 4 capture, 5 draw). WildBattle.start returns true for escape
+    # and capture as well as victory, so never use its boolean for quest flags.
+    receiver.start_core(*arguments) == 1
   end
 
   def self.run_event(encoded_plan)
@@ -210,7 +227,7 @@ module ShatteredMurkrowRescue
       Object.new.respond_to?(:pbConfirmMessage, true)
     unless defined?(Shattered) && Shattered.respond_to?(:befriend) &&
            Object.new.respond_to?(:pbReceiveItem, true) &&
-           Object.new.respond_to?(plan["battle"]["hook"].to_sym, true)
+           battle_receiver(plan["battle"])
       Object.new.send(:pbMessage, "The rescue cannot continue until its game integrations are available.")
       return false
     end
@@ -221,7 +238,7 @@ module ShatteredMurkrowRescue
       return false unless Object.new.send(:pbConfirmMessage, "Will you step in?")
       begin_battle!
       begin
-        won = run_battle!(plan["battle"]) == true
+        won = run_battle!(plan["battle"])
         finish_battle!(won)
       rescue StandardError
         interrupt!
