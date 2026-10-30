@@ -347,16 +347,17 @@
       "evidence": [
         "PR #31: source-level handoff and native installer transaction changes; Python/Ruby fixture tests; native execution not yet verified",
         "PR #31 commits 9b86e779 and 7c1a35cb: reject partial directional collision flags on any occupied start-tile layer, with floor and upper-layer Ruby regression cases; both final-head Actions checks 41043252464 and 41043252551 passed on 7c1a35cb. This is source/synthetic verification only.",
-        "Private full and Android Lite v0.4 source archives located in Library on 2026-10-30, but both raw-byte materialisation attempts returned 'does not have an authorized raw-byte materialization path'; no native game candidate assembled."
+        "Private full and Android Lite v0.4 source archives located in Library on 2026-10-30, but both raw-byte materialisation attempts returned 'does not have an authorized raw-byte materialization path'; no native game candidate assembled.",
+        "PR #33 merged to main at 51314e6b65aa99f20220aa9c038e961e734f59b1; preserves Aipom cry-path regression coverage removed by earlier conflict resolution. Source CI on PR head ea19bd05: validate 41050376695 and synthetic-contract 41050376678 both passed; combined main synthetic contract 41050453615 and plugins CI 41050453381 passed. Native runtime, actual spawn tile and save/reload remain unverified."
       ],
-      "blocker": "Requires real rights-cleared v0.4 System.rxdata, attested HnS landing tile and native Essentials runtime to confirm movement/collision and save persistence."
+      "blocker": "Requires rights-cleared v0.4 System.rxdata with verified hash, licensed HnS tileset mapping, independently attested native spawn tile and a working Essentials v21.1 runtime for actual movement, collision and save/reload. Earlier Library raw-byte materialisation was not authorised."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
   "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%.",
-  "last_verified_source_main_sha": "6e2790dae31634e22e824df023f5191dbc55e353",
+  "last_verified_source_main_sha": "51314e6b65aa99f20220aa9c038e961e734f59b1",
   "last_verified_source_ci": [
-    40987926371,
-    40987926372
+    41050453615,
+    41050453381
   ]
 }
