@@ -49,6 +49,7 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
                      "Graphics/Characters", "PBS", "Plugins"):
             (self.project / path).mkdir(parents=True, exist_ok=True)
         (self.project / "Data/Tilesets.rxdata").write_bytes(b"synthetic tilesets")
+        (self.project / "Data/System.rxdata").write_bytes(b"synthetic original RPG System")
 
         png_header = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\x0dIHDR" + struct.pack(">II", 256, 32)
         for asset_id in profile["assets"]:
@@ -210,6 +211,11 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
                     "map_info_reviewed": True,
                 },
             },
+            "new_game_spawn": {
+                "map_id": gate_id, "x": 5, "y": 5,
+                "reviewed": True, "passability_attested": True,
+                "system_sha256": integration.sha256(self.project / "Data/System.rxdata"),
+            },
             "required_existing_maps": existing_maps,
             "switch_ids": switch_ids,
             "variable_ids": variable_ids,
@@ -275,12 +281,43 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
         self.assertFalse(result["native_execution_verified"])
         self.assertFalse(plan["gameplay_verified"])
         self.assertEqual(handoff.INSTALL_ORDER, plan["installer_apis"])
+        self.assertEqual({"map_id": self.native_plan["map_targets"]["reception_gate"]["id"],
+                          "x": 5, "y": 5, "reviewed": True, "passability_attested": True},
+                         plan["new_game_spawn"])
+        self.assertEqual(integration.sha256(self.project / "Data/System.rxdata"),
+                         plan["baseline_hashes"]["Data/System.rxdata"])
         merged_ten = next(item for item in plan["source_pins"] if item["id"] == 10)
         self.assertEqual(self.manifest["main"]["commit"], merged_ten["source_commit"])
         runner = (self.project / "Plugins/Shattered Initial Slice Installer/001_Install.rb").read_text()
         self.assertIn(result["plan_sha256"], runner)
         self.assertEqual(self.base_digest, integration.project_tree_digest(self.root / "project"))
         self.assertTrue((self.project / "Plugins/Shattered HnS Gate/reception_gate.json").is_file())
+
+    def test_rejects_unreviewed_occupied_and_out_of_bounds_new_game_spawn(self):
+        cases = [
+            ({"reviewed": False}, "explicitly reviewed"),
+            ({"passability_attested": False}, "explicitly reviewed"),
+            ({"map_id": self.native_plan["map_targets"]["route22"]["id"]}, "HnS gate map ID"),
+            ({"x": 22}, "outside the HnS reception gate"),
+            ({"y": -1}, "outside the HnS reception gate"),
+            ({"x": 11, "y": 19}, "overlaps an HnS exit"),
+            ({"x": 9, "y": 11}, "overlaps a Gate Story event"),
+            ({"x": 3, "y": 3}, "overlaps a world-link event"),
+            ({"x": 4, "y": 4}, "overlaps a world-link landing"),
+            ({"system_sha256": "0" * 64}, "System.rxdata hash differs"),
+        ]
+        for changes, expected in cases:
+            with self.subTest(changes=changes):
+                invalid = copy.deepcopy(self.native_plan)
+                invalid["new_game_spawn"].update(changes)
+                with self.assertRaisesRegex(integration.IntegrationError, expected):
+                    self._prepare(invalid)
+
+    def test_rejects_modified_original_system_data(self):
+        system = self.project / "Data/System.rxdata"
+        system.write_bytes(b"modified since reviewed baseline")
+        with self.assertRaisesRegex(integration.IntegrationError, "System.rxdata hash differs"):
+            self._prepare()
 
     def test_reuses_original_private_aipom_cry_from_cries_subdirectory(self):
         source = self.inputs / self.stage_plan["assets"]["aipom_cry"]["source"]

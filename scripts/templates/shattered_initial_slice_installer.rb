@@ -161,6 +161,13 @@ module ShatteredInitialSlice
     check(configs["route22"]["expected_map_sha256"] == route["sha256"] &&
       route["sha256"].match?(/\A[0-9a-f]{64}\z/),
       "Route22 base map SHA256 differs from the reviewed plan")
+    spawn = plan["new_game_spawn"]
+    check(spawn.is_a?(Hash) && spawn.keys.sort == %w[map_id x y reviewed passability_attested].sort &&
+      spawn["map_id"] == gate_id && spawn["reviewed"] == true &&
+      spawn["passability_attested"] == true &&
+      spawn["x"].is_a?(Integer) && spawn["y"].is_a?(Integer) &&
+      spawn["x"].between?(0, 21) && spawn["y"].between?(0, 20),
+      "Reviewed HnS New Game spawn is missing or out of bounds")
     resources = plan["resource_ids"]
     check(configs["route22"]["scatter_switch"] == resources["switches"]["route22_scatter"] &&
       configs["route22"]["cleared_switch"] == resources["switches"]["route22_cleared"] &&
@@ -235,6 +242,11 @@ module ShatteredInitialSlice
     check(map_infos.key?(route_id) || map_infos.key?(route_id.to_s),
       "Route22 MapInfo is missing")
     check(File.file?("Data/Tilesets.rxdata"), "Native Tilesets.rxdata is missing")
+    system = load_native("Data/System.rxdata")
+    check(system.respond_to?(:start_map_id) && system.respond_to?(:start_x) &&
+      system.respond_to?(:start_y) && system.respond_to?(:start_map_id=) &&
+      system.respond_to?(:start_x=) && system.respond_to?(:start_y=),
+      "Native RPG::System does not expose writable New Game start coordinates")
 
     existing_maps = {}
     plan["required_existing_maps"].each do |record|
@@ -303,6 +315,7 @@ module ShatteredInitialSlice
     [
       "Data/MapInfos.rxdata",
       "Data/Tilesets.rxdata",
+      "Data/System.rxdata",
       native_map_path(plan["map_targets"]["reception_gate"]["id"]),
       native_map_path(plan["map_targets"]["route22"]["id"])
     ].uniq
@@ -436,6 +449,71 @@ module ShatteredInitialSlice
       "Gate Story event differs from reviewed config: #{event_name}")
   end
 
+  # Fail closed on an occupied or impassable native map tile. This is a static
+  # RMXP tileset passage check; gameplay movement still requires a real launch.
+  def self.validate_spawn_tile!(plan)
+    spawn = plan.fetch("new_game_spawn")
+    map = load_native(native_map_path(spawn.fetch("map_id")))
+    x, y = spawn.fetch("x"), spawn.fetch("y")
+    check(x.between?(0, map.width - 1) && y.between?(0, map.height - 1),
+      "New Game spawn falls outside the installed gate")
+    check(map.events.is_a?(Hash) && !event_at?(map, x, y),
+      "New Game spawn is occupied by an installed event")
+    check(map.respond_to?(:data) && map.respond_to?(:tileset_id),
+      "Installed HnS map has no native collision data")
+    tilesets = load_native("Data/Tilesets.rxdata")
+    tileset = tilesets[map.tileset_id] if tilesets.is_a?(Array)
+    check(tileset && tileset.respond_to?(:passages) && tileset.respond_to?(:priorities),
+      "Installed HnS tileset lacks passage/priority tables")
+    passable = false
+    2.downto(0) do |z|
+      tile_id = map.data[x, y, z]
+      check(tile_id.is_a?(Integer) && tile_id >= 0,
+        "New Game spawn has invalid native tile data")
+      next if tile_id == 0
+      passage = tileset.passages[tile_id]
+      priority = tileset.priorities[tile_id]
+      check(passage.is_a?(Integer) && priority.is_a?(Integer),
+        "New Game spawn tile has no reviewed passage/priority")
+      check((passage & 0x0f) != 0x0f,
+        "New Game spawn is blocked by the HnS tileset")
+      # The start tile must be freely traversable in all four directions.
+      # A directional passage bit on an upper layer can block movement even
+      # when a lower floor layer is fully passable. Do not accept that floor
+      # as proof that New Game can move away from its spawn.
+      check((passage & 0x0f) == 0,
+        "New Game spawn has directional movement restrictions")
+      if priority == 0
+        passable = true
+        break
+      end
+    end
+    check(passable, "New Game spawn has no traversable floor tile")
+    true
+  end
+
+  def self.install_new_game_spawn!(plan)
+    validate_spawn_tile!(plan)
+    system = load_native("Data/System.rxdata")
+    spawn = plan.fetch("new_game_spawn")
+    original = [system.start_map_id, system.start_x, system.start_y]
+    system.start_map_id = spawn.fetch("map_id")
+    system.start_x = spawn.fetch("x")
+    system.start_y = spawn.fetch("y")
+    save_native(system, "Data/System.rxdata")
+    original
+  end
+
+  def self.validate_installed_spawn!(plan)
+    validate_spawn_tile!(plan)
+    system = load_native("Data/System.rxdata")
+    spawn = plan.fetch("new_game_spawn")
+    check([system.start_map_id, system.start_x, system.start_y] ==
+      [spawn["map_id"], spawn["x"], spawn["y"]],
+      "Native New Game start no longer matches the reviewed HnS gate spawn")
+    true
+  end
+
   def self.validate_installed_maps!(plan, configs)
     gate_id = plan["map_targets"]["reception_gate"]["id"]
     route_id = plan["map_targets"]["route22"]["id"]
@@ -543,6 +621,7 @@ module ShatteredInitialSlice
       receipt["plan_sha256"] == PLAN_SHA256 &&
       receipt["source_pins"] == plan["source_pins"] &&
       receipt["installer_apis"] == INSTALLER_ORDER &&
+      receipt["new_game_spawn"] == plan["new_game_spawn"] &&
       receipt["gameplay_verified"] == false &&
       receipt["save_reload_verified"] == false &&
       receipt["android_joiplay_verified"] == false,
@@ -574,6 +653,7 @@ module ShatteredInitialSlice
         "Installed native map data changed since receipt: #{path}")
     end
     validate_installed_maps!(plan, configs)
+    validate_installed_spawn!(plan)
     receipt
   end
 
@@ -625,6 +705,8 @@ module ShatteredInitialSlice
         File.delete(dynamic_path) if File.exist?(dynamic_path)
       end
       validate_install_results!(plan, configs, results)
+      original_start = install_new_game_spawn!(plan)
+      validate_installed_spawn!(plan)
       installed_paths = transaction_paths(plan)
       receipt = {
         "schema_version" => 1,
@@ -632,6 +714,8 @@ module ShatteredInitialSlice
         "plan_sha256" => PLAN_SHA256,
         "source_pins" => plan["source_pins"],
         "installer_apis" => INSTALLER_ORDER,
+        "new_game_spawn" => plan["new_game_spawn"],
+        "original_new_game_start" => original_start,
         "installed_files" => installed_paths.each_with_object({}) do |path, result|
           result[path] = file_sha(path)
         end,

@@ -472,8 +472,39 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
         _fail(destination_id in (gate_id, route_id),
               "world-link destination is outside the initial slice")
 
+    # New Game must not silently retain the prototype's old Crystal-gate spawn.
+    # Coordinates are reviewed private input, never inferred from a screenshot or a warp.
+    spawn = plan.get("new_game_spawn")
+    _fail(isinstance(spawn, dict) and set(spawn) == {
+        "map_id", "x", "y", "reviewed", "passability_attested", "system_sha256"
+    }, "reviewed New Game spawn contract is required")
+    _fail(spawn["reviewed"] is True and spawn["passability_attested"] is True,
+          "New Game spawn and passability must be explicitly reviewed")
+    _fail(spawn["map_id"] == gate_id and type(spawn["map_id"]) is int,
+          "New Game must start at the reviewed HnS gate map ID")
+    _fail(all(type(spawn[axis]) is int and 0 <= spawn[axis] < limit
+              for axis, limit in (("x", 22), ("y", 21))),
+          "New Game spawn is outside the HnS reception gate")
+    spawn_xy = (spawn["x"], spawn["y"])
+    _fail(spawn_xy not in {tuple(p) for positions in HNS_DIRECTIONS.values() for p in positions},
+          "New Game spawn overlaps an HnS exit")
+    _fail(spawn_xy not in {(e["x"], e["y"]) for e in configs["world_links"]["events"]
+                           if e["map_id"] == gate_id},
+          "New Game spawn overlaps a world-link event")
+    _fail(spawn_xy not in {(p["x"], p["y"])
+                           for p in configs["gate_story"]["positions"].values()},
+          "New Game spawn overlaps a Gate Story event")
+    _fail(spawn_xy not in {(e["destination"]["x"], e["destination"]["y"])
+                           for e in configs["world_links"]["events"]
+                           if e["destination"]["map_id"] == gate_id},
+          "New Game spawn overlaps a world-link landing")
+    system_path = integration.regular_file(project, "Data/System.rxdata",
+                                           "original native New Game system data")
+    _fail(integration.sha256(system_path) == _sha(spawn["system_sha256"], "System baseline"),
+          "reviewed New Game System.rxdata hash differs from staged baseline")
+
     assets = _asset_paths(configs, plan, build_report, project)
-    for path in ("PBS/items.txt", "PBS/pokemon.txt", "Data/MapInfos.rxdata", "Data/Tilesets.rxdata"):
+    for path in ("PBS/items.txt", "PBS/pokemon.txt", "Data/MapInfos.rxdata", "Data/Tilesets.rxdata", "Data/System.rxdata"):
         integration.regular_file(project, path, f"native handoff prerequisite {path}")
     _fail("[SHATTEREDGATEKEY]" in (project / "PBS/items.txt").read_text(encoding="utf-8-sig"),
           "compiled-input PBS items file is missing [SHATTEREDGATEKEY]")
@@ -525,6 +556,7 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
         "config_hashes": {},
         "runtime_files": {**source_files},
         "asset_files": assets,
+        "new_game_spawn": {k: spawn[k] for k in ("map_id", "x", "y", "reviewed", "passability_attested")},
         "map_targets": {
             "reception_gate": {"id": gate_id, "dimensions": [22, 21], "created_by_installer": True},
             "route22": {
@@ -536,6 +568,7 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
         "resource_ids": {"switches": switch_ids, "variables": variable_ids},
         "route22_reserved_positions": route22_reserved,
         "baseline_hashes": {
+            "Data/System.rxdata": integration.sha256(project / "Data/System.rxdata"),
             "Data/MapInfos.rxdata": integration.sha256(project / "Data/MapInfos.rxdata"),
             "Data/Tilesets.rxdata": integration.sha256(project / "Data/Tilesets.rxdata"),
             f"Data/Map{route_id:03d}.rxdata": route_hash,
@@ -553,7 +586,7 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
         "open_runtime_gates": [
             "PBS compilation, plugin script compilation, and game boot in native Essentials v21.1",
             "Route22 event trigger semantics require native RMXP confirmation",
-            "new game, HUMAN battle, gate/Aipom/Route22 playthrough, and save/reload",
+            "New Game spawn tile and collision require native validation, then HUMAN battle, gate/Aipom/Route22 and save/reload",
             "Android JoiPlay/NaviaXP playthrough",
         ],
     }
