@@ -47,7 +47,16 @@ module RPG
   end
 end
 
-MapStub = Struct.new(:width, :height, :events)
+MapStub = Struct.new(:width, :height, :events, :tileset_id, :data)
+TilesetStub = Struct.new(:passages)
+class TileTableStub
+  def initialize(values = {})
+    @values = values
+  end
+  def [](*point)
+    @values.fetch(point, 0)
+  end
+end
 
 def load_data(path)
   Marshal.load(File.binread(path))
@@ -249,6 +258,46 @@ class MurkrowRescueTest < Minitest::Test
     end
   end
 
+  def test_installer_rejects_blocked_event_tile_without_writes
+    with_staged_project do |root, plan|
+      path = File.join(root, "Data/Tilesets.rxdata")
+      File.binwrite(path, Marshal.dump([nil, TilesetStub.new({ 384 => 15 })]))
+      plan["expected_tilesets_sha256"] = Digest::SHA256.file(path).hexdigest
+      map_path = File.join(root, "Data/Map001.rxdata")
+      original = File.binread(map_path)
+      error = assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_match(/event tile is blocked/, error.message)
+      assert_equal original, File.binread(map_path)
+    end
+  end
+
+  def test_installer_rejects_changed_native_tilesets
+    with_staged_project do |root, plan|
+      path = File.join(root, "Data/Tilesets.rxdata")
+      File.binwrite(path, Marshal.dump([nil, TilesetStub.new({ 384 => 15 })]))
+      error = assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_match(/tileset data changed/, error.message)
+    end
+  end
+
+  def test_installer_requires_open_adjacent_approach_tile
+    with_staged_project do |root, plan|
+      path = File.join(root, "Data/Map001.rxdata")
+      map = load_data(path)
+      map.data = TileTableStub.new({ [51, 16, 0] => 384 })
+      save_data(map, path)
+      plan["expected_map_sha256"] = Digest::SHA256.file(path).hexdigest
+      error = assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_match(/no open adjacent approach/, error.message)
+    end
+  end
+
   def test_installer_rejects_occupied_event_id
     with_staged_project do |root, plan|
       map = load_data(File.join(root, "Data/Map001.rxdata"))
@@ -342,11 +391,14 @@ class MurkrowRescueTest < Minitest::Test
       page = RPG::Event::Page.new
       page.list = [RPG::EventCommand.new(201, 0, [0, 2, 3, 4, 2, 0])]
       warp.pages = [page]
-      source = MapStub.new(67, 36, { 3 => warp })
-      destination = MapStub.new(10, 10, {})
+      tiles = TileTableStub.new({ [51, 16, 0] => 384, [50, 16, 0] => 384 })
+      source = MapStub.new(67, 36, { 3 => warp }, 1, tiles)
+      destination = MapStub.new(10, 10, {}, 1, tiles)
       File.binwrite(File.join(root, "Data/Map001.rxdata"), Marshal.dump(source))
       File.binwrite(File.join(root, "Data/Map002.rxdata"), Marshal.dump(destination))
       File.binwrite(File.join(root, "Data/MapInfos.rxdata"), Marshal.dump({ 1 => :source, 2 => :destination }))
+      File.binwrite(File.join(root, "Data/Tilesets.rxdata"),
+                    Marshal.dump([nil, TilesetStub.new({ 384 => 0 })]))
       plan = {
         "schema_version" => 1,
         "source_map_uuid" => "491b8085-ec13-440e-9800-335edda8b08d",
@@ -363,6 +415,9 @@ class MurkrowRescueTest < Minitest::Test
         "event_id" => 9,
         "expected_map_sha256" => Digest::SHA256.file(
           File.join(root, "Data/Map001.rxdata")
+        ).hexdigest,
+        "expected_tilesets_sha256" => Digest::SHA256.file(
+          File.join(root, "Data/Tilesets.rxdata")
         ).hexdigest,
         "character" => "Murkrow",
         "sprite_reviewed" => true,
