@@ -1,0 +1,1978 @@
+{
+  "schema_version": 1,
+  "purpose": "source-only parity anchors; not compiled, installed or runtime verified",
+  "source": {
+    "name": "xx0.77_Pokemon_Shattered.pokebacon.json",
+    "sha256": null,
+    "format": "pokebacon-map-studio",
+    "bytes_reported": 31351093,
+    "notes": "Derived from user's private project reference; no source archive, event scripts, dialogue, graphics or tile layers included. Hash must be generated from local raw file."
+  },
+  "summary": {
+    "map_count": 23,
+    "marker_count": 656,
+    "marker_kinds": {
+      "event": 156,
+      "npc": 77,
+      "sign": 423
+    },
+    "object_count": 567,
+    "link_count": 36
+  },
+  "maps": [
+    {
+      "id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+      "name": "VIRIDIAN CITY · 3.1",
+      "width": 48,
+      "height": 40
+    },
+    {
+      "id": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+      "name": "ROUTE 2 · 3.20",
+      "width": 24,
+      "height": 80
+    },
+    {
+      "id": "0144a502-839a-4d16-8dbc-6345b3ef4dc4",
+      "name": "ROUTE 1 · 3.19",
+      "width": 24,
+      "height": 40
+    },
+    {
+      "id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+      "name": "ROUTE 22 · 3.41",
+      "width": 48,
+      "height": 24
+    },
+    {
+      "id": "feb6a37c-6e51-4b92-a8dd-6549551aa6ef",
+      "name": "VIRIDIAN CITY · 5.4",
+      "width": 15,
+      "height": 10
+    },
+    {
+      "id": "4ec0ead8-41de-4704-81da-740a7fbdd252",
+      "name": "VIRIDIAN CITY · 5.0",
+      "width": 11,
+      "height": 9
+    },
+    {
+      "id": "a770f980-a46c-4cad-a9ac-06cb1bdcbe03",
+      "name": "VIRIDIAN CITY · 5.1",
+      "width": 20,
+      "height": 24
+    },
+    {
+      "id": "b1d081d6-6600-4c9e-a280-a38a162831b1",
+      "name": "VIRIDIAN CITY · 5.2",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "0b6c83d3-8aae-4606-ab7f-03ab394ec29f",
+      "name": "VIRIDIAN CITY · 5.3",
+      "width": 11,
+      "height": 9
+    },
+    {
+      "id": "37281fad-23cb-4091-8fe2-3b71577b1140",
+      "name": "VIRIDIAN CITY · 5.5",
+      "width": 15,
+      "height": 10
+    },
+    {
+      "id": "aea05a39-bca9-4c3a-baaf-c798bf7b2280",
+      "name": "CELADON DEPT. · 0.4",
+      "width": 15,
+      "height": 12
+    },
+    {
+      "id": "e2235d39-9ef1-46bc-8742-eebb8ced86fb",
+      "name": "CELADON DEPT. · 0.1",
+      "width": 12,
+      "height": 9
+    },
+    {
+      "id": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+      "name": "VIRIDIAN FOREST · 1.0",
+      "width": 54,
+      "height": 69
+    },
+    {
+      "id": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+      "name": "ROUTE 2 · 15.0",
+      "width": 15,
+      "height": 12
+    },
+    {
+      "id": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+      "name": "ROUTE 2 · 15.3",
+      "width": 15,
+      "height": 12
+    },
+    {
+      "id": "84748cae-c12e-4d42-ab11-c735471977e4",
+      "name": "ROUTE 22 · 28.0",
+      "width": 22,
+      "height": 21
+    },
+    {
+      "id": "b3f251e1-6ed2-49e6-8e06-90d799e90e60",
+      "name": "VIRIDIAN CITY · 28.4",
+      "width": 15,
+      "height": 11
+    },
+    {
+      "id": "23b8a4d1-593f-44c5-8601-c60a5597f98d",
+      "name": "VIRIDIAN CITY · 28.3",
+      "width": 10,
+      "height": 9
+    },
+    {
+      "id": "4f02101b-ccd1-4b6f-a9f2-52334d1920fe",
+      "name": "VIRIDIAN CITY · 28.2",
+      "width": 12,
+      "height": 10
+    },
+    {
+      "id": "ce1cd3d8-a699-462f-8725-dc9760a927ed",
+      "name": "VIRIDIAN CITY · 28.1",
+      "width": 11,
+      "height": 9
+    },
+    {
+      "id": "d64e62a9-9a24-4ba6-b0eb-c359ac94248e",
+      "name": "ROUTE 22 · 28.6",
+      "width": 39,
+      "height": 30
+    },
+    {
+      "id": "8cd97f39-d08a-4437-bb74-6ddb425cbf95",
+      "name": "ROUTE 22 · 28.7",
+      "width": 40,
+      "height": 50
+    },
+    {
+      "id": "491b8085-ec13-440e-9800-335edda8b08d",
+      "name": "ROUTE 22 · 28.5",
+      "width": 67,
+      "height": 36
+    }
+  ],
+  "scenes": {
+    "johto_gate_aipom": {
+      "status": "source_reference_only",
+      "essentials_map_id": null,
+      "anchors": [
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:1",
+          "kind": "npc",
+          "x": 11,
+          "y": 2,
+          "source_rom_address": 7657552,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:10",
+          "kind": "npc",
+          "x": 10,
+          "y": 2,
+          "source_rom_address": 7657720,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:11",
+          "kind": "npc",
+          "x": 3,
+          "y": 8,
+          "source_rom_address": 7657744,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:12",
+          "kind": "npc",
+          "x": 10,
+          "y": 19,
+          "source_rom_address": 7657768,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:13",
+          "kind": "npc",
+          "x": 11,
+          "y": 19,
+          "source_rom_address": 7657792,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:14",
+          "kind": "npc",
+          "x": 12,
+          "y": 19,
+          "source_rom_address": 7657816,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:15",
+          "kind": "npc",
+          "x": 11,
+          "y": 17,
+          "source_rom_address": 7657888,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:2",
+          "kind": "npc",
+          "x": 10,
+          "y": 3,
+          "source_rom_address": 7657576,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:3",
+          "kind": "npc",
+          "x": 9,
+          "y": 2,
+          "source_rom_address": 7657600,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:4",
+          "kind": "npc",
+          "x": 12,
+          "y": 2,
+          "source_rom_address": 7657624,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:5",
+          "kind": "npc",
+          "x": 6,
+          "y": 7,
+          "source_rom_address": 7657648,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:6",
+          "kind": "npc",
+          "x": 3,
+          "y": 9,
+          "source_rom_address": 7657672,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:npc:7",
+          "kind": "npc",
+          "x": 9,
+          "y": 19,
+          "source_rom_address": 7657696,
+          "script_length": 564,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:sign:0,9",
+          "kind": "sign",
+          "x": 0,
+          "y": 9,
+          "source_rom_address": 7658484,
+          "script_length": 558,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:sign:1,9",
+          "kind": "sign",
+          "x": 1,
+          "y": 9,
+          "source_rom_address": 7658496,
+          "script_length": 558,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:sign:2,9",
+          "kind": "sign",
+          "x": 2,
+          "y": 9,
+          "source_rom_address": 7658508,
+          "script_length": 558,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:sign:20,9",
+          "kind": "sign",
+          "x": 20,
+          "y": 9,
+          "source_rom_address": 7658520,
+          "script_length": 581,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:1,9",
+          "kind": "event",
+          "x": 1,
+          "y": 9,
+          "source_rom_address": 7657984,
+          "script_length": 558,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:10,17",
+          "kind": "event",
+          "x": 10,
+          "y": 17,
+          "source_rom_address": 7658144,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:11,16",
+          "kind": "event",
+          "x": 11,
+          "y": 16,
+          "source_rom_address": 7658112,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:11,17",
+          "kind": "event",
+          "x": 11,
+          "y": 17,
+          "source_rom_address": 7658160,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:11,18",
+          "kind": "event",
+          "x": 11,
+          "y": 18,
+          "source_rom_address": 7658192,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:12,15",
+          "kind": "event",
+          "x": 12,
+          "y": 15,
+          "source_rom_address": 7658096,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:12,16",
+          "kind": "event",
+          "x": 12,
+          "y": 16,
+          "source_rom_address": 7658128,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:12,17",
+          "kind": "event",
+          "x": 12,
+          "y": 17,
+          "source_rom_address": 7658176,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:12,18",
+          "kind": "event",
+          "x": 12,
+          "y": 18,
+          "source_rom_address": 7658208,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:12,19",
+          "kind": "event",
+          "x": 12,
+          "y": 19,
+          "source_rom_address": 7658240,
+          "script_length": 1744,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "84748cae-c12e-4d42-ab11-c735471977e4",
+          "source_event_id": "28.0:trigger:20,9",
+          "kind": "event",
+          "x": 20,
+          "y": 9,
+          "source_rom_address": 7658000,
+          "script_length": 581,
+          "dialogue_entries": 1
+        }
+      ]
+    },
+    "route22_rattata": {
+      "status": "source_reference_only",
+      "essentials_map_id": null,
+      "anchors": [
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:npc:1",
+          "kind": "npc",
+          "x": 38,
+          "y": 17,
+          "source_rom_address": 7626916,
+          "script_length": 1980,
+          "dialogue_entries": 4
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:npc:2",
+          "kind": "npc",
+          "x": 39,
+          "y": 16,
+          "source_rom_address": 7626940,
+          "script_length": 1980,
+          "dialogue_entries": 4
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:npc:3",
+          "kind": "npc",
+          "x": 39,
+          "y": 18,
+          "source_rom_address": 7626964,
+          "script_length": 1980,
+          "dialogue_entries": 4
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,16",
+          "kind": "event",
+          "x": 36,
+          "y": 16,
+          "source_rom_address": 7627028,
+          "script_length": 2130,
+          "dialogue_entries": 4
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,17",
+          "kind": "event",
+          "x": 36,
+          "y": 17,
+          "source_rom_address": 7627044,
+          "script_length": 2124,
+          "dialogue_entries": 4
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,18",
+          "kind": "event",
+          "x": 36,
+          "y": 18,
+          "source_rom_address": 7627060,
+          "script_length": 2130,
+          "dialogue_entries": 4
+        }
+      ]
+    },
+    "route22_mankey": {
+      "status": "source_reference_only",
+      "essentials_map_id": null,
+      "anchors": [
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:34,10",
+          "kind": "event",
+          "x": 34,
+          "y": 10,
+          "source_rom_address": 7627188,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:34,11",
+          "kind": "event",
+          "x": 34,
+          "y": 11,
+          "source_rom_address": 7627284,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:34,12",
+          "kind": "event",
+          "x": 34,
+          "y": 12,
+          "source_rom_address": 7627380,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:34,13",
+          "kind": "event",
+          "x": 34,
+          "y": 13,
+          "source_rom_address": 7627476,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:34,9",
+          "kind": "event",
+          "x": 34,
+          "y": 9,
+          "source_rom_address": 7627092,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:35,10",
+          "kind": "event",
+          "x": 35,
+          "y": 10,
+          "source_rom_address": 7627204,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:35,11",
+          "kind": "event",
+          "x": 35,
+          "y": 11,
+          "source_rom_address": 7627300,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:35,12",
+          "kind": "event",
+          "x": 35,
+          "y": 12,
+          "source_rom_address": 7627396,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:35,13",
+          "kind": "event",
+          "x": 35,
+          "y": 13,
+          "source_rom_address": 7627492,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:35,9",
+          "kind": "event",
+          "x": 35,
+          "y": 9,
+          "source_rom_address": 7627108,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,10",
+          "kind": "event",
+          "x": 36,
+          "y": 10,
+          "source_rom_address": 7627220,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,11",
+          "kind": "event",
+          "x": 36,
+          "y": 11,
+          "source_rom_address": 7627316,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,12",
+          "kind": "event",
+          "x": 36,
+          "y": 12,
+          "source_rom_address": 7627412,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,13",
+          "kind": "event",
+          "x": 36,
+          "y": 13,
+          "source_rom_address": 7627508,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:36,9",
+          "kind": "event",
+          "x": 36,
+          "y": 9,
+          "source_rom_address": 7627124,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:37,10",
+          "kind": "event",
+          "x": 37,
+          "y": 10,
+          "source_rom_address": 7627236,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:37,11",
+          "kind": "event",
+          "x": 37,
+          "y": 11,
+          "source_rom_address": 7627332,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:37,12",
+          "kind": "event",
+          "x": 37,
+          "y": 12,
+          "source_rom_address": 7627428,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:37,13",
+          "kind": "event",
+          "x": 37,
+          "y": 13,
+          "source_rom_address": 7627524,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:37,9",
+          "kind": "event",
+          "x": 37,
+          "y": 9,
+          "source_rom_address": 7627140,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:38,10",
+          "kind": "event",
+          "x": 38,
+          "y": 10,
+          "source_rom_address": 7627252,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:38,11",
+          "kind": "event",
+          "x": 38,
+          "y": 11,
+          "source_rom_address": 7627348,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:38,12",
+          "kind": "event",
+          "x": 38,
+          "y": 12,
+          "source_rom_address": 7627444,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:38,13",
+          "kind": "event",
+          "x": 38,
+          "y": 13,
+          "source_rom_address": 7627540,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:38,9",
+          "kind": "event",
+          "x": 38,
+          "y": 9,
+          "source_rom_address": 7627156,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:39,10",
+          "kind": "event",
+          "x": 39,
+          "y": 10,
+          "source_rom_address": 7627268,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:39,11",
+          "kind": "event",
+          "x": 39,
+          "y": 11,
+          "source_rom_address": 7627364,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:39,12",
+          "kind": "event",
+          "x": 39,
+          "y": 12,
+          "source_rom_address": 7627460,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:39,13",
+          "kind": "event",
+          "x": 39,
+          "y": 13,
+          "source_rom_address": 7627556,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+          "source_event_id": "3.41:trigger:39,9",
+          "kind": "event",
+          "x": 39,
+          "y": 9,
+          "source_rom_address": 7627172,
+          "script_length": 1756,
+          "dialogue_entries": 6
+        }
+      ]
+    },
+    "viridian_entry_escort": {
+      "status": "source_reference_only",
+      "essentials_map_id": null,
+      "anchors": [
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:1",
+          "kind": "npc",
+          "x": 9,
+          "y": 16,
+          "source_rom_address": 7616564,
+          "script_length": 9191,
+          "dialogue_entries": 29
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:13",
+          "kind": "npc",
+          "x": 20,
+          "y": 7,
+          "source_rom_address": 7616780,
+          "script_length": 288,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:14",
+          "kind": "npc",
+          "x": 34,
+          "y": 30,
+          "source_rom_address": 7616684,
+          "script_length": 2579,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:15",
+          "kind": "npc",
+          "x": 36,
+          "y": 20,
+          "source_rom_address": 7616708,
+          "script_length": 2506,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:16",
+          "kind": "npc",
+          "x": 12,
+          "y": 23,
+          "source_rom_address": 7616732,
+          "script_length": 2541,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:17",
+          "kind": "npc",
+          "x": 28,
+          "y": 29,
+          "source_rom_address": 7616636,
+          "script_length": 2455,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:19",
+          "kind": "npc",
+          "x": 30,
+          "y": 29,
+          "source_rom_address": 7616804,
+          "script_length": 2513,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:21",
+          "kind": "npc",
+          "x": 22,
+          "y": 8,
+          "source_rom_address": 7616948,
+          "script_length": 265,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:22",
+          "kind": "npc",
+          "x": 17,
+          "y": 9,
+          "source_rom_address": 7616828,
+          "script_length": 2438,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:23",
+          "kind": "npc",
+          "x": 32,
+          "y": 29,
+          "source_rom_address": 7616852,
+          "script_length": 2637,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:24",
+          "kind": "npc",
+          "x": 35,
+          "y": 20,
+          "source_rom_address": 7616876,
+          "script_length": 2506,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:25",
+          "kind": "npc",
+          "x": 13,
+          "y": 23,
+          "source_rom_address": 7616900,
+          "script_length": 2541,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:3",
+          "kind": "npc",
+          "x": 33,
+          "y": 32,
+          "source_rom_address": 7616612,
+          "script_length": 5843,
+          "dialogue_entries": 24
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:4",
+          "kind": "npc",
+          "x": 23,
+          "y": 4,
+          "source_rom_address": 7616996,
+          "script_length": 1380,
+          "dialogue_entries": 4
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:5",
+          "kind": "npc",
+          "x": 9,
+          "y": 32,
+          "source_rom_address": 7617044,
+          "script_length": 3294,
+          "dialogue_entries": 17
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:6",
+          "kind": "npc",
+          "x": 26,
+          "y": 33,
+          "source_rom_address": 7617020,
+          "script_length": 1000,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:8",
+          "kind": "npc",
+          "x": 18,
+          "y": 9,
+          "source_rom_address": 7616660,
+          "script_length": 2380,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:1,17",
+          "kind": "sign",
+          "x": 1,
+          "y": 17,
+          "source_rom_address": 7618332,
+          "script_length": 903,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:1,18",
+          "kind": "sign",
+          "x": 1,
+          "y": 18,
+          "source_rom_address": 7618344,
+          "script_length": 903,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:1,19",
+          "kind": "sign",
+          "x": 1,
+          "y": 19,
+          "source_rom_address": 7618356,
+          "script_length": 903,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:20,1",
+          "kind": "sign",
+          "x": 20,
+          "y": 1,
+          "source_rom_address": 7618368,
+          "script_length": 1103,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:20,2",
+          "kind": "sign",
+          "x": 20,
+          "y": 2,
+          "source_rom_address": 7618404,
+          "script_length": 1103,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:21,1",
+          "kind": "sign",
+          "x": 21,
+          "y": 1,
+          "source_rom_address": 7618380,
+          "script_length": 1103,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:21,2",
+          "kind": "sign",
+          "x": 21,
+          "y": 2,
+          "source_rom_address": 7618416,
+          "script_length": 1103,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:22,1",
+          "kind": "sign",
+          "x": 22,
+          "y": 1,
+          "source_rom_address": 7618392,
+          "script_length": 1103,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:22,2",
+          "kind": "sign",
+          "x": 22,
+          "y": 2,
+          "source_rom_address": 7618428,
+          "script_length": 1103,
+          "dialogue_entries": 3
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:22,34",
+          "kind": "sign",
+          "x": 22,
+          "y": 34,
+          "source_rom_address": 7617564,
+          "script_length": 294,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:22,35",
+          "kind": "sign",
+          "x": 22,
+          "y": 35,
+          "source_rom_address": 7617600,
+          "script_length": 294,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:23,3",
+          "kind": "sign",
+          "x": 23,
+          "y": 3,
+          "source_rom_address": 7617444,
+          "script_length": 249,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:23,34",
+          "kind": "sign",
+          "x": 23,
+          "y": 34,
+          "source_rom_address": 7617576,
+          "script_length": 294,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:23,35",
+          "kind": "sign",
+          "x": 23,
+          "y": 35,
+          "source_rom_address": 7617612,
+          "script_length": 294,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:24,34",
+          "kind": "sign",
+          "x": 24,
+          "y": 34,
+          "source_rom_address": 7617588,
+          "script_length": 294,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:24,35",
+          "kind": "sign",
+          "x": 24,
+          "y": 35,
+          "source_rom_address": 7617624,
+          "script_length": 294,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:sign:8,15",
+          "kind": "sign",
+          "x": 8,
+          "y": 15,
+          "source_rom_address": 7617516,
+          "script_length": 225,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:trigger:0,17",
+          "kind": "event",
+          "x": 0,
+          "y": 17,
+          "source_rom_address": 7617260,
+          "script_length": 3269,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:trigger:0,18",
+          "kind": "event",
+          "x": 0,
+          "y": 18,
+          "source_rom_address": 7617276,
+          "script_length": 3269,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:trigger:0,19",
+          "kind": "event",
+          "x": 0,
+          "y": 19,
+          "source_rom_address": 7617292,
+          "script_length": 3269,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:trigger:1,17",
+          "kind": "event",
+          "x": 1,
+          "y": 17,
+          "source_rom_address": 7617308,
+          "script_length": 3269,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:trigger:1,18",
+          "kind": "event",
+          "x": 1,
+          "y": 18,
+          "source_rom_address": 7617324,
+          "script_length": 3269,
+          "dialogue_entries": 6
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:trigger:1,19",
+          "kind": "event",
+          "x": 1,
+          "y": 19,
+          "source_rom_address": 7617340,
+          "script_length": 3269,
+          "dialogue_entries": 6
+        }
+      ]
+    },
+    "viridian_raid": {
+      "status": "source_reference_only",
+      "essentials_map_id": null,
+      "anchors": [
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:15",
+          "kind": "npc",
+          "x": 36,
+          "y": 20,
+          "source_rom_address": 7616708,
+          "script_length": 2506,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:16",
+          "kind": "npc",
+          "x": 12,
+          "y": 23,
+          "source_rom_address": 7616732,
+          "script_length": 2541,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:17",
+          "kind": "npc",
+          "x": 28,
+          "y": 29,
+          "source_rom_address": 7616636,
+          "script_length": 2455,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:19",
+          "kind": "npc",
+          "x": 30,
+          "y": 29,
+          "source_rom_address": 7616804,
+          "script_length": 2513,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:21",
+          "kind": "npc",
+          "x": 22,
+          "y": 8,
+          "source_rom_address": 7616948,
+          "script_length": 265,
+          "dialogue_entries": 1
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:24",
+          "kind": "npc",
+          "x": 35,
+          "y": 20,
+          "source_rom_address": 7616876,
+          "script_length": 2506,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:25",
+          "kind": "npc",
+          "x": 13,
+          "y": 23,
+          "source_rom_address": 7616900,
+          "script_length": 2541,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+          "source_event_id": "3.1:npc:4",
+          "kind": "npc",
+          "x": 23,
+          "y": 4,
+          "source_rom_address": 7616996,
+          "script_length": 1380,
+          "dialogue_entries": 4
+        }
+      ]
+    },
+    "murkrow_rescue": {
+      "status": "source_reference_only",
+      "essentials_map_id": null,
+      "anchors": [
+        {
+          "map_id": "491b8085-ec13-440e-9800-335edda8b08d",
+          "source_event_id": "28.5:npc:1",
+          "kind": "npc",
+          "x": 51,
+          "y": 16,
+          "source_rom_address": 7664736,
+          "script_length": 3026,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "491b8085-ec13-440e-9800-335edda8b08d",
+          "source_event_id": "28.5:npc:2",
+          "kind": "npc",
+          "x": 50,
+          "y": 16,
+          "source_rom_address": 7664760,
+          "script_length": 2968,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "491b8085-ec13-440e-9800-335edda8b08d",
+          "source_event_id": "28.5:npc:3",
+          "kind": "npc",
+          "x": 52,
+          "y": 15,
+          "source_rom_address": 7664784,
+          "script_length": 2968,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "491b8085-ec13-440e-9800-335edda8b08d",
+          "source_event_id": "28.5:npc:4",
+          "kind": "npc",
+          "x": 52,
+          "y": 17,
+          "source_rom_address": 7664808,
+          "script_length": 2968,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "491b8085-ec13-440e-9800-335edda8b08d",
+          "source_event_id": "28.5:trigger:53,15",
+          "kind": "event",
+          "x": 53,
+          "y": 15,
+          "source_rom_address": 7664872,
+          "script_length": 2968,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "491b8085-ec13-440e-9800-335edda8b08d",
+          "source_event_id": "28.5:trigger:53,17",
+          "kind": "event",
+          "x": 53,
+          "y": 17,
+          "source_rom_address": 7664904,
+          "script_length": 2968,
+          "dialogue_entries": 5
+        },
+        {
+          "map_id": "491b8085-ec13-440e-9800-335edda8b08d",
+          "source_event_id": "28.5:trigger:54,16",
+          "kind": "event",
+          "x": 54,
+          "y": 16,
+          "source_rom_address": 7664888,
+          "script_length": 2968,
+          "dialogue_entries": 5
+        }
+      ]
+    },
+    "dojo_and_starter": {
+      "status": "source_reference_only",
+      "essentials_map_id": null,
+      "anchors": [
+        {
+          "map_id": "4ec0ead8-41de-4704-81da-740a7fbdd252",
+          "source_event_id": "5.0:npc:1",
+          "kind": "npc",
+          "x": 4,
+          "y": 4,
+          "source_rom_address": 7648752,
+          "script_length": 0,
+          "dialogue_entries": 0
+        },
+        {
+          "map_id": "b1d081d6-6600-4c9e-a280-a38a162831b1",
+          "source_event_id": "5.2:npc:1",
+          "kind": "npc",
+          "x": 6,
+          "y": 4,
+          "source_rom_address": 7650760,
+          "script_length": 22761,
+          "dialogue_entries": 80
+        },
+        {
+          "map_id": "b1d081d6-6600-4c9e-a280-a38a162831b1",
+          "source_event_id": "5.2:npc:2",
+          "kind": "npc",
+          "x": 3,
+          "y": 5,
+          "source_rom_address": 7650784,
+          "script_length": 643,
+          "dialogue_entries": 2
+        },
+        {
+          "map_id": "b1d081d6-6600-4c9e-a280-a38a162831b1",
+          "source_event_id": "5.2:sign:7,1",
+          "kind": "sign",
+          "x": 7,
+          "y": 1,
+          "source_rom_address": 7650912,
+          "script_length": 303,
+          "dialogue_entries": 1
+        }
+      ]
+    }
+  },
+  "links": [
+    {
+      "id": "d7a790ba-8d3a-44b0-b2fc-649395adca3b",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 26,
+        "y": 26
+      },
+      "to": {
+        "mapId": "feb6a37c-6e51-4b92-a8dd-6549551aa6ef",
+        "x": 7,
+        "y": 8
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "147e256c-4d2d-46f3-acf3-e2e6e7bcd155",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 25,
+        "y": 11
+      },
+      "to": {
+        "mapId": "4ec0ead8-41de-4704-81da-740a7fbdd252",
+        "x": 4,
+        "y": 7
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "4d3d8a0d-f01d-43ce-b15d-8998fbdbff71",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 36,
+        "y": 10
+      },
+      "to": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 26,
+        "y": 26
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "b504efb0-f64d-4d76-865b-3967ea2b63ff",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 25,
+        "y": 18
+      },
+      "to": {
+        "mapId": "b1d081d6-6600-4c9e-a280-a38a162831b1",
+        "x": 4,
+        "y": 7
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "2ad63eb5-0321-4618-a3df-810eb7880d0a",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 36,
+        "y": 19
+      },
+      "to": {
+        "mapId": "0b6c83d3-8aae-4606-ab7f-03ab394ec29f",
+        "x": 4,
+        "y": 7
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "6abdea09-9aa5-4573-a0d0-da1f96321d40",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 17,
+        "y": 8
+      },
+      "to": {
+        "mapId": "b3f251e1-6ed2-49e6-8e06-90d799e90e60",
+        "x": 6,
+        "y": 9
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "a0426643-8ea4-4f6f-b9bc-73a056507fef",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 10,
+        "y": 15
+      },
+      "to": {
+        "mapId": "23b8a4d1-593f-44c5-8601-c60a5597f98d",
+        "x": 4,
+        "y": 7
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "688382fa-3077-4005-9226-b744b6861212",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 44,
+        "y": 21
+      },
+      "to": {
+        "mapId": "4f02101b-ccd1-4b6f-a9f2-52334d1920fe",
+        "x": 4,
+        "y": 8
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "2010e978-d808-46a1-88b6-ad0c2dbd1aa3",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 12,
+        "y": 22
+      },
+      "to": {
+        "mapId": "ce1cd3d8-a699-462f-8725-dc9760a927ed",
+        "x": 4,
+        "y": 7
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "b9efe30f-d252-4ca0-bf19-3b56892d64c1",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 0,
+        "y": 21
+      },
+      "to": {
+        "mapId": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+        "x": 47,
+        "y": 11
+      },
+      "kind": "west",
+      "two_way": true
+    },
+    {
+      "id": "cc3e701f-4f20-44e8-b96e-67fce685acef",
+      "from": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 23,
+        "y": 0
+      },
+      "to": {
+        "mapId": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+        "x": 11,
+        "y": 79
+      },
+      "kind": "north",
+      "two_way": true
+    },
+    {
+      "id": "041ea5ab-fcb6-4fba-906a-3061e192e53f",
+      "from": {
+        "mapId": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+        "x": 5,
+        "y": 13
+      },
+      "to": {
+        "mapId": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+        "x": 7,
+        "y": 1
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "cd2b7981-e67f-41d1-97b3-f746af923943",
+      "from": {
+        "mapId": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+        "x": 6,
+        "y": 13
+      },
+      "to": {
+        "mapId": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+        "x": 7,
+        "y": 1
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "85b7789e-461e-4bee-80aa-887ab9a0ac40",
+      "from": {
+        "mapId": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+        "x": 5,
+        "y": 51
+      },
+      "to": {
+        "mapId": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+        "x": 7,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "bfc13c40-a787-490d-97d3-2e73aaa79d12",
+      "from": {
+        "mapId": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+        "x": 6,
+        "y": 51
+      },
+      "to": {
+        "mapId": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+        "x": 7,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "983e5a4b-8a78-4c27-b9fb-437e5801fbd9",
+      "from": {
+        "mapId": "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2",
+        "x": 8,
+        "y": 5
+      },
+      "to": {
+        "mapId": "84748cae-c12e-4d42-ab11-c735471977e4",
+        "x": 20,
+        "y": 9
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "faa4e163-c50c-421c-8f83-f6213301cb22",
+      "from": {
+        "mapId": "feb6a37c-6e51-4b92-a8dd-6549551aa6ef",
+        "x": 1,
+        "y": 6
+      },
+      "to": {
+        "mapId": "37281fad-23cb-4091-8fe2-3b71577b1140",
+        "x": 1,
+        "y": 6
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "c6391a07-8b43-4b8d-ac40-94e2ff782794",
+      "from": {
+        "mapId": "a770f980-a46c-4cad-a9ac-06cb1bdcbe03",
+        "x": 17,
+        "y": 22
+      },
+      "to": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 36,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "bf71a351-cc09-4eb6-a41a-582bf3ac561a",
+      "from": {
+        "mapId": "a770f980-a46c-4cad-a9ac-06cb1bdcbe03",
+        "x": 16,
+        "y": 22
+      },
+      "to": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 36,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "7c6f5ca9-c863-4b52-a854-0cd4b0048e5d",
+      "from": {
+        "mapId": "a770f980-a46c-4cad-a9ac-06cb1bdcbe03",
+        "x": 18,
+        "y": 22
+      },
+      "to": {
+        "mapId": "5e2cbf0c-2a22-47ac-9205-ccca87172d2e",
+        "x": 36,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "32e6ebcb-a0d9-4496-8938-5a8e3c4fface",
+      "from": {
+        "mapId": "37281fad-23cb-4091-8fe2-3b71577b1140",
+        "x": 5,
+        "y": 1
+      },
+      "to": {
+        "mapId": "aea05a39-bca9-4c3a-baaf-c798bf7b2280",
+        "x": 7,
+        "y": 11
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "b2c34df9-6e5e-4bfc-86f9-e5b499dcb70d",
+      "from": {
+        "mapId": "37281fad-23cb-4091-8fe2-3b71577b1140",
+        "x": 9,
+        "y": 1
+      },
+      "to": {
+        "mapId": "e2235d39-9ef1-46bc-8742-eebb8ced86fb",
+        "x": 5,
+        "y": 8
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "e32f310f-9128-4163-b566-48db59491cb7",
+      "from": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 29,
+        "y": 62
+      },
+      "to": {
+        "mapId": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+        "x": 7,
+        "y": 1
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "f35c461e-068c-4c0f-a99e-d8e405ebfb77",
+      "from": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 28,
+        "y": 62
+      },
+      "to": {
+        "mapId": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+        "x": 7,
+        "y": 1
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "d5a21529-e0f2-49a0-a650-7bf0139a94ac",
+      "from": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 5,
+        "y": 9
+      },
+      "to": {
+        "mapId": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+        "x": 7,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "f7837646-fae6-4d34-a502-e10a7bbb5d77",
+      "from": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 6,
+        "y": 9
+      },
+      "to": {
+        "mapId": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+        "x": 7,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "c1302065-c0c2-4348-9463-3d9b00a0db6d",
+      "from": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 30,
+        "y": 62
+      },
+      "to": {
+        "mapId": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+        "x": 7,
+        "y": 1
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "03079162-601f-4c9f-b3c8-3202a99e6924",
+      "from": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 4,
+        "y": 9
+      },
+      "to": {
+        "mapId": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+        "x": 7,
+        "y": 10
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "bac4c508-14d9-4ec3-b0ca-412884742bbe",
+      "from": {
+        "mapId": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+        "x": 6,
+        "y": 10
+      },
+      "to": {
+        "mapId": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+        "x": 5,
+        "y": 51
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "33ee4609-c5ae-492e-b911-019db5832f3a",
+      "from": {
+        "mapId": "5c10b21d-2e64-4ef9-95b9-975b1712e485",
+        "x": 8,
+        "y": 10
+      },
+      "to": {
+        "mapId": "5f714264-d126-4448-8b8a-b513ce4adfb2",
+        "x": 5,
+        "y": 51
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "3d90ccd1-9a37-491e-ba8c-d7e6e609d0de",
+      "from": {
+        "mapId": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+        "x": 6,
+        "y": 10
+      },
+      "to": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 5,
+        "y": 9
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "f4e045c3-30f4-4a91-be5c-1068fcaeacd7",
+      "from": {
+        "mapId": "fbba8348-bb44-486d-83cf-1522ddcb88d0",
+        "x": 8,
+        "y": 10
+      },
+      "to": {
+        "mapId": "8de23335-0335-48a6-bab5-97a6b974cbd7",
+        "x": 5,
+        "y": 9
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "48807e0a-b7a5-4bdb-a74a-f57aec6c3ee1",
+      "from": {
+        "mapId": "84748cae-c12e-4d42-ab11-c735471977e4",
+        "x": 11,
+        "y": 19
+      },
+      "to": {
+        "mapId": "d64e62a9-9a24-4ba6-b0eb-c359ac94248e",
+        "x": 12,
+        "y": 5
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "bf6769e4-85e0-4d16-82b8-377dae9d4b7b",
+      "from": {
+        "mapId": "84748cae-c12e-4d42-ab11-c735471977e4",
+        "x": 11,
+        "y": 1
+      },
+      "to": {
+        "mapId": "8cd97f39-d08a-4437-bb74-6ddb425cbf95",
+        "x": 30,
+        "y": 47
+      },
+      "kind": "door",
+      "two_way": false
+    },
+    {
+      "id": "4b94fbf7-4f5a-4d2f-a641-3b6891d12b0c",
+      "from": {
+        "mapId": "84748cae-c12e-4d42-ab11-c735471977e4",
+        "x": 10,
+        "y": 1
+      },
+      "to": {
+        "mapId": "8cd97f39-d08a-4437-bb74-6ddb425cbf95",
+        "x": 30,
+        "y": 47
+      },
+      "kind": "door",
+      "two_way": true
+    },
+    {
+      "id": "c210da89-621d-42c7-b1c8-2c124245c442",
+      "from": {
+        "mapId": "84748cae-c12e-4d42-ab11-c735471977e4",
+        "x": 1,
+        "y": 9
+      },
+      "to": {
+        "mapId": "491b8085-ec13-440e-9800-335edda8b08d",
+        "x": 53,
+        "y": 12
+      },
+      "kind": "door",
+      "two_way": true
+    }
+  ]
+}
