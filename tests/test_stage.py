@@ -80,6 +80,24 @@ class StagingTest(unittest.TestCase):
         self.assertFalse((self.root / 'staged').exists())
         self.assertEqual('private content', (outside / 'secret.txt').read_text())
 
+    def test_source_project_hardlink_rejected_before_copy(self):
+        outside = self.root / 'private.txt'
+        outside.write_text('do not copy private data')
+        linked = self.project / 'Plugins' / 'private.txt'
+        os.link(outside, linked)
+        with self.assertRaisesRegex(ValueError, 'project contains hardlinked file'):
+            stage(self.project, self.root / 'staged')
+        self.assertFalse((self.root / 'staged').exists())
+        self.assertEqual('do not copy private data', outside.read_text())
+
+    @unittest.skipUnless(hasattr(os, 'mkfifo'), 'POSIX FIFO support required')
+    def test_source_project_fifo_rejected_without_blocking_copy(self):
+        fifo = self.project / 'Plugins' / 'named_pipe'
+        os.mkfifo(fifo)
+        with self.assertRaisesRegex(ValueError, 'project contains unsupported special file'):
+            stage(self.project, self.root / 'staged')
+        self.assertFalse((self.root / 'staged').exists())
+
     def test_archive_symlink_parent_rejected_even_with_overwrite(self):
         outside = self.root / 'private'
         outside.mkdir()
