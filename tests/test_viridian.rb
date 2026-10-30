@@ -107,18 +107,19 @@ class ViridianInstallerTest < Minitest::Test
     File.write("Graphics/Characters/Guard.png","local fixture")
     File.write("Graphics/Characters/Nidoran.png","local fixture")
     save_data({41=>true,42=>true},"Data/MapInfos.rxdata")
-    save_data(ViridianMap.new(48,40,{}),"Data/Map041.rxdata")
+    save_data(ViridianMap.new(50,40,{}),"Data/Map041.rxdata")
     save_data(ViridianMap.new(15,10,{}),"Data/Map042.rxdata")
     @config={
       "schema_version"=>1,
       "source_map_uuid"=>ShatteredViridian::SOURCE_UUID,
       "roles_reviewed"=>true,
       "path_passability_reviewed"=>true,
-      "city_map_id"=>41,"center_map_id"=>42,"center_dimensions"=>[15,10],
+      "city_map_id"=>41,"center_map_id"=>42,"native_city_dimensions"=>[50,40],"center_dimensions"=>[15,10],
+      "native_entrance_reviewed"=>true,
       "expected_city_sha256"=>Digest::SHA256.file("Data/Map041.rxdata").hexdigest,
       "expected_center_sha256"=>Digest::SHA256.file("Data/Map042.rxdata").hexdigest,
-      "guard"=>{"source_event_id"=>"3.1:npc:1","x"=>9,"y"=>16,"character"=>"Guard"},
-      "nidoran"=>{"source_event_id"=>"3.1:npc:8","x"=>18,"y"=>9,"character"=>"Nidoran"},
+      "guard"=>{"source_event_id"=>"3.1:npc:1","source_position"=>[9,16],"x"=>9,"y"=>16,"character"=>"Guard"},
+      "nidoran"=>{"source_event_id"=>"3.1:npc:8","source_position"=>[18,9],"x"=>18,"y"=>9,"character"=>"Nidoran"},
       "guard_path"=>[[9,16],[10,16],[10,17]],
       "nidoran_path"=>[[18,9],[17,9],[17,10]],
       "entry_source_marker"=>[0,17],"entry_trigger"=>[2,17],
@@ -165,11 +166,31 @@ class ViridianInstallerTest < Minitest::Test
     refute File.exist?("Data/Map041.rxdata.shattered_viridian.bak")
   end
   def test_source_anchor_or_role_review_cannot_be_faked
-    @config["nidoran"]["x"]=19
+    @config["nidoran"]["source_position"]=[19,9]
     assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
-    @config["nidoran"]["x"]=18
+    @config["nidoran"]["source_position"]=[18,9]
     @config["roles_reviewed"]=false
     assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
+  end
+  def test_native_50x40_coordinates_can_differ_from_48x40_source_anchors
+    @config["guard"]["x"], @config["guard"]["y"] = 27, 20
+    @config["nidoran"]["x"], @config["nidoran"]["y"] = 28, 21
+    @config["guard_path"] = [[27,20],[28,20],[28,19]]
+    @config["nidoran_path"] = [[28,21],[29,21],[29,20]]
+    @config["entry_trigger"] = [25,20]
+    @config["finish_trigger"] = [30,20]
+    assert_equal 6, ShatteredViridian.install(@config)["installed"]
+    city = load_data("Data/Map041.rxdata")
+    assert_equal [50,40], [city.width,city.height]
+    assert_equal [27,20], [city.events.values.find { |e| e.name.end_with?(":guard") }.x,
+                           city.events.values.find { |e| e.name.end_with?(":guard") }.y]
+  end
+  def test_native_entrance_review_and_dimensions_are_required
+    @config["native_entrance_reviewed"] = false
+    assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
+    @config["native_entrance_reviewed"] = true
+    @config["native_city_dimensions"] = [48,40]
+    assert_raises(RuntimeError) { ShatteredViridian.install(@config) }
   end
   def test_bad_route_and_unreviewed_passability_rejected
     @config["guard_path"]=[[9,16],[12,16]]
