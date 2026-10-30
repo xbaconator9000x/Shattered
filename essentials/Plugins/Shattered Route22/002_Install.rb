@@ -11,6 +11,62 @@ module ShatteredRoute22
   NPCS = [[38, 17], [39, 16], [39, 18]].freeze
   MOVES = [3, 4, 1].freeze # RMXP MoveCommand: right, up, down.
 
+  # The 48x24 positions describe the original source-indexed reference, not
+  # every RMXP project. Native adaptations require explicit reviewed geometry
+  # and six non-overlapping, in-bounds placements, plus the pinned map digest.
+  def self.geometry(config)
+    dimensions = config.fetch("native_dimensions", SOURCE_DIMENSIONS)
+    raise ArgumentError, "invalid reviewed Route22 dimensions" unless
+      dimensions.is_a?(Array) && dimensions.length == 2 &&
+      dimensions.all? { |n| n.instance_of?(Integer) && n.between?(1, 256) }
+    adapted = dimensions != SOURCE_DIMENSIONS || config.key?("event_positions")
+    if adapted
+      raise ArgumentError, "native Route22 adaptation requires explicit review" unless
+        config["reviewed_native_geometry"] == true && config["event_positions"].is_a?(Hash)
+    end
+    positions = config.fetch("event_positions", {
+      "triggers" => TRIGGERS, "npcs" => NPCS
+    })
+    raise ArgumentError, "invalid Route22 event position keys" unless
+      positions.is_a?(Hash) && positions.keys.sort == %w[npcs triggers]
+    %w[triggers npcs].each do |kind|
+      points = positions[kind]
+      raise ArgumentError, "Route22 requires exactly three #{kind}" unless
+        points.is_a?(Array) && points.length == 3 && points.all? do |point|
+          point.is_a?(Array) && point.length == 2 &&
+            point[0].instance_of?(Integer) && point[1].instance_of?(Integer) &&
+            point[0].between?(0, dimensions[0] - 1) &&
+            point[1].between?(0, dimensions[1] - 1)
+        end
+    end
+    all = positions["triggers"] + positions["npcs"]
+    raise ArgumentError, "duplicate Route22 event position" unless all.uniq.length == 6
+    [dimensions, positions["triggers"], positions["npcs"]]
+  end
+
+  def self.validate_native_tiles!(map, coordinates)
+    raise "Adapted Route22 map has no native tile layers" unless
+      map.respond_to?(:data) && map.data && map.respond_to?(:tileset_id)
+    raise "Adapted Route22 tileset file is missing" unless File.file?("Data/Tilesets.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tileset = tilesets[map.tileset_id] if tilesets.is_a?(Array)
+    raise "Adapted Route22 passage table is missing" unless
+      tileset && tileset.respond_to?(:passages) && tileset.passages
+    coordinates.each do |x, y|
+      passable = false
+      2.downto(0) do |layer|
+        tile = map.data[x, y, layer]
+        next if tile.nil? || tile == 0
+        passage = tileset.passages[tile]
+        raise "Unverified Route22 passage at #{x},#{y}" unless passage.is_a?(Integer)
+        next if (passage & 0x10) != 0
+        passable = (passage & 0x0f) == 0
+        break
+      end
+      raise "Blocked or unknown Route22 event tile #{x},#{y}" unless passable
+    end
+  end
+
   def self.validate_config(config)
     raise ArgumentError, "unsupported Route22 configuration" unless config.is_a?(Hash) &&
       config["schema_version"] == 1 && config["source_map_uuid"] == SOURCE_UUID
@@ -27,6 +83,7 @@ module ShatteredRoute22
     raise ArgumentError, "invalid sprite basename" unless
       config["rattata_character"].is_a?(String) &&
       /\A[A-Za-z0-9_ -]+\z/.match(config["rattata_character"])
+    geometry(config)
     config
   end
 
@@ -100,9 +157,13 @@ module ShatteredRoute22
     infos = load_data("Data/MapInfos.rxdata")
     raise "Route22 MapInfo missing" unless infos[config["map_id"]]
     map = load_data(map_path)
-    raise "Route22 must match source 48x24 geometry" unless
-      [map.width, map.height] == SOURCE_DIMENSIONS
+    dimensions, triggers, npcs = geometry(config)
+    raise "Route22 map differs from reviewed native geometry" unless
+      [map.width, map.height] == dimensions
     raise "Route22 event table missing" unless map.events.is_a?(Hash)
+    raise "Legacy Rattata ambush would cause duplicate mandatory battles" if
+      map.events.values.any? { |e| e.name.to_s.match?(/SHATTERED.*Rattata ambush/i) }
+    validate_native_tiles!(map, triggers + npcs) if dimensions != SOURCE_DIMENSIONS
     sprite = config["rattata_character"]
     raise "Missing locally licensed Rattata character sprite" unless
       File.file?("Graphics/Characters/#{sprite}.png")
@@ -112,8 +173,8 @@ module ShatteredRoute22
       raise "Partial/foreign Route22 installation; refusing overwrite" unless
         existing.map(&:name).sort == all_names.sort
       ids = (0..2).map { |i| existing.find { |e| e.name == PREFIX + "rattata_#{i}" }.id }
-      expected = (0..2).map { |i| build_npc(*NPCS[i], i, sprite, config["cleared_switch"]) } +
-        (0..2).map { |i| build_trigger(*TRIGGERS[i], i, ids, config) }
+      expected = (0..2).map { |i| build_npc(*npcs[i], i, sprite, config["cleared_switch"]) } +
+        (0..2).map { |i| build_trigger(*triggers[i], i, ids, config) }
       expected.each do |event|
         actual = existing.find { |e| e.name == event.name }
         event.id = actual.id
@@ -125,15 +186,15 @@ module ShatteredRoute22
     raise "Source map hash changed; verify geometry and passability" unless
       Digest::SHA256.file(map_path).hexdigest == config["expected_map_sha256"]
     occupied = map.events.values.map { |e| [e.x, e.y] }
-    raise "Route22 event tile already occupied" unless (TRIGGERS + NPCS).none? { |p| occupied.include?(p) }
+    raise "Route22 event tile already occupied" unless (triggers + npcs).none? { |p| occupied.include?(p) }
     next_id = (map.events.keys.max || 0) + 1
-    npc_events = NPCS.each_with_index.map do |point, i|
+    npc_events = npcs.each_with_index.map do |point, i|
       event = build_npc(*point, i, sprite, config["cleared_switch"])
       event.id = next_id
       next_id += 1
       event
     end
-    trigger_events = TRIGGERS.each_with_index.map do |point, i|
+    trigger_events = triggers.each_with_index.map do |point, i|
       event = build_trigger(*point, i, npc_events.map(&:id), config)
       event.id = next_id
       next_id += 1
