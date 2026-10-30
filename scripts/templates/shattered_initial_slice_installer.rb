@@ -264,8 +264,8 @@ module ShatteredInitialSlice
     route_map = existing_maps[route_id]
     check(route_map && route_map.events.is_a?(Hash),
       "Route22 map is absent from reviewed HnS warp destinations")
-    check([route_map.width, route_map.height] == [48, 24],
-      "Route22 native map must be 48x24")
+    check([route_map.width, route_map.height] == route.fetch("dimensions"),
+      "Route22 native geometry differs from reviewed plan")
     check(file_sha(native_map_path(route_id)) == route["sha256"],
       "Route22 map changed after the plan was generated")
     check(!event_name?(route_map, "SHATTERED_ROUTE22:") &&
@@ -608,8 +608,8 @@ module ShatteredInitialSlice
     end
 
     route_map = load_native(native_map_path(route_id))
-    check(route_map.width == 48 && route_map.height == 24 && route_map.events.is_a?(Hash),
-      "Installed Route22 map has invalid geometry or events")
+    check([route_map.width, route_map.height] == plan["map_targets"]["route22"].fetch("dimensions") && route_map.events.is_a?(Hash),
+      "Installed Route22 map differs from reviewed geometry or events")
     npc_events = (0..2).map do |index|
       name = "SHATTERED_ROUTE22:rattata_#{index}"
       matches = route_map.events.values.select { |event| event.name == name }
