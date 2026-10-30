@@ -123,8 +123,15 @@ module ShatteredGateStory
     raise "Missing locally provided Aipom sprite" unless File.file?("Graphics/Characters/#{sprite}.png")
     positions = config["positions"]
     positions.each do |name, pos|
-      raise "Scene event tile is impassable: #{name}" unless
-        passable_tile?(map, tilesets, pos["x"], pos["y"])
+      if name == "johto_block"
+        # A south-border transfer may deliberately occupy an impassable tile.
+        # The blocking event must still be reachable from the gate interior.
+        raise "Johto blocker has no northern approach" if pos["y"] == 0 ||
+          !passable_tile?(map, tilesets, pos["x"], pos["y"] - 1)
+      else
+        raise "Scene event tile is impassable: #{name}" unless
+          passable_tile?(map, tilesets, pos["x"], pos["y"])
+      end
     end
     scripts = {
       "collapse" => "ShatteredGateStory.run_collapse(#{config['collapse_sounds'][0, MAX_IMPACTS].inspect}, #{config['final_roar_sound'].inspect})",
