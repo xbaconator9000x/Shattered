@@ -51,6 +51,11 @@ jobs:
         run: |
           ruby -c scripts/audit_native_script_syntax.rb
           ruby tests/test_native_script_syntax.rb
+      - name: Native Viridian escort geometry and collision regression
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
+          ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
+          ruby tests/test_viridian.rb
       - name: World-link native installer syntax and unit tests
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'

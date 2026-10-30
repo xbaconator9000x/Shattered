@@ -244,7 +244,7 @@
     {
       "id": "SE-018",
       "title": "Implement Viridian walls, escort, interiors, doors and weather state",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-017"
       ],
@@ -254,9 +254,11 @@
         "Smoke map transitions, NPC pathing and persisted story flags"
       ],
       "evidence": [
-        "2026-10-31 private original v0.4 native Map010 inspection: Viridian City is 50x40 with 23 existing vanilla events, including Center door at (26,26) and SHATTERED arrival at (25,20). Draft PR #16 assumes 48x40 ROM-source geometry and will refuse native installation; a reviewed walled map, guard/Nidoran identities and collision-safe coordinates are needed before source adoption. No original RXData uploaded."
+        "2026-10-31 private original v0.4 native Map010 inspection: Viridian City is 50x40 with 23 existing vanilla events, including Center door at (26,26) and SHATTERED arrival at (25,20). Draft PR #16 assumes 48x40 ROM-source geometry and will refuse native installation; a reviewed walled map, guard/Nidoran identities and collision-safe coordinates are needed before source adoption. No original RXData uploaded.",
+        "2026-10-31 PR #16 native-geometry repair branch: separate 48x40 ROM-source NPC anchor positions from explicitly reviewed native 50x40 target coordinates, native entrance review and source SHA. Added static Tilesets passage checks for every escort path/event tile, Center trigger and occupied-route collision, plus Ruby fixture tests. Original private Map010 SHA256 0fc83d0c1d55d9286727fc948759730d23d792b9e34524dbe6669f0076879b25, 23 events. This is source implementation only; actual walled Viridian, roles, sprites, gameplay, rain, save/reload and Android remain blocked.",
+        "2026-10-31 PR #16 native source contract: private original Map016 event4 at (32,17) transfers to Map010 (25,20); Center is Map011 20x15. Installer now checks the actual staged Route22 transfer command, requires reviewed NPC roles and rejects intersecting escort routes/player triggers. Source-only; native compilation, map replacement and Android remain OPEN."
       ],
-      "blocker": "Draft PR #16 is synthetic/source-only and assumes 48x40; actual original v0.4 Map010 is 50x40 vanilla Viridian. Require reviewed walled map, roles, collision, native runtime and source permissions; do not mark installed."
+      "blocker": "Reviewed walled Viridian replacement and NPC identities/paths are still missing; source checks alone do not prove playable escort, rain or Center. PR #16 remains draft until actual native installation and runtime tests."
     },
     {
       "id": "SE-019",
