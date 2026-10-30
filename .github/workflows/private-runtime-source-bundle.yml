@@ -1,0 +1,47 @@
+name: Shattered source-only private runtime handoff
+
+on:
+  push:
+    paths:
+      - '.github/workflows/private-runtime-source-bundle.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject assets and unexpected tracked paths before packaging
+        run: |
+          python3 - <<'PY'
+          import pathlib, subprocess
+          paths = subprocess.check_output(
+              ['git', 'ls-files', '-z', '--', 'essentials/Plugins', 'essentials/PBS', 'scripts']
+          ).decode().strip('\0').split('\0')
+          assert paths and len(paths) > 10, 'source inventory unexpectedly empty'
+          allowed = {'.rb', '.txt', '.pbs', '.py', '.json', '.md', '.sh'}
+          for name in paths:
+              path = pathlib.Path(name)
+              assert path.suffix.lower() in allowed, f'non-source file refused: {name}'
+              assert path.is_file() and not path.is_symlink(), f'unsafe source path: {name}'
+              assert path.stat().st_size < 2_000_000, f'oversized source file: {name}'
+          print(f'Validated {len(paths)} tracked source files; no graphics/audio/RXData/ROMs')
+          PY
+      - name: Build exact-commit source-only bundle
+        run: |
+          mkdir -p source-bundle
+          git archive --format=tar.gz --output=source-bundle/shattered-source.tar.gz HEAD essentials/Plugins essentials/PBS scripts
+          printf '%s\n' "$GITHUB_SHA" > source-bundle/main-or-pr-head.sha
+          (cd source-bundle && sha256sum shattered-source.tar.gz > SHA256SUMS)
+          tar -tzf source-bundle/shattered-source.tar.gz | grep -q '^essentials/Plugins/Shattered Core/001_Core.rb$'
+          test ! -e source-bundle/Game.exe
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shattered-source-only-${{ github.sha }}
+          path: source-bundle/
+          if-no-files-found: error
+          retention-days: 2
