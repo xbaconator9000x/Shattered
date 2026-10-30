@@ -22,3 +22,13 @@ This is the PRIVATE source-control hub for the **Pokémon Shattered Essentials v
 
 ## Current priority
 Start with queued or in-progress `SE-002` (plugin source/version verification, manifests, version/dependency/conflict checks), then HUMAN validation `SE-004`. Do not automatically install unverified third-party binaries or touch the original FireRed ROM project.
+
+## Integration-first execution priority
+Supersedes the older Current priority paragraph. First reconcile existing draft work into one reviewable integration candidate: SE-002 catalogue, SE-004 HUMAN, SE-015 source anchors, SE-013 gate, SE-016 gate story and SE-017 transfers in dependency order. Inspect current PR heads and tests; reuse existing implementations rather than opening duplicate feature PRs.
+Use one preserved, authorised Essentials v21.1 source project and one reproducible fresh staging output. Record source hashes, plugin versions and missing inputs. First playable milestone: new game → HUMAN → gate collapse → Aipom key → Route 22 battle → save/close/reload.
+Run combined Python/Ruby checks on the integrated candidate; synthetic tests do not close native runtime gates. Produce a single candidate artifact and commit-specific test route when staging succeeds. Explicitly identify missing archives/assets instead of repeatedly auditing them.
+After each completed task select the next eligible integration task in the same execution while capacity remains. Hourly watchdog is recovery, not a reason to stop between eligible tasks. Keep checks incremental and avoid redundant APK/CI runs. Preserve review requirements; do not claim engine or device execution without evidence.
+
+
+## Work runtime acceptance (user directive, 2026-10-30)
+ChatGPT Work coordinates actual runtime testing. GitHub Actions supplies builds and supporting regression checks only; a green workflow never proves Android or gameplay acceptance. Continue develop → integrate → build → install → launch → test → repair → retest → commit while an executable path exists. Record features separately as implemented, integrated, runtime verified, or blocked, with exact candidate SHA/artifact hash and observed evidence. Assess Work runtime provisioning before assigning device work to the user. Preserve successful prototype implementations; integrate instead of rewriting. Runtime claims require actual execution, screenshots/logs and persisted-state checks; synthetic fixtures remain supporting evidence. On a genuine environment restriction, preserve the reproduction and continue independent eligible work rather than repeatedly re-auditing the same blocker.

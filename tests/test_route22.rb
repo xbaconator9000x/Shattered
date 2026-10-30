@@ -118,6 +118,17 @@ class Route22BattleTest < Minitest::Test
   end
 end
 
+NativeRoute22Map = Struct.new(:width, :height, :events, :tileset_id, :data)
+NativeRoute22Tileset = Struct.new(:passages)
+class NativeRoute22TileData
+  def initialize(values)
+    @values = values
+  end
+  def [](x, y, layer)
+    @values.fetch([x, y, layer], 0)
+  end
+end
+
 class Route22InstallerTest < Minitest::Test
   def setup
     @old=Dir.pwd
@@ -137,6 +148,118 @@ class Route22InstallerTest < Minitest::Test
     Dir.chdir(@old)
     FileUtils.remove_entry(@tmp)
   end
+  def native_v04_fixture(blocked = nil, legacy = false)
+    positions = {
+      "triggers" => [[27, 16], [27, 17], [27, 18]],
+      "npcs" => [[29, 17], [29, 18], [28, 18]]
+    }
+    tiles = {}
+    (positions["triggers"] + positions["npcs"]).each { |x, y| tiles[[x, y, 0]] = 385 }
+    tiles[[30, 17, 0]] = 385 # first Rattata scatter landing
+    tiles[[blocked[0], blocked[1], 0]] = 384 if blocked
+    events = {}
+    if legacy
+      event = RPG::Event.new(30, 17)
+      event.id = 3
+      event.name = "SHATTERED: Rattata ambush"
+      events[3] = event
+    end
+    save_data(NativeRoute22Map.new(54, 34, events, 1, NativeRoute22TileData.new(tiles)),
+              "Data/Map042.rxdata")
+    save_data([nil, NativeRoute22Tileset.new({384 => 15, 385 => 0})],
+              "Data/Tilesets.rxdata")
+    @config["expected_map_sha256"] = Digest::SHA256.file("Data/Map042.rxdata").hexdigest
+    @config["native_dimensions"] = [54, 34]
+    @config["reviewed_native_geometry"] = true
+    @config["event_positions"] = positions
+    @config["scatter_moves"] = [3, 4, 3]
+  end
+
+  def test_native_adaptation_installs_six_and_is_idempotent
+    native_v04_fixture
+    assert_equal 6, ShatteredRoute22.install(@config)["installed"]
+    map = load_data("Data/Map042.rxdata")
+    assert_equal 6, map.events.size
+    assert_equal @config["event_positions"]["triggers"].sort,
+      map.events.values.select { |e| e.name.include?("trigger_") }.map { |e| [e.x, e.y] }.sort
+    before = File.binread("Data/Map042.rxdata")
+    assert_equal 6, ShatteredRoute22.install(@config)["unchanged"]
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_reviewed_legacy_autorun_is_disabled_atomically_and_idempotently
+    native_v04_fixture(nil, true)
+    original = load_data("Data/Map042.rxdata").events[3]
+    @config["legacy_migration"] = {
+      "event_id" => 3, "event_name" => original.name,
+      "x" => 30, "y" => 17,
+      "event_sha256" => Digest::SHA256.hexdigest(Marshal.dump(original))
+    }
+    assert_equal 6, ShatteredRoute22.install(@config)["installed"]
+    map = load_data("Data/Map042.rxdata")
+    assert_equal 7, map.events.length
+    assert_equal ShatteredRoute22::LEGACY_DISABLED, map.events[3].name
+    assert_equal [0], map.events[3].pages.first.list.map(&:code)
+    before = File.binread("Data/Map042.rxdata")
+    assert_equal 6, ShatteredRoute22.install(@config)["unchanged"]
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_wrong_legacy_event_digest_cannot_mutate_map
+    native_v04_fixture(nil, true)
+    @config["legacy_migration"] = {
+      "event_id" => 3, "event_name" => "SHATTERED: Rattata ambush",
+      "x" => 30, "y" => 17, "event_sha256" => "0" * 64
+    }
+    before = File.binread("Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_native_adaptation_rejects_blocked_and_legacy_event
+    native_v04_fixture([27, 17])
+    before = File.binread("Data/Map042.rxdata")
+    assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_equal before, File.binread("Data/Map042.rxdata")
+    native_v04_fixture(nil, true)
+    before = File.binread("Data/Map042.rxdata")
+    error = assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_match(/duplicate mandatory battles/, error.message)
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_native_scatter_destination_must_be_passable
+    native_v04_fixture([30, 17])
+    before = File.binread("Data/Map042.rxdata")
+    error = assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_match(/Blocked or unknown Route22 event tile/, error.message)
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_pinned_v04_hash_rejects_unreviewed_event_relocation
+    native_v04_fixture
+    @config["expected_map_sha256"] = ShatteredRoute22::V04_ROUTE22_SHA256
+    @config["legacy_migration"] = {
+      "event_id" => 3, "event_name" => "SHATTERED: Rattata ambush",
+      "x" => 30, "y" => 17,
+      "event_sha256" => ShatteredRoute22::V04_LEGACY_EVENT_SHA256
+    }
+    ShatteredRoute22.validate_config(@config)
+    @config["event_positions"]["triggers"][0] = [26, 16]
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+  end
+
+  def test_native_adaptation_requires_review_and_unique_coordinates
+    native_v04_fixture
+    @config.delete("reviewed_native_geometry")
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+    @config["reviewed_native_geometry"] = true
+    @config["event_positions"]["npcs"][0] = @config["event_positions"]["triggers"][0]
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+    @config["event_positions"]["npcs"][0] = [54, 17]
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+  end
+
   def test_installs_six_native_events_and_repeated_install_is_byte_identical
     assert_equal 6, ShatteredRoute22.install(@config)["installed"]
     map=load_data("Data/Map042.rxdata")
@@ -144,7 +267,7 @@ class Route22InstallerTest < Minitest::Test
     assert_equal ShatteredRoute22::TRIGGERS.sort,
       map.events.values.select { |e| e.name.include?("trigger_") }.map { |e| [e.x,e.y] }.sort
     trigger=map.events.values.find { |e| e.name.end_with?("trigger_1") }
-    assert_equal [2,2,2], trigger.pages.map(&:trigger)
+    assert_equal [1,1,1], trigger.pages.map(&:trigger), "all pages must be RMXP Player Touch, not Event Touch"
     assert_equal [false,true,true], trigger.pages.map { |p| p.condition.switch1_valid }
     assert_equal [355,209,209,209,210,121,355,0], trigger.pages[0].list.map(&:code)
     assert_equal [355,0], trigger.pages[1].list.map(&:code)
