@@ -208,9 +208,10 @@
       "evidence": [
         "Draft PR SE-016 gate story: native RMXP event installer for verified south exit, six resumable sound beats, persistent Aipom key flag, original key-item PBS staging, Ruby synthetic map tests (10 tests/42 assertions) and Python PBS tests (4); in-engine and Android tests OPEN.",
         "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified.",
-        "PR #14 merged on main at b35245b8; gate collapse/Aipom source and isolated tests integrated. Existing authorised v0.4 base stores AIPOM cry at Audio/SE/Cries/AIPOM.ogg; source-only fix under review, native scene remains unverified."
+        "PR #14 merged on main at b35245b8; gate collapse/Aipom source and isolated tests integrated. Existing authorised v0.4 base stores AIPOM cry at Audio/SE/Cries/AIPOM.ogg; source-only fix under review, native scene remains unverified.",
+        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license."
       ],
-      "blocker": "Real licensed HnS tileset/metatile mapping, verified gate coordinates, private local audio/sprites, native Essentials compilation and scene/save/reload test still required; merged source does not imply gameplay acceptance."
+      "blocker": "Aipom RMXP sprite now staged privately, but HnS asset redistribution rights, correct HnS gate tileset/metatile mapping, native Essentials compilation and scene/save/reload still required."
     },
     {
       "id": "SE-017",
@@ -235,9 +236,10 @@
         "PR #13 world transfers merged at fc5a9d16 and PR #15 Route22 encounter merged at 0ee6e7e7; combined CI passed on main 6e2790da. Actual map collision, battle and save/reload not tested in Essentials.",
         "2026-10-31 real v0.4 native RXData inspection: existing Route22 is Map016, 54x34, SHA256 0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b, not the handoff's 48x24 requirement. Four of six proposed source-anchored Route22 trigger/NPC coordinates have directionally blocked tiles (36,16; 36,18; 39,16; 39,18). Legacy v0.4 encounter event remains at (30,17). Do not install on this map without a reviewed rebase or replacement.",
         "2026-10-31 PR #38 source repair: audited original v0.4 Map016 SHA256 0ec2a363..., 54x34; three candidate trigger tiles (27,16),(27,17),(27,18) form a tile-only cutline between the reception-gate approach and Viridian, with three unoccupied passable NPC positions. Replaced hard-coded 48x24 checks across Python/Ruby handoff; added source-digest-pinned transactional migration of legacy autorun event ID3 and static collision/scatter checks, with Ruby/Python regressions. Native Essentials playthrough NOT verified.",
-        "2026-10-31 PR #38 merged as 19bc9dff1db02776fa12c6ae29f49b40ab636058; source-level validate, synthetic-contract and handoff all passed on merged main. Exact native v0.4 legacy event ID3 hash-pinned migration, static 54x34 cutline and scatter validation integrated; real gameplay remains unverified."
+        "2026-10-31 PR #38 merged as 19bc9dff1db02776fa12c6ae29f49b40ab636058; source-level validate, synthetic-contract and handoff all passed on merged main. Exact native v0.4 legacy event ID3 hash-pinned migration, static 54x34 cutline and scatter validation integrated; real gameplay remains unverified.",
+        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license."
       ],
-      "blocker": "Source integration merged; native Essentials v21.1 compilation, actual mandatory HUMAN-vs-Rattata battle, event migration, route transfer, save/reload and Android JoiPlay/NaviaXP playthrough remain unverified. HnS 2.0 tileset/art mapping and licensed overworld Aipom/Rattata character sprites are not present in the original v0.4 archive."
+      "blocker": "Rattata RMXP sprite now staged privately; actual mandatory HUMAN-vs-Rattata battle, native event migration, route transfer, save/reload, Android, and HnS asset licensing remain unverified."
     },
     {
       "id": "SE-018",
@@ -280,6 +282,9 @@
         "HUMAN sprite, player genders, Aipom/Staryu/Vulpix/Exeggcute followers and battle/UI art render without palette corruption",
         "Gate impacts, roars, key cry, rain and background music do not overlap or leak maps",
         "Menus, follower spacing, turns and rain events survive save, map transition and mobile screen"
+      ],
+      "evidence": [
+        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license."
       ]
     },
     {
