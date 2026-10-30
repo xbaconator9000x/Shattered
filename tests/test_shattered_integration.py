@@ -39,10 +39,10 @@ class ShatteredIntegrationTests(unittest.TestCase):
 
     def test_wrong_stacked_branch_ancestry_fails(self):
         manifest = copy.deepcopy(self.manifest)
-        # PR #15 was retargeted to main after its parent PR #13 merged.
-        # PR #16 remains stacked on #15, so its parent SHA must stay pinned.
-        viridian = next(pr for pr in manifest["pull_requests"] if pr["id"] == 16)
-        viridian["base"] = manifest["main"]["commit"]
+        # PR #16 was retargeted to main after #15 merged.
+        # PR #17 remains stacked on #16, so its parent SHA must stay pinned.
+        dojo = next(pr for pr in manifest["pull_requests"] if pr["id"] == 17)
+        dojo["base"] = manifest["main"]["commit"]
         with self.assertRaisesRegex(integration.IntegrationError, "wrong branch ancestry"):
             integration.validate_manifest(manifest)
 
