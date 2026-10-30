@@ -10,8 +10,11 @@ Source rights and native gameplay must be verified independently.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
+import re
 import struct
+import tempfile
 import zlib
 
 PNG = b"\x89PNG\r\n\x1a\n"
@@ -124,18 +127,46 @@ def build_sheet(raw):
     return (PNG + chunk(b"IHDR", struct.pack(">IIBBBBB", 128, 128, 8, 6, 0, 0, 0)) +
             chunk(b"IDAT", zlib.compress(scanlines, 9)) + chunk(b"IEND", b""))
 
-def convert(source, output, *, force=False):
+def convert(source, output, *, force=False, expected_source_sha256=None,
+            expected_output_sha256=None):
+    """Convert into a private project, rejecting mismatched pinned artwork.
+
+    Both optional pins come from development/hns_overworld_sprite_provenance.json.
+    All validation finishes before any output is replaced; the write is atomic.
+    """
     source, output = Path(source), Path(output)
+    for name, value in (("source", expected_source_sha256),
+                        ("output", expected_output_sha256)):
+        if value is not None and not re.fullmatch(r"[0-9a-f]{64}", value):
+            raise SpriteFormatError(f"invalid {name} SHA-256 pin")
     if source.is_symlink() or not source.is_file() or source.stat().st_size > MAX_SIZE:
         raise SpriteFormatError("source must be a small regular local PNG")
     if output.is_symlink() or (output.exists() and not force):
         raise SpriteFormatError("refusing to overwrite output without --force")
     original = source.read_bytes()
+    source_hash = hashlib.sha256(original).hexdigest()
+    if expected_source_sha256 and source_hash != expected_source_sha256:
+        raise SpriteFormatError("source SHA-256 differs from pinned HnS artwork")
     result = build_sheet(original)
+    output_hash = hashlib.sha256(result).hexdigest()
+    if expected_output_sha256 and output_hash != expected_output_sha256:
+        raise SpriteFormatError("output SHA-256 differs from pinned RMXP sheet")
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(result)
-    return {"source_sha256": hashlib.sha256(original).hexdigest(),
-            "output_sha256": hashlib.sha256(result).hexdigest(),
+    if output.parent.is_symlink():
+        raise SpriteFormatError("refusing symlinked output directory")
+    temp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="wb", prefix=".shattered-sprite-",
+                                         suffix=".png.tmp", dir=output.parent,
+                                         delete=False) as handle:
+            temp_path = Path(handle.name)
+            handle.write(result)
+        os.replace(temp_path, output)
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
+    return {"source_sha256": source_hash,
+            "output_sha256": output_hash,
             "source_dimensions": [192, 32], "output_dimensions": [128, 128],
             "source_frames": 6, "output_frames": 16,
             "rights_reviewed": False, "redistribution_authorised": False,
@@ -147,8 +178,12 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--manifest", type=Path)
     parser.add_argument("--force", action="store_true")
+    parser.add_argument("--expected-source-sha256", help="pinned source SHA-256")
+    parser.add_argument("--expected-output-sha256", help="pinned converted SHA-256")
     args = parser.parse_args()
-    info = convert(args.source, args.output, force=args.force)
+    info = convert(args.source, args.output, force=args.force,
+                   expected_source_sha256=args.expected_source_sha256,
+                   expected_output_sha256=args.expected_output_sha256)
     if args.manifest:
         if args.manifest.is_symlink() or args.manifest.exists():
             parser.error("manifest already exists")
