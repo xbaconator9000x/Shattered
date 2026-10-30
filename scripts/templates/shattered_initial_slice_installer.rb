@@ -258,6 +258,27 @@ module ShatteredInitialSlice
     true
   end
 
+  # Validate a local, non-redistributed RMXP four-direction sprite sheet.
+  # Format checks cannot establish animation quality; that requires runtime.
+  def self.validate_character_sheet!(character_name)
+    check(character_name.is_a?(String) &&
+      character_name.match?(/\\A[A-Za-z0-9 _-]+\\z/),
+      "Unsafe or missing overworld character name")
+    path = File.join("Graphics", "Characters", "#{character_name}.png")
+    check(File.file?(path) && !File.symlink?(path),
+      "Required overworld character sprite is missing: #{character_name}")
+    File.open(path, "rb") do |file|
+      header = file.read(33)
+      check(header && header.bytesize == 33 &&
+        header.byteslice(0, 8) == "\\x89PNG\\r\\n\\x1a\\n".b &&
+        header.byteslice(12, 4) == "IHDR" &&
+        header.byteslice(16, 8).unpack("N2") == [128, 128] &&
+        header.getbyte(24) == 8 && header.getbyte(25) == 6,
+        "Overworld character must be a 128x128 RGBA RMXP sheet: #{character_name}")
+    end
+    true
+  end
+
   def self.preflight_native!(plan, configs)
     check(defined?(RPG::Map), "Installer must run in a native Essentials/RMXP context")
     %w[pbInstallShatteredHNSReceptionGate pbInstallShatteredWorldLinks
@@ -336,6 +357,8 @@ module ShatteredInitialSlice
     ShatteredWorldLinks.validate(configs["world_links"])
     ShatteredGateStory.validate_install(configs["gate_story"])
     ShatteredRoute22.validate_config(configs["route22"])
+    validate_character_sheet!(configs["gate_story"]["aipom_character"])
+    validate_character_sheet!(configs["route22"]["rattata_character"])
     check(configs["hns_import"]["target"]["tileset_image"] &&
       File.file?(File.join("Graphics", "Tilesets",
         configs["hns_import"]["target"]["tileset_image"])),
