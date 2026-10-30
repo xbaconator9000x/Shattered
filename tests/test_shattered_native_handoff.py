@@ -17,6 +17,56 @@ import shattered_integration_handoff as handoff
 
 
 class ShatteredNativeHandoffTests(unittest.TestCase):
+    def test_audited_v04_route22_requires_exact_hash_and_reviewed_geometry(self):
+        target = {"id": 16, "dimensions": [54, 34],
+                  "sha256": handoff.V04_ROUTE22_SHA256}
+        switches = {"route22_scatter": 80, "route22_cleared": 81}
+        variables = {"route22_outcome": 21}
+        config = {"schema_version": 1, "source_map_uuid": handoff.ROUTE22_UUID,
+                  "map_id": 16, "expected_map_sha256": handoff.V04_ROUTE22_SHA256,
+                  "scatter_switch": 80, "cleared_switch": 81,
+                  "outcome_variable": 21, "rattata_character": "Rattata",
+                  "native_dimensions": [54, 34], "reviewed_native_geometry": True,
+                  "legacy_migration": {
+                      "event_id": 3, "event_name": "SHATTERED: Rattata ambush",
+                      "x": 30, "y": 17,
+                      "event_sha256": handoff.V04_LEGACY_EVENT_SHA256},
+                  "scatter_moves": [3, 4, 3],
+                  "event_positions": {
+                      "triggers": [[27, 16], [27, 17], [27, 18]],
+                      "npcs": [[29, 17], [29, 18], [28, 18]]}}
+        handoff._validate_route22(config, target, switches, variables)
+        assert len(handoff._route22_reserved_positions(self.manifest, config)) == 6
+        bad = copy.deepcopy(config)
+        bad["reviewed_native_geometry"] = False
+        with self.assertRaises(integration.IntegrationError):
+            handoff._validate_route22(bad, target, switches, variables)
+        bad = copy.deepcopy(config)
+        bad["event_positions"]["npcs"][0] = [27, 16]
+        with self.assertRaises(integration.IntegrationError):
+            handoff._route22_reserved_positions(self.manifest, bad)
+        bad_target = dict(target, sha256="0" * 64)
+        with self.assertRaises(integration.IntegrationError):
+            handoff._validate_route22(config, bad_target, switches, variables)
+
+    def test_world_links_accept_reviewed_native_dimensions_only_when_matching(self):
+        links = {"format": "shattered-world-links", "format_version": 1,
+                 "maps": [{"map_id": 223, "width": 22, "height": 21},
+                          {"map_id": 16, "width": 54, "height": 34}],
+                 "events": [
+                     {"map_id": 223, "link_id": "gate-route22", "side": "F",
+                      "x": 3, "y": 3,
+                      "destination": {"map_id": 16, "x": 24, "y": 17,
+                                      "direction": 6, "fade": 0}},
+                     {"map_id": 16, "link_id": "gate-route22", "side": "R",
+                      "x": 14, "y": 9,
+                      "destination": {"map_id": 223, "x": 4, "y": 4,
+                                      "direction": 2, "fade": 0}}]}
+        handoff._validate_world_links(links, 223, 16, [54, 34])
+        links["maps"][1]["width"] = 48
+        with self.assertRaises(integration.IntegrationError):
+            handoff._validate_world_links(links, 223, 16, [54, 34])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)

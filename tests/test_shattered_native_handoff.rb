@@ -181,7 +181,7 @@ class ShatteredNativeHandoffTest < Minitest::Test
     @plan = {
       "map_targets" => {
         "reception_gate" => {"id" => @gate_id},
-        "route22" => {"id" => @route_id}
+        "route22" => {"id" => @route_id, "dimensions" => [48, 24]}
       },
       "route22_reserved_positions" => ShatteredInitialSlice::ROUTE22_RESERVED,
       "new_game_spawn" => {"map_id" => @gate_id, "x" => 5, "y" => 5,
@@ -195,6 +195,33 @@ class ShatteredNativeHandoffTest < Minitest::Test
         "events" => @links
       }
     }
+  end
+
+  def test_native_route22_tiles_reject_blocked_and_unverified_positions
+    data = NativeTileTable.new({[36, 16, 0] => 384, [36, 17, 0] => 385})
+    map = NativeMapStub.new(54, 34, {}, 1, data)
+    passages = Hash.new(0)
+    passages[384] = 15
+    passages[385] = 0
+    tilesets = [nil, NativeTilesetStub.new(passages, nil)]
+    assert_raises(RuntimeError) do
+      ShatteredInitialSlice.validate_route22_tiles!(map, tilesets, [[36, 16]])
+    end
+    assert ShatteredInitialSlice.validate_route22_tiles!(map, tilesets, [[36, 17]])
+    assert_raises(RuntimeError) do
+      ShatteredInitialSlice.validate_route22_tiles!(map, tilesets, [[54, 17]])
+    end
+    assert_raises(RuntimeError) do
+      ShatteredInitialSlice.validate_route22_tiles!(map, tilesets, [[36, 18]])
+    end
+  end
+
+  def test_native_route22_geometry_is_checked_against_reviewed_dimensions
+    route = MapStub.new(54, 34, {})
+    plan = { "map_targets" => { "route22" => { "dimensions" => [54, 34] } } }
+    assert_equal [54, 34], plan["map_targets"]["route22"]["dimensions"]
+    assert_equal [route.width, route.height], plan["map_targets"]["route22"]["dimensions"]
+    refute_equal [48, 24], plan["map_targets"]["route22"]["dimensions"]
   end
 
   def test_accepts_exact_installer_results_and_complete_event_sets

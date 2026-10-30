@@ -24,6 +24,14 @@ module ShatteredInitialSlice
   ROUTE22_RESERVED = [[36, 16], [36, 17], [36, 18],
                       [38, 17], [39, 16], [39, 18]].freeze
 
+  def self.route22_reserved(config)
+    positions = config.fetch("event_positions", {
+      "triggers" => ROUTE22_RESERVED.first(3),
+      "npcs" => ROUTE22_RESERVED.last(3)
+    })
+    positions.fetch("triggers") + positions.fetch("npcs")
+  end
+
   def self.top
     TOPLEVEL_BINDING.eval("self")
   end
@@ -209,14 +217,45 @@ module ShatteredInitialSlice
       check(!link_positions[[gate_id, position["x"], position["y"]]],
         "Gate Story event overlaps a world-link event: #{name}")
     end
-    check(plan["route22_reserved_positions"].length == ROUTE22_RESERVED.length &&
-      plan["route22_reserved_positions"].sort == ROUTE22_RESERVED.sort,
+    reserved = route22_reserved(configs["route22"])
+    check(plan["route22_reserved_positions"].length == reserved.length &&
+      plan["route22_reserved_positions"].sort == reserved.sort,
       "Route22 event coordinate contract differs from the pinned source")
     configs["world_links"]["events"].each do |event|
       next unless event["map_id"] == route_id
-      check(!ROUTE22_RESERVED.include?([event["x"], event["y"]]),
+      check(!reserved.include?([event["x"], event["y"]]),
         "World-link event overlaps a reserved Route22 event coordinate")
     end
+  end
+
+  # Conservative native RMXP tile-only check. This rejects definitely blocked
+  # positions; it does not establish that a player can reach or trigger them.
+  def self.route22_tile_open?(map, tileset, x, y)
+    return false unless map.respond_to?(:data) && map.data &&
+      tileset && tileset.respond_to?(:passages) && tileset.passages
+    return false unless x.between?(0, map.width - 1) && y.between?(0, map.height - 1)
+    2.downto(0) do |layer|
+      tile_id = map.data[x, y, layer]
+      next if tile_id.nil? || tile_id == 0
+      passage = tileset.passages[tile_id]
+      return false unless passage.is_a?(Integer)
+      next if (passage & 0x10) != 0
+      return (passage & 0x0f) == 0
+    end
+    false
+  end
+
+  def self.validate_route22_tiles!(map, tilesets, positions = ROUTE22_RESERVED)
+    check(map.respond_to?(:tileset_id) && tilesets.is_a?(Array),
+      "Route22 native tileset information is missing")
+    tileset = tilesets[map.tileset_id]
+    check(tileset && tileset.respond_to?(:passages),
+      "Route22 tileset passage data is missing")
+    positions.each do |x, y|
+      check(route22_tile_open?(map, tileset, x, y),
+        "Route22 event tile is blocked or unverified: #{x},#{y}")
+    end
+    true
   end
 
   def self.preflight_native!(plan, configs)
@@ -264,14 +303,29 @@ module ShatteredInitialSlice
     route_map = existing_maps[route_id]
     check(route_map && route_map.events.is_a?(Hash),
       "Route22 map is absent from reviewed HnS warp destinations")
-    check([route_map.width, route_map.height] == [48, 24],
-      "Route22 native map must be 48x24")
+    check([route_map.width, route_map.height] == route.fetch("dimensions"),
+      "Route22 native geometry differs from reviewed plan")
     check(file_sha(native_map_path(route_id)) == route["sha256"],
       "Route22 map changed after the plan was generated")
     check(!event_name?(route_map, "SHATTERED_ROUTE22:") &&
       !event_name?(route_map, "SHATTERED_LINK:"),
       "Route22 has a partial/duplicate integration install without a receipt")
-    ROUTE22_RESERVED.each do |x, y|
+    migration = configs["route22"]["legacy_migration"]
+    if migration
+      legacy = route_map.events[migration["event_id"]]
+      check(legacy && legacy.id == migration["event_id"] &&
+        legacy.name == migration["event_name"] &&
+        [legacy.x, legacy.y] == [migration["x"], migration["y"]] &&
+        Digest::SHA256.hexdigest(Marshal.dump(legacy)) == migration["event_sha256"],
+        "Legacy Route22 autorun differs from the reviewed migration source")
+    else
+      check(!route_map.events.values.any? { |event|
+        event.name.to_s.match?(/SHATTERED.*Rattata ambush/i)
+      }, "Legacy Route22 Rattata autorun must be reconciled before another encounter")
+    end
+    reserved = route22_reserved(configs["route22"])
+    validate_route22_tiles!(route_map, load_native("Data/Tilesets.rxdata"), reserved)
+    reserved.each do |x, y|
       check(!event_at?(route_map, x, y),
         "Route22 event coordinate is occupied: #{x},#{y}")
     end
@@ -608,8 +662,8 @@ module ShatteredInitialSlice
     end
 
     route_map = load_native(native_map_path(route_id))
-    check(route_map.width == 48 && route_map.height == 24 && route_map.events.is_a?(Hash),
-      "Installed Route22 map has invalid geometry or events")
+    check([route_map.width, route_map.height] == plan["map_targets"]["route22"].fetch("dimensions") && route_map.events.is_a?(Hash),
+      "Installed Route22 map differs from reviewed geometry or events")
     npc_events = (0..2).map do |index|
       name = "SHATTERED_ROUTE22:rattata_#{index}"
       matches = route_map.events.values.select { |event| event.name == name }
@@ -618,13 +672,16 @@ module ShatteredInitialSlice
     end
     npc_ids = npc_events.map(&:id)
     route_config = configs["route22"]
-    expected_events = ShatteredRoute22::NPCS.each_with_index.map do |point, index|
+    positions = route_config.fetch("event_positions", {
+      "npcs" => ShatteredRoute22::NPCS, "triggers" => ShatteredRoute22::TRIGGERS
+    })
+    expected_events = positions["npcs"].each_with_index.map do |point, index|
       ShatteredRoute22.build_npc(
         *point, index, route_config["rattata_character"],
         route_config["cleared_switch"]
       )
     end
-    expected_events.concat(ShatteredRoute22::TRIGGERS.each_with_index.map do |point, index|
+    expected_events.concat(positions["triggers"].each_with_index.map do |point, index|
       ShatteredRoute22.build_trigger(*point, index, npc_ids, route_config)
     end)
     expected_events.each do |expected|
@@ -633,6 +690,14 @@ module ShatteredInitialSlice
       expected.id = actual.id
       check(Marshal.dump(actual) == Marshal.dump(expected),
         "Route22 event differs from the pinned installer: #{expected.name}")
+    end
+    if (migration = route_config["legacy_migration"])
+      disabled = route_map.events[migration["event_id"]]
+      check(disabled && disabled.name == ShatteredRoute22::LEGACY_DISABLED &&
+        disabled.pages.length == 1 && disabled.pages[0].trigger == 0 &&
+        disabled.pages[0].through == true &&
+        disabled.pages[0].list.map(&:code) == [0],
+        "Legacy Rattata autorun was not safely disabled in the installed map")
     end
     expected_route_events = expected_events.map(&:name).sort
     actual_route_events = route_map.events.values.map(&:name).grep(/\ASHATTERED_ROUTE22:/).sort
