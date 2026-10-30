@@ -1,0 +1,5 @@
+Name       = Shattered Gate Story
+Version    = 0.2.0
+Essentials = 21.1
+Website    = https://github.com/xbaconator9000x/Shattered
+Credits    = Shattered contributors

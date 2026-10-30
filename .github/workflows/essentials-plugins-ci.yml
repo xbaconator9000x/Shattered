@@ -1,6 +1,7 @@
 name: Shattered Essentials plugins CI
 on:
   push:
+    branches: [main]
     paths:
       - 'essentials/**'
       - 'development/**'
@@ -15,6 +16,9 @@ on:
       - 'tests/**'
       - '.github/workflows/essentials-plugins-ci.yml'
   workflow_dispatch:
+concurrency:
+  group: shattered-plugins-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -34,6 +38,10 @@ jobs:
         run: ruby -c 'essentials/Plugins/Shattered Core/001_Core.rb'
       - name: Shattered HUMAN API unit tests
         run: ruby tests/test_shattered_core.rb
+      - name: World-link native installer syntax and unit tests
+        run: |
+          ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'
+          ruby tests/test_world_links.rb
       - name: Smoke test staged project output
         run: |
           mkdir -p /tmp/base/PBS

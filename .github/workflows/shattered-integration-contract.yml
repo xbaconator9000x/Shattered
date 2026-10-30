@@ -1,0 +1,56 @@
+name: Shattered synthetic integration contract
+
+on:
+  pull_request:
+    paths:
+      - "development/shattered_integration_manifest.json"
+      - "scripts/shattered_integration.py"
+      - "scripts/shattered_integration_handoff.py"
+      - "scripts/shattered_integration_contract.py"
+      - "scripts/templates/shattered_initial_slice_installer.rb"
+      - "tests/test_shattered_integration*.py"
+      - "tests/test_shattered_native_handoff.*"
+      - "docs/INTEGRATED_BUILD_GATES.md"
+      - ".github/workflows/shattered-integration-contract.yml"
+  push:
+    paths:
+      - "development/shattered_integration_manifest.json"
+      - "scripts/shattered_integration.py"
+      - "scripts/shattered_integration_handoff.py"
+      - "scripts/shattered_integration_contract.py"
+      - "scripts/templates/shattered_initial_slice_installer.rb"
+      - "tests/test_shattered_integration*.py"
+      - "tests/test_shattered_native_handoff.*"
+      - "docs/INTEGRATED_BUILD_GATES.md"
+      - ".github/workflows/shattered-integration-contract.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.1"
+      - name: Fetch current main and pinned PR heads
+        run: |
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          for pr in 12 13 14 15; do
+            git fetch --no-tags origin \
+              "+refs/pull/${pr}/head:refs/remotes/integration/pr-${pr}"
+          done
+      - name: Assemble pinned sources and run every component suite
+        run: python3 scripts/shattered_integration_contract.py --git-repo "$GITHUB_WORKSPACE" --profile initial_slice
+      - name: Run integration harness regression tests
+        run: python3 -m unittest tests/test_shattered_integration.py -v
+      - name: Run native handoff synthetic tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_shattered_native_handoff.py' -v
+          ruby tests/test_shattered_native_handoff.rb

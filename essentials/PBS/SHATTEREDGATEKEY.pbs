@@ -1,0 +1,9 @@
+# Append exactly once to an authorised staged project's PBS/items.txt.
+# This is a key item, not a TM or machine.
+[SHATTEREDGATEKEY]
+Name = Gate Key
+NamePlural = Gate Keys
+Pocket = 8
+Price = 0
+Flags = KeyItem
+Description = A small key entrusted to you by an Aipom near the ruined Johto gate.

@@ -1,0 +1,23 @@
+name: Shattered Route22 native encounter isolated tests
+
+on:
+  pull_request:
+    paths:
+      - "essentials/Plugins/Shattered Route22/**"
+      - "tests/test_route22.rb"
+      - ".github/workflows/route22-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  route22:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ruby syntax and native RMXP event / battle state tests
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Route22/001_Route22.rb'
+          ruby -c 'essentials/Plugins/Shattered Route22/002_Install.rb'
+          ruby tests/test_route22.rb

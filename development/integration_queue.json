@@ -3,7 +3,7 @@
   "project": "Shattered Essentials v21.1 plugin integration",
   "estimated_integration_completion_percent": 16,
   "measure": "Original plugin integration estimate remains a partial infrastructure indicator, NOT the full demo remake. Copilot SE-002 on PR #6; source rights, runtime compile, mobile playthrough and most demo events unverified.",
-  "max_parallel_active": 3,
+  "max_parallel_active": 4,
   "tasks": [
     {
       "id": "SE-001",
@@ -24,6 +24,9 @@
       "validation": [
         "manifest schema and dependency graph pass",
         "source attribution/permission review"
+      ],
+      "evidence": [
+        "PR #6 merged on main at 05e02a32; manifest validation and combined CI passed on main 6e2790da. Authoritative third-party licenses/versions remain unverified; task is not runtime complete."
       ]
     },
     {
@@ -54,6 +57,10 @@
       "validation": [
         "Ruby tests pass",
         "Essentials compile and real JoiPlay runtime"
+      ],
+      "evidence": [
+        "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested.",
+        "PR #11 merged on main at 8dbea4be (HUMAN Core v0.2.2); source-level battle/stamina tests and main combined CI passed. Real native battle, save/load, defensive type behavior and Android remain open."
       ]
     },
     {
@@ -137,7 +144,7 @@
     {
       "id": "SE-013",
       "title": "Import faithful Heart & Soul League Reception Gate map and four exits",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-003"
       ],
@@ -146,6 +153,10 @@
         "Recreate three RMXP tile layers plus terrain/collision/warps for 22x21 gate",
         "Keep original crystal map only as fallback prototype; test north/south/east/west transfers",
         "Do not claim map is imported until actual Essentials runtime load and warp test"
+      ],
+      "evidence": [
+        "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
+        "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified."
       ]
     },
     {
@@ -162,7 +173,7 @@
     {
       "id": "SE-015",
       "title": "Source-grounded Shattered demo scene and asset parity inventory",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-001"
       ],
@@ -170,12 +181,19 @@
         "Extract an objective scene and interaction list from authorised original demo and v0.4 test; no redistribution of source game assets",
         "Track original scene/event reference, target Essentials map and event IDs, flags, dialogs, BGM/SFX, blockers and status",
         "Clearly distinguish original source access, planned design and actually implemented runtime features"
+      ],
+      "evidence": [
+        "Authorised original xx0.77 PokéBacon map export inspected privately: 23 maps, 656 event markers (77 NPC, 156 triggers, 423 signs), 567 placed objects and 36 map links; no raw user project file or asset uploaded.",
+        "Sanitised development/demo_parity_reference.json records 123 tagged references to 115 unique source events across 7 scene groups, map/warp coordinates and source addresses without original scripts/dialogue/graphics.",
+        "scripts/extract_demo_parity.py + 10 new Python tests pass in GitHub Actions (19 total Python tests) and 5 Ruby tests/16 assertions pass; source event -> real RPG Maker XP event ID mapping and native playback remain OPEN.",
+        "Extractor now records source script control identifiers (set/clear flags, written vars, audio cues, movement and warp counts) without copying original event source; regeneration from original raw file is required to enrich the committed reference.",
+        "PR #12 merged on main at a128b6ca; sanitized parity anchors integrated, but source-to-native event identity and playable parity remain open."
       ]
     },
     {
       "id": "SE-016",
       "title": "Implement Johto collapse cinematic, Aipom key and persistent blocked entrance",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-013",
         "SE-015",
@@ -185,12 +203,18 @@
         "Recreate timed tremors/roars/impacts, falling rock blocker and correct directional messages",
         "Aipom with shiny held key, facing/cry/exclamation, event interaction, item pickup and stable state",
         "Test revisit, interruptions, save/restore, no duplicated rewards or softlocks"
-      ]
+      ],
+      "evidence": [
+        "Draft PR SE-016 gate story: native RMXP event installer for verified south exit, six resumable sound beats, persistent Aipom key flag, original key-item PBS staging, Ruby synthetic map tests (10 tests/42 assertions) and Python PBS tests (4); in-engine and Android tests OPEN.",
+        "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified.",
+        "PR #14 merged on main at b35245b8; gate collapse/Aipom source and isolated tests integrated. Existing authorised v0.4 base stores AIPOM cry at Audio/SE/Cries/AIPOM.ogg; source-only fix under review, native scene remains unverified."
+      ],
+      "blocker": "Real licensed HnS tileset/metatile mapping, verified gate coordinates, private local audio/sprites, native Essentials compilation and scene/save/reload test still required; merged source does not imply gameplay acceptance."
     },
     {
       "id": "SE-017",
       "title": "Connect Route 22 and implement mandatory Rattata encounter",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-013",
         "SE-015",
@@ -200,7 +224,16 @@
         "Faithful Route 22 layered map and eastern gate transfer to correct warp",
         "Scatter encounter group then mandatory lv5 Rattata battle using real HUMAN battler",
         "Test victory/flee/blackout/return save flags and collision"
-      ]
+      ],
+      "evidence": [
+        "PR #13 stacked on SE-015 PR #12: rights-safe source-indexed link compiler and native RMXP transfer event installer, no original assets committed",
+        "Explicit target map/doorway/landing mapping required; no guessed warp destinations, no player landing on transfer triggers",
+        "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN",
+        "PR #15 (stacked on PR #13): six source-anchored native RMXP Rattata NPC/trigger events with one-time scatter, real WildBattle.start(:RATTATA,5) entry, Poké Ball battle rule, persistent victory-only state and retry on flee/loss/abort; synthetic 15 Ruby tests / 70 assertions passed locally.",
+        "PR #15 installer refuses unstaged, wrong-size, wrong-hash, occupied, partial/foreign Route22 maps; requires verified local sprite and reserved switch/variable IDs; no native battle, collision or Android validation yet.",
+        "PR #13 world transfers merged at fc5a9d16 and PR #15 Route22 encounter merged at 0ee6e7e7; combined CI passed on main 6e2790da. Actual map collision, battle and save/reload not tested in Essentials."
+      ],
+      "blocker": "Reviewed 48x24 Route22 target map, collision/warp positions, first real HUMAN battle and save/reload remain unverified; source branches are merged."
     },
     {
       "id": "SE-018",
@@ -297,8 +330,34 @@
         "Original game remains intact, full dependency manifest and reproducible patch, regression evidence and asset rights verified",
         "No release marked integrated/complete without manual device and true game-engine execution"
       ]
+    },
+    {
+      "id": "SE-030",
+      "title": "Pin and install the reviewed HnS New Game spawn in native RPG::System",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-013"
+      ],
+      "validation": [
+        "Private System.rxdata baseline hash matches reviewed input",
+        "Native HnS tile passability and event occupancy checked",
+        "System.rxdata included in rollback and installed-file receipt",
+        "Actual native New Game spawn, movement and save/reload verified"
+      ],
+      "evidence": [
+        "PR #31: source-level handoff and native installer transaction changes; Python/Ruby fixture tests; native execution not yet verified",
+        "PR #31 commits 9b86e779 and 7c1a35cb: reject partial directional collision flags on any occupied start-tile layer, with floor and upper-layer Ruby regression cases; both final-head Actions checks 41043252464 and 41043252551 passed on 7c1a35cb. This is source/synthetic verification only.",
+        "Private full and Android Lite v0.4 source archives located in Library on 2026-10-30, but both raw-byte materialisation attempts returned 'does not have an authorized raw-byte materialization path'; no native game candidate assembled.",
+        "PR #33 merged to main at 51314e6b65aa99f20220aa9c038e961e734f59b1; preserves Aipom cry-path regression coverage removed by earlier conflict resolution. Source CI on PR head ea19bd05: validate 41050376695 and synthetic-contract 41050376678 both passed; combined main synthetic contract 41050453615 and plugins CI 41050453381 passed. Native runtime, actual spawn tile and save/reload remain unverified."
+      ],
+      "blocker": "Requires rights-cleared v0.4 System.rxdata with verified hash, licensed HnS tileset mapping, independently attested native spawn tile and a working Essentials v21.1 runtime for actual movement, collision and save/reload. Earlier Library raw-byte materialisation was not authorised."
     }
   ],
-  "estimated_full_demo_completion_percent": null,
-  "full_demo_scope": "See docs/SHATTERED_ESSENTIALS_FULL_REMAKE_ACCEPTANCE.md; plugin infrastructure completion does NOT equal full remake completion"
+  "estimated_full_demo_completion_percent": 4,
+  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%.",
+  "last_verified_source_main_sha": "51314e6b65aa99f20220aa9c038e961e734f59b1",
+  "last_verified_source_ci": [
+    41050453615,
+    41050453381
+  ]
 }

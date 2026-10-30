@@ -6,20 +6,38 @@ This project is **independent** from the Shattered FireRed ROM hack and from Ess
 
 - `essentials/Plugins/Shattered Core/`: **real Ruby plugin**, event-facing `Shattered.ensure_human`, `Shattered.befriend`, optional stamina backing store, planned type/technique/equipment data. Does **not** yet hook the battle PP system, modify party menus, disable Poké Balls, apply non-standard typing, or implement the specialisations.
 - `essentials/PBS/HUMAN.pbs`: appended to `PBS/pokemon.txt` by staging tool. HUMAN is currently *Normal type* until a safe battle-level effectiveness hook is implemented.
-- `development/plugin_manifest.json`: source links, exact versions, upstream compatibility/dependencies and conflict risks. **Not a claim of installation.**
-- `scripts/stage_essentials.py`: testable safe installer; its default action stages only Shattered Core/HUMAN. Additional third-party packages require verified local ZIPs (`--archive pluginid=/path/to.zip`). The tool refuses unsafe/overlapping archive writes by default.
-- `scripts/validate_integration.py`: checks dependency cycles, task readiness and structure.
+- `development/plugin_manifest.json`: catalogue pins, declared dependency/override claims and verification state. Third-party source, version, compatibility and license claims below remain **unverified**; this is not a claim of installation.
+- `scripts/stage_essentials.py`: testable safe installer; its default action stages only Shattered Core/HUMAN. It accepts local third-party ZIPs (`--archive pluginid=/path/to.zip`) but does not verify their provenance, version or license; complete those checks manually first. The tool refuses unsafe/overlapping archive writes by default.
+- `scripts/validate_integration.py`: checks version syntax/compatibility targets, dependency references/cycles and declared dependency-version constraints, duplicate overrides, verification metadata, runtime claims and task readiness.
 - GitHub Actions runs static validation, Ruby tests and builds an isolated *synthetic* starter project. These tests **cannot replace a native Essentials plugin compilation or an Android playtest**.
 
-## Third-party installation order
+## Catalogue evidence and attribution limits
 
-1. Update **Hotfixes from bundled 1.0.3 to v1.0.9**. Existing 1.0.3 is genuinely present in the v0.4 base archive, and updating must be verified rather than blindly adding a second copy.
-2. Install **Deluxe Battle Kit v1.3.1** after Hotfixes; stage **Enhanced Battle UI v2.1.1** only after DBK.
-3. Install **Following Pokemon EX v2.5.1** and test map transfers, follower spacing and trainer-as-party-member exclusion.
-4. Install **Modern Quest System + UI v1.1.0** and port rescue events/sidequests.
-5. Audit **Feral Tank v1.1.9** against HUMAN and other stat hooks: it overrides `Pokemon.calcHP`, `Pokemon.calcStat` and `Pokemon.calc_stats`; do not introduce a competing override. Its move-learning options need explicit test cases.
+The following are the URLs and version pins already recorded in the manifest. During this review the resource host could not be resolved, and no upstream archives or source files were available for inspection. Therefore the resource names, authorship/origin, pinned releases, Essentials compatibility and dependency claims are **not independently verified** here. Resource links alone do not establish licensing or permission to redistribute; confirm author credits and each license before obtaining, installing or sharing any plugin. No third-party code, graphics or archives are included in this repository.
 
-Upstream distribution and credits: [Hotfixes](https://eeveeexpo.com/resources/1376/), [DBK](https://eeveeexpo.com/resources/1470/), [Enhanced UI](https://eeveeexpo.com/resources/1472/), [Followers](https://eeveeexpo.com/resources/516/), [Quest System](https://eeveeexpo.com/resources/709/), [Feral Tank](https://eeveeexpo.com/resources/2011/).
+| Catalogue entry | Pinned version | Recorded source | Verification |
+| --- | --- | --- | --- |
+| v21.1 Hotfixes | 1.0.9 | [resource 1376](https://eeveeexpo.com/resources/1376/) | Source and version unverified; license unknown |
+| Deluxe Battle Kit | 1.3.1 | [resource 1470](https://eeveeexpo.com/resources/1470/) | Source and version unverified; license unknown |
+| Enhanced Battle UI | 2.1.1 | [resource 1472](https://eeveeexpo.com/resources/1472/) | Source and version unverified; license unknown |
+| Following Pokemon EX | 2.5.1 | [resource 516](https://eeveeexpo.com/resources/516/) | Source and version unverified; license unknown |
+| Modern Quest System + UI | 1.1.0 | [resource 709](https://eeveeexpo.com/resources/709/) | Source and version unverified; license unknown |
+| Feral Tank | 1.1.9 | [resource 2011](https://eeveeexpo.com/resources/2011/) | Source and version unverified; license unknown |
+
+The manifest records the desired Essentials target (21.1), not proven upstream compatibility. No dependency-version bounds have been independently confirmed; the validator enforces any bounds added to `dependency_version_constraints` without inventing pins. SE-002 remains in progress until source, version, dependency, compatibility and permission evidence can be checked.
+
+## Staged integration order
+
+1. **Verify before install:** obtain the authoritative release/source and license information for each plugin; inspect its metadata/version and Essentials compatibility. Keep source archives local and preserve the original project.
+2. **Hotfixes:** the v0.4 base-project inventory records bundled Hotfixes 1.0.3; verify its metadata and compare with the pinned 1.0.9 release before updating. Do not install a second copy blindly.
+3. **Battle plugins:** install Hotfixes before Deluxe Battle Kit (DBK), then stage Enhanced Battle UI only after DBK. The dependency links are manifest claims and remain pending archive/source verification.
+4. **Independent candidates:** evaluate Following Pokemon EX and Modern Quest System separately against a clean copy. Test follower map transfers, spacing and trainer exclusion; compile quest UI and ported events.
+5. **Feral Tank last:** do not install until its pinned source is inspected and stat calculations are regression-tested against Essentials and Shattered HUMAN behavior.
+6. **After each stage:** inspect changed files and override order, recompile in Essentials, start a new game and run focused functional checks. Record compilation/runtime evidence separately; no step here implies Android validation.
+
+### Feral Tank / HUMAN conflict audit
+
+The existing catalogue describes Feral Tank as overriding `Pokemon#calcHP`, `Pokemon#calcStat` and `Pokemon#calc_stats`. These are **unverified override claims**, not a source audit. Such replacements could conflict with another plugin's stat hook or change a Pokémon object's stat calculations when called by custom HUMAN battle logic. Shattered Core currently exposes event-facing APIs and does not implement a HUMAN battle-stat or battle-turn hook, so no compatibility with Feral Tank can yet be claimed. Before modifying or installing either side, inspect the exact upstream methods and hook/alias behavior, then test Pokémon stat recalculation and HUMAN stats independently; avoid competing method replacements until their call order and data model are understood.
 
 ## Test locally
 
