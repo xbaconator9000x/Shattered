@@ -31,9 +31,10 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
                       "event_id": 3, "event_name": "SHATTERED: Rattata ambush",
                       "x": 30, "y": 17,
                       "event_sha256": handoff.V04_LEGACY_EVENT_SHA256},
+                  "scatter_moves": [3, 4, 3],
                   "event_positions": {
-                      "triggers": [[24, 17], [26, 17], [28, 17]],
-                      "npcs": [[25, 17], [27, 17], [29, 17]]}}
+                      "triggers": [[27, 16], [27, 17], [27, 18]],
+                      "npcs": [[29, 17], [29, 18], [28, 18]]}}
         handoff._validate_route22(config, target, switches, variables)
         assert len(handoff._route22_reserved_positions(self.manifest, config)) == 6
         bad = copy.deepcopy(config)
