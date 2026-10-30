@@ -27,6 +27,10 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
                   "scatter_switch": 80, "cleared_switch": 81,
                   "outcome_variable": 21, "rattata_character": "Rattata",
                   "native_dimensions": [54, 34], "reviewed_native_geometry": True,
+                  "legacy_migration": {
+                      "event_id": 3, "event_name": "SHATTERED: Rattata ambush",
+                      "x": 30, "y": 17,
+                      "event_sha256": handoff.V04_LEGACY_EVENT_SHA256},
                   "event_positions": {
                       "triggers": [[24, 17], [26, 17], [28, 17]],
                       "npcs": [[25, 17], [27, 17], [29, 17]]}}
