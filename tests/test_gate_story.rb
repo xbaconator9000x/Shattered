@@ -118,6 +118,15 @@ class GateStoryTest < Minitest::Test
     assert ShatteredGateStory.run_aipom("cry")
     assert_equal 1, $bag.added
   end
+  def test_original_private_aipom_cry_subdirectory_and_path_safety
+    6.times { ShatteredGateStory.impact! }
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_includes $sounds, "Cries/AIPOM"
+    ["../AIPOM", "Cries/../AIPOM", "Cries//AIPOM", "Other/AIPOM"].each do |unsafe|
+      assert_raises(ArgumentError) { ShatteredGateStory.run_aipom(unsafe) }
+    end
+  end
+
   def test_reconcile_bag_item_if_save_interrupted
     6.times { ShatteredGateStory.impact! }
     ShatteredGateStory.clue!
@@ -188,6 +197,16 @@ class GateInstallerTest < Minitest::Test
     assert_equal 3, ShatteredGateStory.install(@config)["unchanged"]
     assert_equal before, File.binread("Data/Map010.rxdata")
   end
+  def test_installs_aipom_using_existing_cries_subdirectory
+    FileUtils.mkdir_p("Audio/SE/Cries")
+    File.write("Audio/SE/Cries/AIPOM.ogg", "private")
+    @config["aipom_cry"] = "Cries/AIPOM"
+    assert_equal 3, ShatteredGateStory.install(@config)["installed"].length
+    installed = load_data("Data/Map010.rxdata")
+    aipom = installed.events.values.find { |event| event.name == "SHATTERED_GATE:aipom" }
+    assert_includes aipom.pages.first.list.first.parameters.first, '"Cries/AIPOM"'
+  end
+
   def test_rejects_wrong_exit_without_touching_map
     @config["expected_south_transfer"] = [0,99,0,0,2,0]
     original = File.binread("Data/Map010.rxdata")

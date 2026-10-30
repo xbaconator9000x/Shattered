@@ -3,7 +3,7 @@
   "project": "Shattered Essentials v21.1 plugin integration",
   "estimated_integration_completion_percent": 16,
   "measure": "Original plugin integration estimate remains a partial infrastructure indicator, NOT the full demo remake. Copilot SE-002 on PR #6; source rights, runtime compile, mobile playthrough and most demo events unverified.",
-  "max_parallel_active": 3,
+  "max_parallel_active": 4,
   "tasks": [
     {
       "id": "SE-001",
@@ -24,6 +24,9 @@
       "validation": [
         "manifest schema and dependency graph pass",
         "source attribution/permission review"
+      ],
+      "evidence": [
+        "PR #6 merged on main at 05e02a32; manifest validation and combined CI passed on main 6e2790da. Authoritative third-party licenses/versions remain unverified; task is not runtime complete."
       ]
     },
     {
@@ -56,7 +59,8 @@
         "Essentials compile and real JoiPlay runtime"
       ],
       "evidence": [
-        "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested."
+        "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested.",
+        "PR #11 merged on main at 8dbea4be (HUMAN Core v0.2.2); source-level battle/stamina tests and main combined CI passed. Real native battle, save/load, defensive type behavior and Android remain open."
       ]
     },
     {
@@ -151,7 +155,8 @@
         "Do not claim map is imported until actual Essentials runtime load and warp test"
       ],
       "evidence": [
-        "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN."
+        "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
+        "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified."
       ]
     },
     {
@@ -181,7 +186,8 @@
         "Authorised original xx0.77 PokéBacon map export inspected privately: 23 maps, 656 event markers (77 NPC, 156 triggers, 423 signs), 567 placed objects and 36 map links; no raw user project file or asset uploaded.",
         "Sanitised development/demo_parity_reference.json records 123 tagged references to 115 unique source events across 7 scene groups, map/warp coordinates and source addresses without original scripts/dialogue/graphics.",
         "scripts/extract_demo_parity.py + 10 new Python tests pass in GitHub Actions (19 total Python tests) and 5 Ruby tests/16 assertions pass; source event -> real RPG Maker XP event ID mapping and native playback remain OPEN.",
-        "Extractor now records source script control identifiers (set/clear flags, written vars, audio cues, movement and warp counts) without copying original event source; regeneration from original raw file is required to enrich the committed reference."
+        "Extractor now records source script control identifiers (set/clear flags, written vars, audio cues, movement and warp counts) without copying original event source; regeneration from original raw file is required to enrich the committed reference.",
+        "PR #12 merged on main at a128b6ca; sanitized parity anchors integrated, but source-to-native event identity and playable parity remain open."
       ]
     },
     {
@@ -200,9 +206,10 @@
       ],
       "evidence": [
         "Draft PR SE-016 gate story: native RMXP event installer for verified south exit, six resumable sound beats, persistent Aipom key flag, original key-item PBS staging, Ruby synthetic map tests (10 tests/42 assertions) and Python PBS tests (4); in-engine and Android tests OPEN.",
-        "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified."
+        "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified.",
+        "PR #14 merged on main at b35245b8; gate collapse/Aipom source and isolated tests integrated. Existing authorised v0.4 base stores AIPOM cry at Audio/SE/Cries/AIPOM.ogg; source-only fix under review, native scene remains unverified."
       ],
-      "blocker": "Requires PR #10 HnS map conversion and actual licensed tiles/audio/sprite, verified south exit coordinates, native Essentials v21.1 compilation and device playtest; cannot yet install on original or call scene complete."
+      "blocker": "Real licensed HnS tileset/metatile mapping, verified gate coordinates, private local audio/sprites, native Essentials compilation and scene/save/reload test still required; merged source does not imply gameplay acceptance."
     },
     {
       "id": "SE-017",
@@ -223,9 +230,10 @@
         "Explicit target map/doorway/landing mapping required; no guessed warp destinations, no player landing on transfer triggers",
         "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN",
         "PR #15 (stacked on PR #13): six source-anchored native RMXP Rattata NPC/trigger events with one-time scatter, real WildBattle.start(:RATTATA,5) entry, Poké Ball battle rule, persistent victory-only state and retry on flee/loss/abort; synthetic 15 Ruby tests / 70 assertions passed locally.",
-        "PR #15 installer refuses unstaged, wrong-size, wrong-hash, occupied, partial/foreign Route22 maps; requires verified local sprite and reserved switch/variable IDs; no native battle, collision or Android validation yet."
+        "PR #15 installer refuses unstaged, wrong-size, wrong-hash, occupied, partial/foreign Route22 maps; requires verified local sprite and reserved switch/variable IDs; no native battle, collision or Android validation yet.",
+        "PR #13 world transfers merged at fc5a9d16 and PR #15 Route22 encounter merged at 0ee6e7e7; combined CI passed on main 6e2790da. Actual map collision, battle and save/reload not tested in Essentials."
       ],
-      "blocker": "Map 3.41 Route22 must be faithfully staged and its event chokepoint/passability verified; PRs #11/#12/#13/#15 and battle dependencies must be integrated before native HUMAN fight and save/reload tests."
+      "blocker": "Reviewed 48x24 Route22 target map, collision/warp positions, first real HUMAN battle and save/reload remain unverified; source branches are merged."
     },
     {
       "id": "SE-018",
@@ -325,5 +333,10 @@
     }
   ],
   "estimated_full_demo_completion_percent": 4,
-  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%."
+  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%.",
+  "last_verified_source_main_sha": "6e2790dae31634e22e824df023f5191dbc55e353",
+  "last_verified_source_ci": [
+    40987926371,
+    40987926372
+  ]
 }

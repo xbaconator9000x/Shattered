@@ -282,6 +282,28 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
         self.assertEqual(self.base_digest, integration.project_tree_digest(self.root / "project"))
         self.assertTrue((self.project / "Plugins/Shattered HnS Gate/reception_gate.json").is_file())
 
+    def test_reuses_original_private_aipom_cry_from_cries_subdirectory(self):
+        source = self.inputs / self.stage_plan["assets"]["aipom_cry"]["source"]
+        nested = self.project / "Audio/SE/Cries/AIPOM.ogg"
+        nested.parent.mkdir(parents=True, exist_ok=True)
+        nested.write_bytes(source.read_bytes())
+        self.native_plan["installer_configs"]["gate_story"]["aipom_cry"] = "Cries/AIPOM"
+        result = self._prepare()
+        plan = json.loads((self.project / result["installer_plan_path"]).read_text())
+        self.assertEqual("Audio/SE/Cries/AIPOM.ogg",
+                         plan["asset_files"]["aipom_cry"]["path"])
+        self.assertEqual(integration.sha256(nested),
+                         plan["asset_files"]["aipom_cry"]["sha256"])
+
+    def test_rejects_aipom_cry_traversal_or_arbitrary_directories(self):
+        for unsafe in ("../AIPOM", "Cries/../AIPOM", "Cries//AIPOM", "Other/AIPOM"):
+            plan = copy.deepcopy(self.native_plan)
+            plan["installer_configs"]["gate_story"]["aipom_cry"] = unsafe
+            with self.subTest(unsafe=unsafe):
+                with self.assertRaisesRegex(integration.IntegrationError,
+                                            "unsafe Gate Story Aipom cry path"):
+                    self._prepare(plan)
+
     def test_rejects_wrong_map_ids_hashes_and_source_file_hashes(self):
         wrong_id = copy.deepcopy(self.native_plan)
         wrong_id["installer_configs"]["hns_import"]["target"]["map_id"] += 1

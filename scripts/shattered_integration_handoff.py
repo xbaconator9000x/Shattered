@@ -30,6 +30,9 @@ STORY_FLAG_PLAN = "shattered_gate_story_v1"
 ROUTE22_UUID = "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2"
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 SAFE_BASENAME = re.compile(r"^[A-Za-z0-9_ -]+$")
+# Existing private Essentials projects store species cries in Audio/SE/Cries/.
+# Allow only this single literal subdirectory for the Aipom cry.
+SAFE_AIPOM_CRY = re.compile(r"^(?:Cries/)?[A-Za-z0-9_ -]+$")
 ROOT = Path(__file__).resolve().parents[1]
 RUBY_TEMPLATE = ROOT / "scripts" / "templates" / "shattered_initial_slice_installer.rb"
 
@@ -225,9 +228,12 @@ def _validate_story(config, gate_id, hns_config, links_positions, links_landings
     for key in ("collapse_sounds",):
         _fail(all(isinstance(name, str) and SAFE_BASENAME.fullmatch(name) for name in config[key]),
               f"unsafe Gate Story asset basename: {key}")
-    for key in ("final_roar_sound", "aipom_cry", "aipom_character"):
+    for key in ("final_roar_sound", "aipom_character"):
         _fail(isinstance(config.get(key), str) and SAFE_BASENAME.fullmatch(config[key]),
               f"unsafe Gate Story asset basename: {key}")
+    _fail(isinstance(config.get("aipom_cry"), str) and
+          SAFE_AIPOM_CRY.fullmatch(config["aipom_cry"]),
+          "unsafe Gate Story Aipom cry path")
 
 
 def _validate_route22(config, route_target, switch_ids, variable_ids):
