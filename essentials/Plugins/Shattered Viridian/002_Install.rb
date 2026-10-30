@@ -90,6 +90,9 @@ module ShatteredViridian
     # A ROM-source coordinate must never be used to infer a native-map landing.
     raise ArgumentError, "native entrance and warp not reviewed" unless config["native_entrance_reviewed"] == true
     entry = point!(config["entry_trigger"], native_size, "entry_trigger")
+    landing = point!(config["native_warp_landing"], native_size, "native_warp_landing")
+    raise ArgumentError, "player-touch entry must be adjacent to (not on) warp landing" unless
+      (entry[0]-landing[0]).abs + (entry[1]-landing[1]).abs == 1
     ["finish_trigger", "rain_controller"].each { |key| point!(config[key], native_size, key) }
     point!(config["center_trigger"], center_size, "center_trigger")
     city_points = [entry, config["finish_trigger"], config["rain_controller"],
