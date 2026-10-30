@@ -310,6 +310,9 @@ module ShatteredInitialSlice
     check(!event_name?(route_map, "SHATTERED_ROUTE22:") &&
       !event_name?(route_map, "SHATTERED_LINK:"),
       "Route22 has a partial/duplicate integration install without a receipt")
+    check(!route_map.events.values.any? { |event|
+      event.name.to_s.match?(/SHATTERED.*Rattata ambush/i)
+    }, "Legacy Route22 Rattata autorun must be reconciled before installing another encounter")
     reserved = route22_reserved(configs["route22"])
     validate_route22_tiles!(route_map, load_native("Data/Tilesets.rxdata"), reserved)
     reserved.each do |x, y|
