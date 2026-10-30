@@ -18,7 +18,16 @@ module ShatteredDojo
     raise ArgumentError, "Invalid dojo map ID" unless id.instance_of?(Integer) && id.between?(1, 999)
     anchor = SOURCE_NPCS[plan["source_event_id"]]
     raise ArgumentError, "Source NPC is not a dojo-scene anchor" unless anchor
-    raise ArgumentError, "Source coordinate mismatch" unless plan["event_position"] == anchor
+    raise ArgumentError, "Source coordinate mismatch" unless plan["source_position"] == anchor
+    raise ArgumentError, "Native map review required" unless plan["native_map_reviewed"] == true
+    dims = plan["native_map_dimensions"]
+    raise ArgumentError, "Reviewed native dojo dimensions required" unless
+      dims.is_a?(Array) && dims.length == 2 &&
+      dims.all? { |v| v.instance_of?(Integer) && v.between?(1, 200) }
+    position = plan["event_position"]
+    raise ArgumentError, "Native event position out of bounds" unless
+      position.is_a?(Array) && position.length == 2 &&
+      position.each_with_index.all? { |v, i| v.instance_of?(Integer) && v.between?(0, dims[i] - 1) }
     sha = plan["expected_map_sha256"]
     raise ArgumentError, "Expected reviewed SHA256 required" unless
       sha.is_a?(String) && /\A[0-9a-f]{64}\z/.match(sha)
@@ -45,6 +54,25 @@ module ShatteredDojo
     event
   end
 
+  # Static native tileset passage check. Does not establish approach direction
+  # or a working action-button interaction without launching Essentials.
+  def self.native_tile_clear?(map, tilesets, x, y)
+    return false unless map.respond_to?(:data) && map.data &&
+      map.respond_to?(:tileset_id) && tilesets.is_a?(Array)
+    tileset = tilesets[map.tileset_id]
+    return false unless tileset && tileset.respond_to?(:passages) && tileset.passages
+    layers = map.data.respond_to?(:zsize) ? map.data.zsize : 3
+    (layers - 1).downto(0) do |layer|
+      tile = map.data[x, y, layer]
+      next if tile.nil? || tile == 0
+      flag = tileset.passages[tile]
+      return false unless flag.is_a?(Integer)
+      next if (flag & 0x10) != 0
+      return (flag & 0x0f) == 0
+    end
+    false
+  end
+
   def self.install(plan)
     validate_plan(plan)
     raise "Refusing to modify an unstaged project" unless File.file?("SHATTERED_STAGING_REPORT.json")
@@ -59,7 +87,8 @@ module ShatteredDojo
     raise "Locally licensed character sprite missing" unless
       File.file?("Graphics/Characters/#{plan['character']}.png")
     map = load_data(path)
-    raise "Dojo map size differs from source" unless [map.width, map.height] == SOURCE_SIZE
+    raise "Dojo map differs from reviewed native geometry" unless
+      [map.width, map.height] == plan["native_map_dimensions"]
     raise "Dojo map event collection unavailable" unless map.events.is_a?(Hash)
     installed = map.events.values.select { |e| e.name.start_with?(PREFIX) }
     if installed.any?
@@ -73,6 +102,9 @@ module ShatteredDojo
     raise "Dojo map changed since manual review" unless
       Digest::SHA256.file(path).hexdigest == plan["expected_map_sha256"]
     pos = plan["event_position"]
+    raise "Dojo native tile is blocked or unverified" unless
+      File.file?("Data/Tilesets.rxdata") &&
+      native_tile_clear?(map, load_data("Data/Tilesets.rxdata"), *pos)
     raise "Occupied dojo event tile" if map.events.values.any? { |e| [e.x, e.y] == pos }
     event = build_event(plan)
     event.id = (map.events.keys.max || 0) + 1
