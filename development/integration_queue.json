@@ -312,7 +312,8 @@
       ],
       "evidence": [
         "2026-10-31 original v0.4 ZIP recovered locally (SHA256 c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e), 7,675 members; native MapInfos, Tilesets, System and three target maps parsed. It contains an old scripted MACHOP named HUMAN at Crystal Map222; never accept this as genuine HUMAN. New private native audit script/tests on integration branch; licensed HnS map and plugins remain unverified, no compiled candidate.",
-        "2026-10-31 original v0.4 ZIP rechecked locally: Game.ini uses Data/Scripts.rxdata; Plugins/v21.1 Hotfixes/meta.txt declares 1.0.3 (target 1.0.9), no licensed HnS gate mapping. PR #39 merged source-only, PR #40 under review adds strict source/output sprite SHA pins and atomic private writes. No native Essentials v21.1 build compiled or executed."
+        "2026-10-31 original v0.4 ZIP rechecked locally: Game.ini uses Data/Scripts.rxdata; Plugins/v21.1 Hotfixes/meta.txt declares 1.0.3 (target 1.0.9), no licensed HnS gate mapping. PR #39 merged source-only, PR #40 under review adds strict source/output sprite SHA pins and atomic private writes. No native Essentials v21.1 build compiled or executed.",
+        "2026-10-31 actual private v0.4 Data/Scripts.rxdata SHA256 38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05: all 402 decompressed Ruby script sections syntax-compiled with MRI Ruby 3.3.8; Data/PluginScripts.rxdata SHA256 f2974f1973356a1b577f6c01a40712400804b4364529305e48b48d665879a7c0: 2 Hotfixes 1.0.3 plugin scripts syntax-compiled; 0 syntax failures. Added read-only source-free syntax preflight with 7 regression tests/14 assertions. This is NOT native Essentials engine compilation, gameplay, save/reload or Android evidence; Hotfixes 1.0.9 and HnS map remain blocked."
       ]
     },
     {
