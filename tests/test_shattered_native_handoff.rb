@@ -224,6 +224,42 @@ class ShatteredNativeHandoffTest < Minitest::Test
     refute_equal [48, 24], plan["map_targets"]["route22"]["dimensions"]
   end
 
+  def test_native_character_sprite_preflight_rejects_bad_crc_and_truncated_sheet
+    chunk = lambda do |name, payload|
+      [payload.bytesize].pack("N") + name + payload +
+        [Zlib.crc32(name + payload)].pack("N")
+    end
+    png = "\\x89PNG\\r\\n\\x1a\\n".b +
+      chunk.call("IHDR", [128, 128, 8, 6, 0, 0, 0].pack("NNC5")) +
+      chunk.call("IDAT", Zlib::Deflate.deflate(("\\x00".b * 513) * 128)) +
+      chunk.call("IEND", "")
+    Dir.mktmpdir("shattered-sprite-preflight") do |root|
+      Dir.chdir(root) do
+        FileUtils.mkdir_p("Graphics/Characters")
+        path = "Graphics/Characters/Aipom.png"
+        File.binwrite(path, png)
+        assert ShatteredInitialSlice.validate_character_sheet!("Aipom")
+        assert_raises(RuntimeError) do
+          ShatteredInitialSlice.validate_character_sheet!("../Aipom")
+        end
+        bad = png.dup
+        bad.setbyte(29, bad.getbyte(29) ^ 0x01)
+        File.binwrite(path, bad)
+        assert_raises(RuntimeError) do
+          ShatteredInitialSlice.validate_character_sheet!("Aipom")
+        end
+        File.binwrite(path, png[0...-12])
+        assert_raises(RuntimeError) do
+          ShatteredInitialSlice.validate_character_sheet!("Aipom")
+        end
+        File.delete(path)
+        assert_raises(RuntimeError) do
+          ShatteredInitialSlice.validate_character_sheet!("Aipom")
+        end
+      end
+    end
+  end
+
   def test_accepts_exact_installer_results_and_complete_event_sets
     results = [
       @gate_id,
