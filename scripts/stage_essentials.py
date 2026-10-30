@@ -150,6 +150,46 @@ def install_shattered_core(dest):
     return {'core': str(target.relative_to(dest)), 'human_pbs': 'appended'}
 
 
+EQUIPMENT_ITEMS = ('KNIFE', 'BRAZIER', 'SLING', 'SPRAYGUN', 'BUCKLER')
+EQUIPMENT_MOVES = ('SLASH', 'EMBER', 'ROCKTHROW', 'BUBBLE', 'DEFENSECURL')
+
+
+def install_shattered_equipment(dest):
+    """Opt-in source staging only; never invent missing native item/move PBS."""
+    source = ROOT / 'essentials' / 'Plugins' / 'Shattered Equipment'
+    if not all((source / name).is_file() for name in ('001_Equipment.rb', 'meta.txt')):
+        raise ValueError('Shattered Equipment source plugin is missing')
+    plugins = dest / 'Plugins'
+    if plugins.is_dir() and any(
+        entry.name.casefold() == 'shattered equipment' for entry in plugins.iterdir()
+    ):
+        raise ValueError('Shattered Equipment would overwrite an existing plugin')
+    for relative, ids in (
+        ('PBS/items.txt', EQUIPMENT_ITEMS),
+        ('PBS/moves.txt', EQUIPMENT_MOVES),
+    ):
+        path = dest / relative
+        if not path.is_file():
+            raise ValueError(f'Shattered Equipment requires reviewed {relative}')
+        contents = path.read_text(encoding='utf-8-sig')
+        missing = [
+            item for item in ids
+            if re.search(r'^\[' + re.escape(item) + r'\]\s*$', contents, flags=re.M) is None
+        ]
+        if missing:
+            raise ValueError(
+                f'Shattered Equipment missing {relative} IDs: ' + ', '.join(missing)
+            )
+    target = plugins / 'Shattered Equipment'
+    shutil.copytree(source, target)
+    return {
+        'plugin': str(target.relative_to(dest)),
+        'pbs_items_checked': list(EQUIPMENT_ITEMS),
+        'pbs_moves_checked': list(EQUIPMENT_MOVES),
+        'runtime_verified': False,
+    }
+
+
 def install_hns_gate(dest, gate_data, gate_image):
     data = Path(gate_data)
     image = Path(gate_image)
@@ -216,7 +256,8 @@ def png_dimensions(data):
     return width, height
 
 
-def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None):
+def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None,
+          include_equipment=False):
     project = Path(project).absolute()
     reject_symlinked_project(project)
     project = project.resolve()
@@ -260,6 +301,11 @@ def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_im
                   'caveats': ['Requires Essentials debug compilation of PluginScripts.rxdata',
                               'JoiPlay/NaviaXP testing not done',
                               'Plugin version/license/manual conflict review required']}
+        if include_equipment:
+            report['equipment'] = install_shattered_equipment(target)
+            report['caveats'].append(
+                'Equipment PBS IDs checked, but native script compilation, item ownership, '
+                'battle move UI and save/reload remain unverified')
         if gate_data is not None:
             report["hns_gate"] = install_hns_gate(target, gate_data, gate_image)
             report["caveats"].append(
@@ -278,11 +324,13 @@ def main():
     p.add_argument('--output', required=True)
     p.add_argument('--archive', action='append', default=[], help='pluginid=/local/verified.zip')
     p.add_argument('--allow-overwrite', action='store_true', help='only after reviewing collisions')
+    p.add_argument('--include-equipment', action='store_true',
+                   help='stage in-repo equipment adapter only after validating native item/move PBS IDs')
     p.add_argument('--gate-data', help='converted SE-013 reception gate JSON bundle')
     p.add_argument('--gate-tileset-image', help='rights-cleared 256px-wide XP tileset PNG')
     a = p.parse_args()
     print(json.dumps(stage(a.project, a.output, a.archive, a.allow_overwrite,
-                           a.gate_data, a.gate_tileset_image), indent=2))
+                           a.gate_data, a.gate_tileset_image, a.include_equipment), indent=2))
 
 
 if __name__ == '__main__':

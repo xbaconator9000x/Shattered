@@ -351,13 +351,32 @@
         "PR #33 merged to main at 51314e6b65aa99f20220aa9c038e961e734f59b1; preserves Aipom cry-path regression coverage removed by earlier conflict resolution. Source CI on PR head ea19bd05: validate 41050376695 and synthetic-contract 41050376678 both passed; combined main synthetic contract 41050453615 and plugins CI 41050453381 passed. Native runtime, actual spawn tile and save/reload remain unverified."
       ],
       "blocker": "Requires rights-cleared v0.4 System.rxdata with verified hash, licensed HnS tileset mapping, independently attested native spawn tile and a working Essentials v21.1 runtime for actual movement, collision and save/reload. Earlier Library raw-byte materialisation was not authorised."
+    },
+    {
+      "id": "SE-020A",
+      "title": "Integrate six-slot HUMAN equipment and battle-only techniques into the canonical staged game",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-004"
+      ],
+      "validation": [
+        "Real merged Shattered Core v0.2.3 + equipment Ruby integration test passes",
+        "Native PBS item/move IDs preflight before opt-in source staging",
+        "Native Essentials compiled HUMAN battle: gear move selection, one stamina debit, companion PP and item ownership",
+        "Save/close/reload preserves equipment but not temporary battler moves"
+      ],
+      "evidence": [
+        "PR #25: in-repo adapter, Ruby fixture tests and merged Core v0.2.3 compatibility regression; not native gameplay",
+        "PR #25: opt-in stage_essentials --include-equipment fails closed when gear/move PBS IDs are missing and preserves original project"
+      ],
+      "blocker": "Default gear item PBS definitions and rights-cleared base not verified in native project; no actual compiled Essentials battle, equipment UI, item ownership or save/reload evidence."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
   "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%.",
-  "last_verified_source_main_sha": "51314e6b65aa99f20220aa9c038e961e734f59b1",
+  "last_verified_source_main_sha": "49ef56bd4e3e145d38db58005950003d1eb27b9c",
   "last_verified_source_ci": [
-    41050453615,
-    41050453381
+    41056926797,
+    41056926617
   ]
 }
