@@ -13,6 +13,10 @@ module ShatteredRoute22
   LEGACY_DISABLED = "SHATTERED_LEGACY_ROUTE22_DISABLED"
   V04_ROUTE22_SHA256 = "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b"
   V04_LEGACY_EVENT_SHA256 = "ef8861a24531fedc56be153cc88a80ed6e314103af48b810d85b116aaadfe786"
+  V04_TRIGGERS = [[27, 16], [27, 17], [27, 18]].freeze
+  V04_NPCS = [[29, 17], [29, 18], [28, 18]].freeze
+  V04_SCATTER_MOVES = [3, 4, 3].freeze
+  MOVE_DELTAS = {1 => [0, 1], 2 => [-1, 0], 3 => [1, 0], 4 => [0, -1]}.freeze
 
   # The 48x24 positions describe the original source-indexed reference, not
   # every RMXP project. Native adaptations require explicit reviewed geometry
@@ -45,6 +49,21 @@ module ShatteredRoute22
     all = positions["triggers"] + positions["npcs"]
     raise ArgumentError, "duplicate Route22 event position" unless all.uniq.length == 6
     [dimensions, positions["triggers"], positions["npcs"]]
+  end
+
+  def self.scatter_moves(config)
+    moves = config.fetch("scatter_moves", MOVES)
+    raise ArgumentError, "Route22 scatter moves must be three cardinal steps" unless
+      moves.is_a?(Array) && moves.length == 3 &&
+      moves.all? { |move| MOVE_DELTAS.key?(move) }
+    moves
+  end
+
+  def self.scatter_destinations(npcs, config)
+    npcs.each_with_index.map do |(x, y), i|
+      dx, dy = MOVE_DELTAS.fetch(scatter_moves(config)[i])
+      [x + dx, y + dy]
+    end
   end
 
   def self.validate_native_tiles!(map, coordinates)
@@ -86,8 +105,12 @@ module ShatteredRoute22
     raise ArgumentError, "invalid sprite basename" unless
       config["rattata_character"].is_a?(String) &&
       /\A[A-Za-z0-9_ -]+\z/.match(config["rattata_character"])
-    geometry(config)
+    dimensions, triggers, npcs = geometry(config)
+    scatter_moves(config)
     if config["expected_map_sha256"] == V04_ROUTE22_SHA256
+      raise ArgumentError, "audited v0.4 Route22 positions/moves changed" unless
+        dimensions == [54, 34] && triggers == V04_TRIGGERS &&
+        npcs == V04_NPCS && scatter_moves(config) == V04_SCATTER_MOVES
       record = config["legacy_migration"]
       raise ArgumentError, "audited v0.4 requires pinned legacy event migration" unless
         record.is_a?(Hash) && record == {
@@ -173,11 +196,12 @@ module ShatteredRoute22
     initial = page
     initial.trigger = 1 # RMXP Player Touch (2 is Event Touch)
     commands = [command(355, ['pbMessage(_INTL("The Rattata scatter! One turns and attacks!"))'])]
+    moves = scatter_moves(config)
     npc_ids.each_with_index do |npc_id, i|
       route = RPG::MoveRoute.new
       route.repeat = false
       route.skippable = true
-      route.list = [RPG::MoveCommand.new(MOVES[i]), RPG::MoveCommand.new(0)]
+      route.list = [RPG::MoveCommand.new(moves[i]), RPG::MoveCommand.new(0)]
       commands << command(209, [npc_id, route]) # RMXP Set Move Route
     end
     commands << command(210) # Wait for Move Completion
@@ -214,7 +238,8 @@ module ShatteredRoute22
       [map.width, map.height] == dimensions
     raise "Route22 event table missing" unless map.events.is_a?(Hash)
     legacy = legacy_event(map, config)
-    validate_native_tiles!(map, triggers + npcs) if dimensions != SOURCE_DIMENSIONS
+    validate_native_tiles!(map, triggers + npcs + scatter_destinations(npcs, config)) if
+      dimensions != SOURCE_DIMENSIONS
     sprite = config["rattata_character"]
     raise "Missing locally licensed Rattata character sprite" unless
       File.file?("Graphics/Characters/#{sprite}.png")
