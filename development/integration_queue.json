@@ -54,6 +54,9 @@
       "validation": [
         "Ruby tests pass",
         "Essentials compile and real JoiPlay runtime"
+      ],
+      "evidence": [
+        "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested."
       ]
     },
     {
@@ -137,7 +140,7 @@
     {
       "id": "SE-013",
       "title": "Import faithful Heart & Soul League Reception Gate map and four exits",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-003"
       ],
@@ -146,6 +149,9 @@
         "Recreate three RMXP tile layers plus terrain/collision/warps for 22x21 gate",
         "Keep original crystal map only as fallback prototype; test north/south/east/west transfers",
         "Do not claim map is imported until actual Essentials runtime load and warp test"
+      ],
+      "evidence": [
+        "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN."
       ]
     },
     {
@@ -162,7 +168,7 @@
     {
       "id": "SE-015",
       "title": "Source-grounded Shattered demo scene and asset parity inventory",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-001"
       ],
@@ -170,6 +176,12 @@
         "Extract an objective scene and interaction list from authorised original demo and v0.4 test; no redistribution of source game assets",
         "Track original scene/event reference, target Essentials map and event IDs, flags, dialogs, BGM/SFX, blockers and status",
         "Clearly distinguish original source access, planned design and actually implemented runtime features"
+      ],
+      "evidence": [
+        "Authorised original xx0.77 PokéBacon map export inspected privately: 23 maps, 656 event markers (77 NPC, 156 triggers, 423 signs), 567 placed objects and 36 map links; no raw user project file or asset uploaded.",
+        "Sanitised development/demo_parity_reference.json records 123 tagged references to 115 unique source events across 7 scene groups, map/warp coordinates and source addresses without original scripts/dialogue/graphics.",
+        "scripts/extract_demo_parity.py + 10 new Python tests pass in GitHub Actions (19 total Python tests) and 5 Ruby tests/16 assertions pass; source event -> real RPG Maker XP event ID mapping and native playback remain OPEN.",
+        "Extractor now records source script control identifiers (set/clear flags, written vars, audio cues, movement and warp counts) without copying original event source; regeneration from original raw file is required to enrich the committed reference."
       ]
     },
     {
@@ -187,14 +199,15 @@
         "Test revisit, interruptions, save/restore, no duplicated rewards or softlocks"
       ],
       "evidence": [
-        "Draft PR SE-016 gate story: native RMXP event installer for verified south exit, six resumable sound beats, persistent Aipom key flag, original key-item PBS staging, Ruby synthetic map tests (10 tests/42 assertions) and Python PBS tests (4); in-engine and Android tests OPEN."
+        "Draft PR SE-016 gate story: native RMXP event installer for verified south exit, six resumable sound beats, persistent Aipom key flag, original key-item PBS staging, Ruby synthetic map tests (10 tests/42 assertions) and Python PBS tests (4); in-engine and Android tests OPEN.",
+        "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified."
       ],
       "blocker": "Requires PR #10 HnS map conversion and actual licensed tiles/audio/sprite, verified south exit coordinates, native Essentials v21.1 compilation and device playtest; cannot yet install on original or call scene complete."
     },
     {
       "id": "SE-017",
       "title": "Connect Route 22 and implement mandatory Rattata encounter",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-013",
         "SE-015",
@@ -204,7 +217,13 @@
         "Faithful Route 22 layered map and eastern gate transfer to correct warp",
         "Scatter encounter group then mandatory lv5 Rattata battle using real HUMAN battler",
         "Test victory/flee/blackout/return save flags and collision"
-      ]
+      ],
+      "evidence": [
+        "PR #13 stacked on SE-015 PR #12: rights-safe source-indexed link compiler and native RMXP transfer event installer, no original assets committed",
+        "Explicit target map/doorway/landing mapping required; no guessed warp destinations, no player landing on transfer triggers",
+        "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN"
+      ],
+      "blocker": "Real target Essentials map IDs, geometry, door triggers and collision/passability must be verified against installed maps before an actual link plan can be run."
     },
     {
       "id": "SE-018",
@@ -304,5 +323,5 @@
     }
   ],
   "estimated_full_demo_completion_percent": 4,
-  "full_demo_scope": "See docs/SHATTERED_ESSENTIALS_FULL_REMAKE_ACCEPTANCE.md; plugin infrastructure completion does NOT equal full remake completion"
+  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%."
 }

@@ -1,12 +1,25 @@
 import json
+import binascii
 from pathlib import Path
+import struct
 import sys
 import tempfile
 import unittest
 import zipfile
+import zlib
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
 from stage_essentials import stage, safe_zip_install, clean_path
 from validate_integration import validate
+
+
+def png_fixture(width, height):
+    def chunk(name, data):
+        body = name + data
+        return struct.pack('>I', len(data)) + body + struct.pack('>I', binascii.crc32(body) & 0xFFFFFFFF)
+    header = struct.pack('>IIBBBBB', width, height, 8, 6, 0, 0, 0)
+    pixels = zlib.compress((b'\x00' + b'\x00' * width * 4) * height)
+    return (b'\x89PNG\r\n\x1a\n' + chunk(b'IHDR', header) +
+            chunk(b'IDAT', pixels) + chunk(b'IEND', b''))
 
 
 class StagingTest(unittest.TestCase):
@@ -78,6 +91,37 @@ class StagingTest(unittest.TestCase):
             z.writestr('Plugins/Enhanced UI/meta.txt', 'plugin')
         with self.assertRaisesRegex(ValueError, 'requires deluxe_battle_kit'):
             stage(self.project, self.root / 'staged', [f'enhanced_battle_ui={p}'])
+
+    def test_gate_bundle_stages_only_into_separate_copy(self):
+        bundle = self.root / 'gate.json'
+        bundle.write_text(json.dumps({
+            'format': 'shattered-hns-rmxp-map',
+            'format_version': 1,
+            'target': {'tileset_image': 'SE013_ReceptionGate.png'},
+        }))
+        image = self.root / 'gate.png'
+        image.write_bytes(png_fixture(256, 32))
+        output = self.root / 'staged'
+        report = stage(self.project, output, gate_data=bundle, gate_image=image)
+        self.assertFalse(report['hns_gate']['native_map_generated'])
+        self.assertTrue((output / 'Plugins/Shattered HnS Gate/001_Import.rb').is_file())
+        self.assertTrue((output / 'Plugins/Shattered HnS Gate/meta.txt').is_file())
+        self.assertTrue((output / 'Plugins/Shattered HnS Gate/reception_gate.json').is_file())
+        self.assertTrue((output / 'Graphics/Tilesets/SE013_ReceptionGate.png').is_file())
+        self.assertFalse((self.project / 'Plugins/Shattered HnS Gate').exists())
+
+    def test_gate_bundle_rejects_non_xp_tileset_dimensions(self):
+        bundle = self.root / 'gate.json'
+        bundle.write_text(json.dumps({
+            'format': 'shattered-hns-rmxp-map',
+            'format_version': 1,
+            'target': {'tileset_image': 'SE013_ReceptionGate.png'},
+        }))
+        image = self.root / 'gate.png'
+        image.write_bytes(png_fixture(128, 32))
+        with self.assertRaisesRegex(ValueError, '256 pixels wide'):
+            stage(self.project, self.root / 'staged', gate_data=bundle, gate_image=image)
+        self.assertFalse((self.root / 'staged').exists())
 
 
 if __name__ == '__main__':
