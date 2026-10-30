@@ -97,6 +97,45 @@ class OverworldConversionTests(unittest.TestCase):
             self.assertEqual(first,mod.convert(source,output,force=True))
             self.assertEqual(original_hash,hashlib.sha256(source.read_bytes()).hexdigest())
 
+    def test_pinned_source_and_output_hashes_enforced_before_write(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "source.png"
+            output = Path(tmp) / "Characters" / "Aipom.png"
+            raw = atlas()
+            source.write_bytes(raw)
+            source_sha = hashlib.sha256(raw).hexdigest()
+            output_sha = hashlib.sha256(mod.build_sheet(raw)).hexdigest()
+            record = mod.convert(source, output,
+                expected_source_sha256=source_sha,
+                expected_output_sha256=output_sha)
+            self.assertEqual(record["source_sha256"], source_sha)
+            self.assertEqual(record["output_sha256"], output_sha)
+            self.assertEqual(hashlib.sha256(output.read_bytes()).hexdigest(), output_sha)
+            before = output.read_bytes()
+            with self.assertRaisesRegex(mod.SpriteFormatError, "source SHA-256"):
+                mod.convert(source, output, force=True,
+                    expected_source_sha256="0" * 64)
+            with self.assertRaisesRegex(mod.SpriteFormatError, "output SHA-256"):
+                mod.convert(source, output, force=True,
+                    expected_output_sha256="f" * 64)
+            with self.assertRaisesRegex(mod.SpriteFormatError, "invalid source"):
+                mod.convert(source, output, force=True,
+                    expected_source_sha256="not-a-hash")
+            self.assertEqual(output.read_bytes(), before)
+            self.assertEqual(list(output.parent.glob(".shattered-sprite-*")), [])
+
+    def test_rejects_symlinked_output_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source = Path(tmp) / "source.png"
+            source.write_bytes(atlas())
+            target = Path(tmp) / "real"
+            target.mkdir()
+            link = Path(tmp) / "linked"
+            link.symlink_to(target, target_is_directory=True)
+            with self.assertRaisesRegex(mod.SpriteFormatError, "symlinked output"):
+                mod.convert(source, link / "Aipom.png")
+            self.assertEqual(list(target.iterdir()), [])
+
     def test_symlink_source_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             source = Path(tmp)/"source.png"
