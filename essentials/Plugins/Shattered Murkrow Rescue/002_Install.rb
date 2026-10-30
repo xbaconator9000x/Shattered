@@ -2,6 +2,7 @@
 # SE-019C: explicit-plan, transactional native RPG Maker XP event installer.
 require "json"
 require "digest"
+require "zlib"
 
 module ShatteredMurkrowRescue
   PREFIX = "SHATTERED_MURKROW_RESCUE:" unless const_defined?(:PREFIX)
@@ -71,6 +72,9 @@ module ShatteredMurkrowRescue
     character = plan["character"]
     raise ArgumentError, "Unsafe character filename" unless
       character.is_a?(String) && /\A[A-Za-z0-9_ -]{1,80}\z/.match(character)
+    character_sha = plan["expected_character_sha256"]
+    raise ArgumentError, "Reviewed local character SHA256 required" unless
+      character_sha.is_a?(String) && /\A[0-9a-f]{64}\z/.match(character_sha)
     raise ArgumentError, "Character role needs user review" unless plan["sprite_reviewed"] == true
     raise ArgumentError, "This plugin uses saved quest flags, not RMXP switches or variables" unless
       plan["switch_ids"] == [] && plan["variable_ids"] == []
@@ -174,6 +178,52 @@ module ShatteredMurkrowRescue
     true
   end
 
+  # Structural and hash verification only; does not prove correct animation.
+  # No third-party sprite is committed with this installer.
+  def self.validate_character_sheet!(path, expected_sha)
+    raise "Locally licensed character sprite missing" unless
+      File.file?(path) && !File.symlink?(path) && File.size(path).between?(70, 1024 * 1024)
+    raise "Reviewed Murkrow character sprite changed" unless
+      Digest::SHA256.file(path).hexdigest == expected_sha
+    bytes = File.binread(path)
+    raise "Murkrow character PNG signature invalid" unless
+      bytes.start_with?("\x89PNG\r\n\x1a\n".b)
+    offset = 8
+    header = false
+    image_data = false
+    ended = false
+    while offset < bytes.bytesize
+      raise "Murkrow PNG truncated" if ended || offset + 12 > bytes.bytesize
+      length = bytes.byteslice(offset, 4).unpack1("N")
+      raise "Murkrow PNG chunk exceeds file" if length > bytes.bytesize - offset - 12
+      kind = bytes.byteslice(offset + 4, 4)
+      data = bytes.byteslice(offset + 8, length)
+      crc = bytes.byteslice(offset + 8 + length, 4).unpack1("N")
+      raise "Murkrow PNG CRC mismatch" unless Zlib.crc32(kind + data) == crc
+      case kind
+      when "IHDR"
+        raise "Murkrow must be a 128x128 RGBA character sheet" unless
+          !header && offset == 8 && length == 13 &&
+          data.byteslice(0, 8).unpack("N2") == [128, 128] &&
+          data.byteslice(8, 5).bytes == [8, 6, 0, 0, 0]
+        header = true
+      when "IDAT"
+        raise "Murkrow PNG image data out of order" unless header && !ended
+        image_data = true
+      when "IEND"
+        raise "Murkrow PNG end invalid" unless
+          header && image_data && length == 0 && offset + 12 == bytes.bytesize
+        ended = true
+      else
+        raise "Murkrow PNG unsupported critical chunk" unless
+          header && (kind.getbyte(0) & 0x20) != 0
+      end
+      offset += 12 + length
+    end
+    raise "Murkrow PNG has no complete image" unless ended
+    true
+  end
+
   def self.install(plan)
     validate_plan!(plan)
     raise "Refusing to modify an unstaged project" unless
@@ -202,8 +252,7 @@ module ShatteredMurkrowRescue
       [map.width, map.height] == plan["target_map_size"]
     raise "Target map event collection unavailable" unless map.events.is_a?(Hash)
     sprite_path = "Graphics/Characters/#{plan['character']}.png"
-    raise "Locally licensed character sprite missing" unless
-      File.file?(sprite_path) && !File.symlink?(sprite_path)
+    validate_character_sheet!(sprite_path, plan["expected_character_sha256"])
     validate_destination_warp!(map, plan, map_infos)
     validate_native_position!(map, tilesets, plan["target_position"])
 

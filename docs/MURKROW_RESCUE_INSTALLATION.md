@@ -51,9 +51,9 @@ leaves the remaining step retryable.
 Shattered Core v0.2.3 provides the `befriend` API and lifecycle/battle hooks.
 The rescue still checks for an existing Murkrow before recruitment and
 refuses duplicate quest-specific additions.
-The event plan selects only the Essentials `pbWildBattle` or
-`pbTrainerBattle` helper; the selected helper and arguments must be verified
-against the staged v21.1 project. For `pbWildBattle`, the rescue explicitly
+The event plan selects only the Essentials `WildBattle.start_core` or
+`TrainerBattle.start_core` entry point; the selected helper and arguments must be verified
+against the staged v21.1 project. The original v0.4 Essentials v21.1 `Overworld_BattleStarting` script defines these numeric-returning core entry points; the legacy `pbWildBattle` and `TrainerBattle.start_core` helpers are not defined. Only outcome `1` counts as victory: loss (`2`), escape (`3`), capture (`4`), draw (`5`) and abort (`0`) must remain retryable. Wild rescue requires `:MURKROW` and a reviewed level. For `WildBattle.start_core`, the rescue explicitly
 requires and applies Essentials' `setBattleRule("disablePokeBalls")` before
 battle; missing rules abort the encounter without marking it complete.
 No native battle integration is claimed merely because the Ruby tests pass.
@@ -71,7 +71,7 @@ must both be empty. Persistent quest flags are kept in the save object instead.
 2. In the staged project's `Data/MapInfos.rxdata`, identify the actual target
    map and the existing, reviewed transfer event that leads to the intended
    destination. Review the map in RPG Maker XP and confirm the anchor role,
-   event tile passability, local sprite, target event ID, warp destination,
+   event tile passability, SHA-pinned structurally valid local sprite, target event ID, warp destination,
    encounter helper/arguments, and reward. Do not use the test coordinates as
    approval.
 3. Create a local JSON plan (do not commit a plan containing private project
@@ -89,9 +89,10 @@ must both be empty. Persistent quest flags are kept in the save object instead.
    | `expected_map_sha256` | SHA-256 of the untouched target `Data/MapNNN.rxdata` |
    | `expected_tilesets_sha256` | SHA-256 of the reviewed `Data/Tilesets.rxdata`; any change fails closed |
    | `character` | Safe local character filename without `.png`; graphic must be licensed |
+   | `expected_character_sha256` | SHA-256 of privately staged 128×128 RGBA Murkrow PNG; hash, dimensions and PNG chunk CRC checked before map modification |
    | `switch_ids`, `variable_ids` | Both `[]`; this plugin uses saved quest flags |
    | `destination_warp` | Reviewed `event_id`, destination `map_id`, `x`, `y`, and `reviewed: true` |
-   | `battle` | `hook` is `pbWildBattle` or `pbTrainerBattle`; `arguments` use JSON primitives and `{"symbol":"SPECIES_OR_TYPE"}` for symbols |
+   | `battle` | `hook` is `WildBattle.start_core` or `TrainerBattle.start_core`; `arguments` use JSON primitives and `{"symbol":"SPECIES_OR_TYPE"}` for symbols |
    | `reward` | Existing item ID and quantity from 1 through 99 |
 
    The installer verifies the source anchor, plan review markers, IDs and

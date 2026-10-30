@@ -3,6 +3,7 @@ require "tmpdir"
 require "fileutils"
 require "digest"
 require "json"
+require "zlib"
 
 class Pokemon
   attr_accessor :species, :level
@@ -75,18 +76,24 @@ def pbConfirmMessage(_message)
   $confirm_results.empty? ? true : $confirm_results.shift
 end
 
-def pbWildBattle(*_arguments)
-  raise "Wild battle was started without the no-capture rule" unless
-    $battle_rules.include?("disablePokeBalls")
-  result = $battle_results.shift
-  raise "fixture battle interruption" if result == :raise
-  result
+# Match the actual v21.1 battle entry points and integer outcome contract.
+class WildBattle
+  def self.start_core(species, level)
+    raise "Wrong Murkrow species" unless species == :MURKROW && level == 5
+    raise "Wild battle was started without the no-capture rule" unless
+      $battle_rules.include?("disablePokeBalls")
+    result = $battle_results.shift
+    raise "fixture battle interruption" if result == :raise
+    result
+  end
 end
 
-def pbTrainerBattle(*_arguments)
-  result = $battle_results.shift
-  raise "fixture battle interruption" if result == :raise
-  result
+class TrainerBattle
+  def self.start_core(*_arguments)
+    result = $battle_results.shift
+    raise "fixture battle interruption" if result == :raise
+    result
+  end
 end
 
 def setBattleRule(rule)
@@ -101,6 +108,20 @@ end
 
 load File.expand_path("../essentials/Plugins/Shattered Murkrow Rescue/001_Quest.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Murkrow Rescue/002_Install.rb", __dir__)
+
+def murkrow_png_chunk(kind, payload)
+  [payload.bytesize].pack("N") + kind + payload +
+    [Zlib.crc32(kind + payload)].pack("N")
+end
+
+def valid_murkrow_png
+  header = [128, 128, 8, 6, 0, 0, 0].pack("N2C5")
+  row = "\x00".b * (1 + 128 * 4)
+  "\x89PNG\r\n\x1a\n".b +
+    murkrow_png_chunk("IHDR", header) +
+    murkrow_png_chunk("IDAT", Zlib::Deflate.deflate(row * 128)) +
+    murkrow_png_chunk("IEND", "".b)
+end
 
 class MurkrowRescueTest < Minitest::Test
   def setup
@@ -162,7 +183,7 @@ class MurkrowRescueTest < Minitest::Test
 
   def test_complete_native_event_recruits_and_rewards_once
     $confirm_results = [true, true]
-    $battle_results = [true]
+    $battle_results = [1]
 
     assert ShatteredMurkrowRescue.run_event(runtime_plan)
     assert_equal :complete, ShatteredMurkrowRescue.state(@store)[:stage]
@@ -175,26 +196,26 @@ class MurkrowRescueTest < Minitest::Test
 
   def test_wild_rescue_battle_enforces_no_pokeballs
     $confirm_results = [true, true]
-    $battle_results = [true]
+    $battle_results = [1]
     assert ShatteredMurkrowRescue.run_event(runtime_plan)
     assert_equal ["disablePokeBalls"], $battle_rules
   end
 
   def test_failed_battle_rule_does_not_start_rescue_or_complete_it
     $confirm_results = [true]
-    $battle_results = [true]
+    $battle_results = [1]
     $fail_battle_rule = true
     refute ShatteredMurkrowRescue.run_event(runtime_plan)
     assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
     assert_empty $battle_rules
-    assert_equal [true], $battle_results
+    assert_equal [1], $battle_results
     assert_equal 0, $reward_count
     assert_equal 1, @player.party.length
   end
 
   def test_event_battle_loss_or_abort_can_be_retried
     $confirm_results = [true, true, true]
-    $battle_results = [false, :raise, true]
+    $battle_results = [2, :raise, 1]
 
     refute ShatteredMurkrowRescue.run_event(runtime_plan)
     assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
@@ -202,6 +223,90 @@ class MurkrowRescueTest < Minitest::Test
     assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
     assert ShatteredMurkrowRescue.run_event(runtime_plan)
     assert_equal 1, @player.party.count { |pokemon| pokemon.species == :MURKROW }
+  end
+
+  def test_wild_rescue_does_not_mark_escape_capture_draw_or_abort_as_victory
+    [0, 2, 3, 4, 5].each do |decision|
+      setup
+      $confirm_results = [true]
+      $battle_results = [decision]
+      refute ShatteredMurkrowRescue.run_event(runtime_plan),
+        "Essentials outcome #{decision} incorrectly completed Murkrow battle"
+      assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+      refute ShatteredMurkrowRescue.state(@store)[:flags][:battle_won]
+      assert_equal 0, $reward_count
+      assert_equal ["disablePokeBalls"], $battle_rules
+    end
+  end
+
+  def test_legacy_battle_hooks_are_rejected_before_event_execution
+    ["pbWildBattle", "pbTrainerBattle", "WildBattle.start"].each do |hook|
+      assert_raises(ArgumentError) do
+        ShatteredMurkrowRescue.validate_battle!(
+          "hook" => hook, "arguments" => [{ "symbol" => "MURKROW" }, 5])
+      end
+    end
+  end
+
+  def test_wild_rescue_cannot_replace_murkrow_with_another_species
+    assert_raises(ArgumentError) do
+      ShatteredMurkrowRescue.validate_battle!(
+        "hook" => "WildBattle.start_core",
+        "arguments" => [{ "symbol" => "PIKACHU" }, 5])
+    end
+  end
+
+  def test_trainer_battle_core_requires_numeric_victory
+    plan = JSON.parse(runtime_plan)
+    plan["battle"] = {
+      "hook" => "TrainerBattle.start_core",
+      "arguments" => [{ "symbol" => "YOUNGSTER" }, "Test Trainer"]
+    }
+    $confirm_results = [true, true, true]
+    $battle_results = [3, 1]
+    refute ShatteredMurkrowRescue.run_event(JSON.generate(plan))
+    assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    assert ShatteredMurkrowRescue.run_event(JSON.generate(plan))
+    assert_equal :complete, ShatteredMurkrowRescue.state(@store)[:stage]
+    assert_empty $battle_rules
+  end
+
+  def test_murkrow_sprite_is_hash_pinned_and_structurally_checked_before_map_write
+    with_staged_project do |root, plan|
+      path = File.join(root, "Graphics/Characters/Murkrow.png")
+      map_path = File.join(root, "Data/Map001.rxdata")
+      original_map = File.binread(map_path)
+      original_png = File.binread(path)
+      assert ShatteredMurkrowRescue.validate_character_sheet!(
+        path, plan["expected_character_sha256"])
+
+      File.binwrite(path, original_png + "changed")
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_equal original_map, File.binread(map_path)
+
+      File.binwrite(path, "not a png")
+      plan["expected_character_sha256"] = Digest::SHA256.file(path).hexdigest
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_equal original_map, File.binread(map_path)
+
+      damaged = original_png.dup
+      damaged.setbyte(45, damaged.getbyte(45) ^ 0x01)
+      File.binwrite(path, damaged)
+      plan["expected_character_sha256"] = Digest::SHA256.file(path).hexdigest
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_equal original_map, File.binread(map_path)
+
+      File.binwrite(path, original_png)
+      plan["expected_character_sha256"] = Digest::SHA256.file(path).hexdigest
+      assert ShatteredMurkrowRescue.validate_character_sheet!(
+        path, plan["expected_character_sha256"])
+    end
   end
 
   def test_installer_rejects_unreviewed_or_mismatched_map_without_writes
@@ -373,8 +478,8 @@ class MurkrowRescueTest < Minitest::Test
 
   def runtime_plan
     JSON.generate(
-      "battle" => { "hook" => "pbWildBattle",
-                    "arguments" => [{ "symbol" => "PIKACHU" }, 5] },
+      "battle" => { "hook" => "WildBattle.start_core",
+                    "arguments" => [{ "symbol" => "MURKROW" }, 5] },
       "reward" => { "item" => "POTION", "quantity" => 1 }
     )
   end
@@ -384,7 +489,7 @@ class MurkrowRescueTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, "Data"))
       FileUtils.mkdir_p(File.join(root, "Graphics/Characters"))
       File.write(File.join(root, "SHATTERED_STAGING_REPORT.json"), "{}")
-      File.write(File.join(root, "Graphics/Characters/Murkrow.png"), "fixture")
+      File.binwrite(File.join(root, "Graphics/Characters/Murkrow.png"), valid_murkrow_png)
       warp = RPG::Event.new(1, 1)
       warp.id = 3
       warp.name = "Reviewed Route 22 transfer"
@@ -420,6 +525,9 @@ class MurkrowRescueTest < Minitest::Test
           File.join(root, "Data/Tilesets.rxdata")
         ).hexdigest,
         "character" => "Murkrow",
+        "expected_character_sha256" => Digest::SHA256.file(
+          File.join(root, "Graphics/Characters/Murkrow.png")
+        ).hexdigest,
         "sprite_reviewed" => true,
         "switch_ids" => [],
         "variable_ids" => [],
@@ -433,8 +541,8 @@ class MurkrowRescueTest < Minitest::Test
           "y" => 4
         },
         "battle" => {
-          "hook" => "pbWildBattle",
-          "arguments" => [{ "symbol" => "PIKACHU" }, 5]
+          "hook" => "WildBattle.start_core",
+          "arguments" => [{ "symbol" => "MURKROW" }, 5]
         },
         "reward" => { "item" => "POTION", "quantity" => 1 }
       }
