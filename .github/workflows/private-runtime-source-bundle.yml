@@ -21,7 +21,7 @@ jobs:
           import pathlib, subprocess
           paths = subprocess.check_output(
               ['git', 'ls-files', '-z', '--', 'essentials/Plugins', 'essentials/PBS', 'scripts', 'development']
-          ).decode().strip('\0').split('\0')
+          ).decode().strip('\\0').split('\\0')
           assert paths and len(paths) > 10, 'source inventory unexpectedly empty'
           allowed = {'.rb', '.txt', '.pbs', '.py', '.json', '.md', '.sh'}
           for name in paths:
@@ -35,26 +35,10 @@ jobs:
         run: |
           mkdir -p source-bundle
           git archive --format=tar.gz --output=source-bundle/shattered-source.tar.gz HEAD essentials/Plugins essentials/PBS scripts development
-          printf '%s\n' "$GITHUB_SHA" > source-bundle/main-or-pr-head.sha
+          printf '%s\\n' "$GITHUB_SHA" > source-bundle/main-or-pr-head.sha
           (cd source-bundle && sha256sum shattered-source.tar.gz > SHA256SUMS)
-          tar -tzf source-bundle/shattered-source.tar.gz | grep -q '^essentials/Plugins/Shattered Core/001_Core.rb
-          test ! -e source-bundle/Game.exe
-      - uses: actions/upload-artifact@v4
-        with:
-          name: shattered-source-only-${{ github.sha }}
-          path: source-bundle/
-          if-no-files-found: error
-          retention-days: 2
-
-          tar -tzf source-bundle/shattered-source.tar.gz | grep -q '^development/plugin_manifest.json
-          test ! -e source-bundle/Game.exe
-      - uses: actions/upload-artifact@v4
-        with:
-          name: shattered-source-only-${{ github.sha }}
-          path: source-bundle/
-          if-no-files-found: error
-          retention-days: 2
-
+          tar -tzf source-bundle/shattered-source.tar.gz | grep -Fq 'essentials/Plugins/Shattered Core/001_Core.rb'
+          tar -tzf source-bundle/shattered-source.tar.gz | grep -Fq 'development/plugin_manifest.json'
           test ! -e source-bundle/Game.exe
       - uses: actions/upload-artifact@v4
         with:
