@@ -4,12 +4,16 @@ on:
     paths:
       - 'essentials/Plugins/Shattered Raid/**'
       - 'tests/test_shattered_raid.rb'
+      - 'tests/test_raid_core_integration.rb'
+      - 'essentials/Plugins/Shattered Core/**'
       - 'docs/SE-019B_BEEDRILL_RAID.md'
       - '.github/workflows/shattered-raid-ci.yml'
   pull_request:
     paths:
       - 'essentials/Plugins/Shattered Raid/**'
       - 'tests/test_shattered_raid.rb'
+      - 'tests/test_raid_core_integration.rb'
+      - 'essentials/Plugins/Shattered Core/**'
       - 'docs/SE-019B_BEEDRILL_RAID.md'
       - '.github/workflows/shattered-raid-ci.yml'
   workflow_dispatch:
@@ -25,3 +29,5 @@ jobs:
         run: ruby -c 'essentials/Plugins/Shattered Raid/001_Raid.rb'
       - name: Run isolated raid tests
         run: ruby tests/test_shattered_raid.rb
+      - name: Run real-Core raid integration regression
+        run: ruby tests/test_raid_core_integration.rb
