@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - '.github/workflows/private-runtime-source-bundle.yml'
+      - 'scripts/compile_private_plugins.rb'
+      - 'tests/test_private_plugin_compiler.rb'
   workflow_dispatch:
 
 permissions:
@@ -20,7 +22,7 @@ jobs:
           python3 - <<'PY'
           import pathlib, subprocess
           raw = subprocess.check_output(
-              ['git', 'ls-files', '-z', '--', 'essentials/Plugins', 'essentials/PBS', 'scripts', 'development']
+              ['git', 'ls-files', '-z', '--', 'essentials/Plugins', 'essentials/PBS', 'scripts', 'development', 'tests']
           )
           paths = [part.decode() for part in raw.split(bytes([0])) if part]
           assert len(paths) > 10, 'source inventory unexpectedly empty'
@@ -35,7 +37,7 @@ jobs:
       - name: Build exact-commit source-only bundle
         run: |
           mkdir -p source-bundle
-          git archive --format=tar.gz --output=source-bundle/shattered-source.tar.gz HEAD essentials/Plugins essentials/PBS scripts development
+          git archive --format=tar.gz --output=source-bundle/shattered-source.tar.gz HEAD essentials/Plugins essentials/PBS scripts development tests
           echo "$GITHUB_SHA" > source-bundle/main-or-pr-head.sha
           (cd source-bundle && sha256sum shattered-source.tar.gz > SHA256SUMS)
           tar -tzf source-bundle/shattered-source.tar.gz | grep -Fq 'essentials/Plugins/Shattered Core/001_Core.rb'
