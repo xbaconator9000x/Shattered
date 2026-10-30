@@ -42,7 +42,7 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
         with self.assertRaises(integration.IntegrationError):
             handoff._validate_route22(bad, target, switches, variables)
         bad = copy.deepcopy(config)
-        bad["event_positions"]["npcs"][0] = [24, 17]
+        bad["event_positions"]["npcs"][0] = [27, 16]
         with self.assertRaises(integration.IntegrationError):
             handoff._route22_reserved_positions(self.manifest, bad)
         bad_target = dict(target, sha256="0" * 64)
