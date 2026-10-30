@@ -102,6 +102,43 @@ module ShatteredNativeAudit
       'existing_event_ids' => event_ids }
   end
 
+  # Tile-only reachability; ignores event movement, warps and dynamic passage.
+  # A cutline is a candidate mandatory trigger barrier, NOT a gameplay proof.
+  def tile_path?(map, tilesets, start, goal, excluded = [])
+    return false unless [start, goal].all? { |point|
+      point.is_a?(Array) && point.length == 2 &&
+        tile_status(map, tilesets, *point) == 'clear'
+    }
+    blocked = excluded.to_h { |point| [point, true] }
+    return false if blocked[start] || blocked[goal]
+    visited = { start => true }
+    queue = [start]
+    head = 0
+    while head < queue.length
+      x, y = queue[head]
+      head += 1
+      return true if [x, y] == goal
+      [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].each do |point|
+        next if blocked[point] || visited[point]
+        next unless tile_status(map, tilesets, *point) == 'clear'
+        visited[point] = true
+        queue << point
+      end
+    end
+    false
+  end
+
+  def cutline_report(map, tilesets, entry:, exit_point:, triggers:)
+    raise ArgumentError, 'expected three distinct trigger positions' unless
+      triggers.is_a?(Array) && triggers.length == 3 && triggers.uniq.length == 3
+    connected = tile_path?(map, tilesets, entry, exit_point)
+    bypass = tile_path?(map, tilesets, entry, exit_point, triggers)
+    { 'entry' => entry, 'exit' => exit_point, 'triggers' => triggers,
+      'entry_reaches_exit' => connected, 'bypass_without_trigger' => bypass,
+      'static_cutline_candidate' => connected && !bypass,
+      'runtime_verified' => false }
+  end
+
   def audit(project, gate_id: 222, route_id: 16, viridian_id: 10,
             route_positions: DEFAULT_ROUTE_POSITIONS, archive: nil)
     project = Pathname(project).expand_path
