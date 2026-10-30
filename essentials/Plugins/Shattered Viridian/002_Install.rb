@@ -197,6 +197,41 @@ module ShatteredViridian
      "finish" => finish_event, "rain" => rain_event, "center" => center_event}
   end
 
+  # Static RMXP tileset check, not a substitute for native movement/playtests.
+  # Reject a proposed event or escort step if its native tile is blocked.
+  def self.native_tile_clear?(map, tilesets, x, y)
+    return false unless map.respond_to?(:data) && map.data &&
+      map.respond_to?(:tileset_id) && tilesets.is_a?(Array)
+    tileset = tilesets[map.tileset_id]
+    return false unless tileset && tileset.respond_to?(:passages) && tileset.passages
+    layers = map.data.respond_to?(:zsize) ? map.data.zsize : 3
+    (layers - 1).downto(0) do |layer|
+      tile = map.data[x, y, layer]
+      next if tile.nil? || tile == 0
+      flag = tileset.passages[tile]
+      return false unless flag.is_a?(Integer)
+      next if (flag & 0x10) != 0
+      return (flag & 0x0f) == 0
+    end
+    false
+  end
+
+  def self.validate_native_passages!(config, city, center)
+    tilesets = load_data("Data/Tilesets.rxdata")
+    city_positions = [config["entry_trigger"], config["finish_trigger"],
+      config["rain_controller"], [config["guard"]["x"], config["guard"]["y"]],
+      [config["nidoran"]["x"], config["nidoran"]["y"]]]
+    city_positions.concat(config["guard_path"]).concat(config["nidoran_path"])
+    city_positions.uniq.each do |x, y|
+      raise "Blocked or unknown native Viridian tile #{x},#{y}" unless
+        native_tile_clear?(city, tilesets, x, y)
+    end
+    x, y = config["center_trigger"]
+    raise "Blocked or unknown native Center tile #{x},#{y}" unless
+      native_tile_clear?(center, tilesets, x, y)
+    true
+  end
+
   def self.install(config)
     validate(config)
     raise "Refusing to edit unstaged original" unless File.file?("SHATTERED_STAGING_REPORT.json")
@@ -248,6 +283,10 @@ module ShatteredViridian
                     config["rain_controller"],
                     [config["guard"]["x"], config["guard"]["y"]],
                     [config["nidoran"]["x"], config["nidoran"]["y"]]]
+    validate_native_passages!(config, city, center)
+    # Also refuse paths through unrelated native map events, not just occupied spawn points.
+    route_tiles = (config["guard_path"] + config["nidoran_path"]).uniq
+    raise "Escort path intersects an existing native event" if city.events.values.any? { |e| route_tiles.include?([e.x, e.y]) }
     raise "Occupied city event tile" if city.events.values.any? { |e| planned_city.include?([e.x, e.y]) }
     raise "Occupied Center event tile" if center.events.values.any? { |e| [e.x,e.y] == config["center_trigger"] }
     guard_id = (city.events.keys.max || 0) + 1
