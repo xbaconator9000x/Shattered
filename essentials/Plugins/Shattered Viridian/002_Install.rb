@@ -6,7 +6,7 @@ require "digest"
 module ShatteredViridian
   PREFIX = "SHATTERED_VIRIDIAN:"
   SOURCE_UUID = "5e2cbf0c-2a22-47ac-9205-ccca87172d2e"
-  CITY_SIZE = [48, 40].freeze
+  SOURCE_CITY_SIZE = [48, 40].freeze # ROM parity coordinates, not native RMXP geometry
   SOURCE_NPCS = {
     "3.1:npc:1" => [9,16], "3.1:npc:13" => [20,7],
     "3.1:npc:14" => [34,30], "3.1:npc:15" => [36,20],
@@ -61,6 +61,9 @@ module ShatteredViridian
     city_id = integer!(config["city_map_id"], 1, 999, "city_map_id")
     center_id = integer!(config["center_map_id"], 1, 999, "center_map_id")
     raise ArgumentError, "city and Center maps must differ" if city_id == center_id
+    native_size = config["native_city_dimensions"]
+    raise ArgumentError, "reviewed native city dimensions required" unless native_size.is_a?(Array) && native_size.length == 2
+    native_size.each { |v| integer!(v, 1, 200, "native city dimension") }
     center_size = config["center_dimensions"]
     raise ArgumentError, "invalid Center dimensions" unless center_size.is_a?(Array) &&
       center_size.length == 2
@@ -75,18 +78,19 @@ module ShatteredViridian
       raise ArgumentError, "missing #{role}" unless npc.is_a?(Hash)
       source = SOURCE_NPCS[npc["source_event_id"]]
       raise ArgumentError, "unverified #{role} source NPC anchor" unless source &&
-        [npc["x"], npc["y"]] == source
+        npc["source_position"] == source
+      point!([npc["x"], npc["y"]], native_size, "#{role} native position")
       character!(npc["character"])
-      path!(config["#{role}_path"], source, CITY_SIZE, "#{role}_path")
+      path!(config["#{role}_path"], [npc["x"], npc["y"]], native_size, "#{role}_path")
     end
     raise ArgumentError, "NPC source anchors must differ" if
       config["guard"]["source_event_id"] == config["nidoran"]["source_event_id"]
-    marker = point!(config["entry_source_marker"], CITY_SIZE, "entry_source_marker")
+    marker = point!(config["entry_source_marker"], SOURCE_CITY_SIZE, "entry_source_marker")
     raise ArgumentError, "entry marker absent from original Viridian map" unless SOURCE_ENTRIES.include?(marker)
-    entry = point!(config["entry_trigger"], CITY_SIZE, "entry_trigger")
-    raise ArgumentError, "entry trigger too far from source entrance" unless
-      (entry[0]-marker[0]).abs + (entry[1]-marker[1]).abs <= 3
-    ["finish_trigger", "rain_controller"].each { |key| point!(config[key], CITY_SIZE, key) }
+    # A ROM-source coordinate must never be used to infer a native-map landing.
+    raise ArgumentError, "native entrance and warp not reviewed" unless config["native_entrance_reviewed"] == true
+    entry = point!(config["entry_trigger"], native_size, "entry_trigger")
+    ["finish_trigger", "rain_controller"].each { |key| point!(config[key], native_size, key) }
     point!(config["center_trigger"], center_size, "center_trigger")
     city_points = [entry, config["finish_trigger"], config["rain_controller"],
                    [config["guard"]["x"], config["guard"]["y"]],
@@ -209,8 +213,8 @@ module ShatteredViridian
     infos = load_data("Data/MapInfos.rxdata")
     raise "City/Center MapInfo missing" unless infos[config["city_map_id"]] && infos[config["center_map_id"]]
     maps = paths.transform_values { |path| load_data(path) }
-    raise "Viridian source must be 48x40" unless
-      [maps["city"].width, maps["city"].height] == CITY_SIZE
+    raise "Native Viridian geometry differs from reviewed plan" unless
+      [maps["city"].width, maps["city"].height] == config["native_city_dimensions"]
     raise "Center dimensions differ from reviewed plan" unless
       [maps["center"].width, maps["center"].height] == config["center_dimensions"]
     maps.each_value { |map| raise "Missing event collection" unless map.events.is_a?(Hash) }
