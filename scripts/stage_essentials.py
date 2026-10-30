@@ -105,7 +105,7 @@ def safe_zip_install(archive, dest, plugin_id, overwrite=False):
             key = tuple(part.casefold() for part in path.parts)
             if (key in seen_paths or key in seen_parent_paths or
                     any(key[:i] in seen_paths for i in range(1, len(key)))):
-                raise ValueError(f'duplicate or conflicting archive destination: {path}')
+                raise ValueError(f'duplicate archive destination or path conflict: {path}')
             seen_paths.add(key)
             seen_parent_paths.update(key[:i] for i in range(1, len(key)))
             reject_linked_destination(dest, path, overwrite)
