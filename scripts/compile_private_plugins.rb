@@ -10,6 +10,29 @@ require "optparse"
 require "fileutils"
 
 module ShatteredPrivatePluginCompiler
+  # Explicit native runtime load contract. Installation helpers mutate RXData and
+  # depend on CRuby stdlib (json/digest), which mkxp-z may not provide.
+  # Never include a new .rb file silently: update this inventory and tests first.
+  RUNTIME_FILES = {
+    "Shattered Core" => %w[001_Core.rb],
+    "Shattered Dojo" => %w[001_Starter.rb],
+    "Shattered Equipment" => %w[001_Equipment.rb],
+    "Shattered Gate Story" => %w[001_GateStory.rb],
+    "Shattered Murkrow Rescue" => %w[001_Quest.rb],
+    "Shattered Raid" => %w[001_Raid.rb],
+    "Shattered Route22" => %w[001_Route22.rb],
+    "Shattered Viridian" => %w[001_Entry.rb]
+  }.freeze
+  INSTALLER_FILES = {
+    "Shattered Dojo" => %w[002_Install.rb],
+    "Shattered Gate Story" => %w[002_Install.rb],
+    "Shattered HnS Gate" => %w[001_Import.rb],
+    "Shattered Murkrow Rescue" => %w[002_Install.rb],
+    "Shattered Route22" => %w[002_Install.rb],
+    "Shattered Viridian" => %w[002_Install.rb],
+    "Shattered World Links" => %w[001_Install.rb]
+  }.freeze
+
   module_function
 
   def check(condition, message)
@@ -53,9 +76,11 @@ module ShatteredPrivatePluginCompiler
     meta = metadata(File.join(directory, "meta.txt"))
     check(meta[:name] == folder, "Plugin folder/name mismatch")
     scripts = Dir.children(directory).select { |name| name.end_with?(".rb") }.sort
-    check(!scripts.empty?, "No Ruby plugin scripts")
-    check(scripts.length <= 100, "Too many plugin scripts")
-    packed = scripts.map do |name|
+    expected = (RUNTIME_FILES.fetch(folder, []) + INSTALLER_FILES.fetch(folder, [])).sort
+    check(!expected.empty? && scripts == expected,
+      "Unreviewed plugin source inventory for #{folder}; refusing native compilation")
+    runtime = RUNTIME_FILES.fetch(folder, [])
+    packed = runtime.map do |name|
       check(name.match?(/\A[A-Za-z0-9 _-]+\.rb\z/), "Unsafe plugin filename")
       source = File.binread(safe_file!(File.join(directory, name)))
       check(source.valid_encoding?, "Invalid plugin script bytes")
@@ -107,9 +132,15 @@ module ShatteredPrivatePluginCompiler
       folders.uniq == folders, "Invalid requested plugin list")
     added = []
     unchanged = []
+    offline_only = []
     folders.each do |folder|
       proposed = source_entry(project, folder)
       old = entries.find { |entry| entry[0] == proposed[0] }
+      if proposed[2].empty?
+        check(!old, "Offline-only plugin #{folder} was previously compiled into runtime; use a fresh stage")
+        offline_only << folder
+        next
+      end
       if old
         check(equivalent?(old, proposed),
           "Plugin #{folder} is already compiled with different source; use a fresh stage")
@@ -136,6 +167,8 @@ module ShatteredPrivatePluginCompiler
     report = {
       "kind" => "native_format_plugin_archive_not_gameplay_acceptance",
       "added" => added, "unchanged" => unchanged,
+      "offline_only" => offline_only,
+      "runtime_script_names" => entries.select { |entry| RUNTIME_FILES.key?(entry[0]) }.to_h { |entry| [entry[0], entry[2].map(&:first)] },
       "plugin_names" => entries.map(&:first),
       "original_archive_sha256" => Digest::SHA256.hexdigest(original),
       "compiled_archive_sha256" => Digest::SHA256.file(target).hexdigest,
