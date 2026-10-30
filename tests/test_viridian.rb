@@ -118,6 +118,13 @@ class ViridianInstallerTest < Minitest::Test
     save_data({41=>true,42=>true},"Data/MapInfos.rxdata")
     save_data(ViridianMap.new(50,40,{},1,ViridianTileData.new),"Data/Map041.rxdata")
     save_data(ViridianMap.new(15,10,{},1,ViridianTileData.new),"Data/Map042.rxdata")
+    route_event=RPG::Event.new(32,17)
+    route_event.id=4
+    route_event.name="Existing Route22 Viridian transfer"
+    route_page=RPG::Event::Page.new
+    route_page.list=[RPG::EventCommand.new(201,0,[0,41,1,17,2,0])]
+    route_event.pages=[route_page]
+    save_data(ViridianMap.new(54,34,{4=>route_event},1,ViridianTileData.new),"Data/Map043.rxdata")
     passage=Hash.new(0); passage[385]=15
     save_data([nil,ViridianTileset.new(passage)],"Data/Tilesets.rxdata")
     @config={
@@ -127,6 +134,8 @@ class ViridianInstallerTest < Minitest::Test
       "path_passability_reviewed"=>true,
       "city_map_id"=>41,"center_map_id"=>42,"native_city_dimensions"=>[50,40],"center_dimensions"=>[15,10],
       "native_entrance_reviewed"=>true,
+      "native_route22_warp_reviewed"=>true,"route22_map_id"=>43,
+      "route22_event_id"=>4,"native_route22_warp_origin"=>[32,17],
       "expected_city_sha256"=>Digest::SHA256.file("Data/Map041.rxdata").hexdigest,
       "expected_center_sha256"=>Digest::SHA256.file("Data/Map042.rxdata").hexdigest,
       "guard"=>{"source_event_id"=>"3.1:npc:1","source_position"=>[9,16],"x"=>9,"y"=>16,"character"=>"Guard"},
@@ -188,14 +197,41 @@ class ViridianInstallerTest < Minitest::Test
     @config["nidoran"]["x"], @config["nidoran"]["y"] = 28, 21
     @config["guard_path"] = [[27,20],[28,20],[28,19]]
     @config["nidoran_path"] = [[28,21],[29,21],[29,20]]
-    @config["entry_trigger"] = [25,20]
-    @config["native_warp_landing"] = [24,20]
     @config["finish_trigger"] = [30,20]
     assert_equal 6, ShatteredViridian.install(@config)["installed"]
     city = load_data("Data/Map041.rxdata")
     assert_equal [50,40], [city.width,city.height]
     assert_equal [27,20], [city.events.values.find { |e| e.name.end_with?(":guard") }.x,
                            city.events.values.find { |e| e.name.end_with?(":guard") }.y]
+  end
+  def test_route22_transfer_must_really_land_on_reviewed_native_tile
+    route=load_data("Data/Map043.rxdata")
+    route.events[4].pages[0].list[0].parameters=[0,41,3,17,2,0]
+    save_data(route,"Data/Map043.rxdata")
+    before=File.binread("Data/Map041.rxdata")
+    error=assert_raises(RuntimeError) { ShatteredViridian.install(@config) }
+    assert_match(/does not land/,error.message)
+    assert_equal before,File.binread("Data/Map041.rxdata")
+  end
+  def test_route22_transfer_origin_and_event_id_are_verified
+    @config["native_route22_warp_origin"]=[31,17]
+    assert_raises(RuntimeError) { ShatteredViridian.install(@config) }
+    @config["native_route22_warp_origin"]=[32,17]
+    @config["route22_event_id"]=5
+    assert_raises(RuntimeError) { ShatteredViridian.install(@config) }
+    @config["route22_event_id"]=4
+    @config["native_route22_warp_reviewed"]=false
+    assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
+  end
+  def test_escort_routes_and_player_trigger_cannot_intersect
+    @config["nidoran_path"]=[[18,9],[17,9],[16,9],[15,9],[14,9],[13,9],[12,9],[11,9],[10,9],[10,10],[10,11],[10,12],[10,13],[10,14],[10,15],[10,16]]
+    @config["guard_path"]=[[9,16],[10,16],[10,17]]
+    assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
+    @config["nidoran_path"]=[[18,9],[17,9],[17,10]]
+    @config["entry_trigger"]=[10,17]
+    @config["native_warp_landing"]=[10,18]
+    error=assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
+    assert_match(/escort route crosses/,error.message)
   end
   def test_native_entrance_review_and_dimensions_are_required
     @config["native_entrance_reviewed"] = false
