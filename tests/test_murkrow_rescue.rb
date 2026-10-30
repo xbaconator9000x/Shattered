@@ -3,6 +3,7 @@ require "tmpdir"
 require "fileutils"
 require "digest"
 require "json"
+require "zlib"
 
 class Pokemon
   attr_accessor :species, :level
@@ -107,6 +108,20 @@ end
 
 load File.expand_path("../essentials/Plugins/Shattered Murkrow Rescue/001_Quest.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Murkrow Rescue/002_Install.rb", __dir__)
+
+def murkrow_png_chunk(kind, payload)
+  [payload.bytesize].pack("N") + kind + payload +
+    [Zlib.crc32(kind + payload)].pack("N")
+end
+
+def valid_murkrow_png
+  header = [128, 128, 8, 6, 0, 0, 0].pack("N2C5")
+  row = "\x00".b * (1 + 128 * 4)
+  "\x89PNG\r\n\x1a\n".b +
+    murkrow_png_chunk("IHDR", header) +
+    murkrow_png_chunk("IDAT", Zlib::Deflate.deflate(row * 128)) +
+    murkrow_png_chunk("IEND", "".b)
+end
 
 class MurkrowRescueTest < Minitest::Test
   def setup
@@ -254,6 +269,44 @@ class MurkrowRescueTest < Minitest::Test
     assert ShatteredMurkrowRescue.run_event(JSON.generate(plan))
     assert_equal :complete, ShatteredMurkrowRescue.state(@store)[:stage]
     assert_empty $battle_rules
+  end
+
+  def test_murkrow_sprite_is_hash_pinned_and_structurally_checked_before_map_write
+    with_staged_project do |root, plan|
+      path = File.join(root, "Graphics/Characters/Murkrow.png")
+      map_path = File.join(root, "Data/Map001.rxdata")
+      original_map = File.binread(map_path)
+      original_png = File.binread(path)
+      assert ShatteredMurkrowRescue.validate_character_sheet!(
+        path, plan["expected_character_sha256"])
+
+      File.binwrite(path, original_png + "changed")
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_equal original_map, File.binread(map_path)
+
+      File.binwrite(path, "not a png")
+      plan["expected_character_sha256"] = Digest::SHA256.file(path).hexdigest
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_equal original_map, File.binread(map_path)
+
+      damaged = original_png.dup
+      damaged.setbyte(45, damaged.getbyte(45) ^ 0x01)
+      File.binwrite(path, damaged)
+      plan["expected_character_sha256"] = Digest::SHA256.file(path).hexdigest
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+      assert_equal original_map, File.binread(map_path)
+
+      File.binwrite(path, original_png)
+      plan["expected_character_sha256"] = Digest::SHA256.file(path).hexdigest
+      assert ShatteredMurkrowRescue.validate_character_sheet!(
+        path, plan["expected_character_sha256"])
+    end
   end
 
   def test_installer_rejects_unreviewed_or_mismatched_map_without_writes
@@ -436,7 +489,7 @@ class MurkrowRescueTest < Minitest::Test
       FileUtils.mkdir_p(File.join(root, "Data"))
       FileUtils.mkdir_p(File.join(root, "Graphics/Characters"))
       File.write(File.join(root, "SHATTERED_STAGING_REPORT.json"), "{}")
-      File.write(File.join(root, "Graphics/Characters/Murkrow.png"), "fixture")
+      File.binwrite(File.join(root, "Graphics/Characters/Murkrow.png"), valid_murkrow_png)
       warp = RPG::Event.new(1, 1)
       warp.id = 3
       warp.name = "Reviewed Route 22 transfer"
@@ -472,6 +525,9 @@ class MurkrowRescueTest < Minitest::Test
           File.join(root, "Data/Tilesets.rxdata")
         ).hexdigest,
         "character" => "Murkrow",
+        "expected_character_sha256" => Digest::SHA256.file(
+          File.join(root, "Graphics/Characters/Murkrow.png")
+        ).hexdigest,
         "sprite_reviewed" => true,
         "switch_ids" => [],
         "variable_ids" => [],
