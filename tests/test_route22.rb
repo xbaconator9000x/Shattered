@@ -228,6 +228,27 @@ class Route22InstallerTest < Minitest::Test
     assert_equal before, File.binread("Data/Map042.rxdata")
   end
 
+  def test_native_scatter_destination_must_be_passable
+    native_v04_fixture([30, 17])
+    before = File.binread("Data/Map042.rxdata")
+    error = assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
+    assert_match(/Blocked or unknown Route22 event tile/, error.message)
+    assert_equal before, File.binread("Data/Map042.rxdata")
+  end
+
+  def test_pinned_v04_hash_rejects_unreviewed_event_relocation
+    native_v04_fixture
+    @config["expected_map_sha256"] = ShatteredRoute22::V04_ROUTE22_SHA256
+    @config["legacy_migration"] = {
+      "event_id" => 3, "event_name" => "SHATTERED: Rattata ambush",
+      "x" => 30, "y" => 17,
+      "event_sha256" => ShatteredRoute22::V04_LEGACY_EVENT_SHA256
+    }
+    ShatteredRoute22.validate_config(@config)
+    @config["event_positions"]["triggers"][0] = [26, 16]
+    assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
+  end
+
   def test_native_adaptation_requires_review_and_unique_coordinates
     native_v04_fixture
     @config.delete("reviewed_native_geometry")
