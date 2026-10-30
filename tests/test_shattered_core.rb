@@ -562,7 +562,7 @@ class ShatteredCoreTest < Minitest::Test
       :FIRE => 4, :ICE => 4, :ELECTRIC => 4,
       :POISON => 4, :STEEL => 4, :ROCK => 4, :FIGHTING => 4,
       :NORMAL => 2, :WATER => 2, :GRASS => 2, :GROUND => 2,
-      :FLYING => 2, :SHADOW => 2
+      :FLYING => 2
     }
     expected.each do |type, multiplier|
       assert_equal multiplier, move.pbCalcTypeMod(type, companion_battler, human_battler),
@@ -571,8 +571,10 @@ class ShatteredCoreTest < Minitest::Test
     assert_equal 2, move.pbCalcTypeMod(nil, companion_battler, human_battler)
     assert_nil move.native_type_calls
     assert_equal :native_type_chart,
+      move.pbCalcTypeMod(:SHADOW, companion_battler, human_battler)
+    assert_equal :native_type_chart,
       move.pbCalcTypeMod(:GHOST, human_battler, companion_battler)
-    assert_equal 1, move.native_type_calls
+    assert_equal 2, move.native_type_calls
   end
 
   def test_human_type_hook_is_idempotent_and_preserves_native_method
