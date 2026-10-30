@@ -1,6 +1,7 @@
 name: Shattered Essentials plugins CI
 on:
   push:
+    branches: [main]
     paths:
       - 'essentials/**'
       - 'development/**'
@@ -15,6 +16,9 @@ on:
       - 'tests/**'
       - '.github/workflows/essentials-plugins-ci.yml'
   workflow_dispatch:
+concurrency:
+  group: shattered-plugins-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
@@ -34,6 +38,29 @@ jobs:
         run: ruby -c 'essentials/Plugins/Shattered Core/001_Core.rb'
       - name: Shattered HUMAN API unit tests
         run: ruby tests/test_shattered_core.rb
+      - name: HUMAN equipment and merged Core integration regression
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Equipment/001_Equipment.rb'
+          ruby tests/test_equipment.rb
+          ruby tests/test_equipment_core_integration.rb
+      - name: Private native RMXP inventory regression (synthetic fixtures only)
+        run: |
+          ruby -c scripts/audit_native_project.rb
+          ruby tests/test_native_project_audit.rb
+      - name: Compiled native RXData script syntax audit regression (synthetic fixtures only)
+        run: |
+          ruby -c scripts/audit_native_script_syntax.rb
+          ruby tests/test_native_script_syntax.rb
+      - name: Native Viridian escort geometry and collision regression
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
+          ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
+          ruby tests/test_viridian.rb
+      - name: Native dojo starter questionnaire and map collision regression
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Dojo/001_Starter.rb'
+          ruby -c 'essentials/Plugins/Shattered Dojo/002_Install.rb'
+          ruby tests/test_dojo.rb
       - name: World-link native installer syntax and unit tests
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'

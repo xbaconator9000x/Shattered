@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "kind": "sanitised_private_v04_route22_native_review_not_runtime_acceptance",
+  "source_project": "User-supplied Shattered Essentials v0.4 original Johto gate",
+  "native_map_id": 16,
+  "native_map_sha256": "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b",
+  "native_dimensions": [
+    54,
+    34
+  ],
+  "source_reference_dimensions": [
+    48,
+    24
+  ],
+  "legacy_events": [
+    {
+      "id": 3,
+      "name": "SHATTERED: Rattata ambush",
+      "position": [
+        30,
+        17
+      ],
+      "trigger": "autorun",
+      "action": "existing level-5 Rattata battle; must reconcile to prevent duplicate encounter",
+      "event_sha256": "ef8861a24531fedc56be153cc88a80ed6e314103af48b810d85b116aaadfe786",
+      "migration": "Exact event digest required; transactional replacement with inert page in staged map only; native runtime unverified"
+    },
+    {
+      "id": 4,
+      "name": "SHATTERED: Viridian gate",
+      "position": [
+        32,
+        17
+      ],
+      "action": "existing transfer to Viridian Map010"
+    }
+  ],
+  "candidate": {
+    "triggers": [
+      [
+        27,
+        16
+      ],
+      [
+        27,
+        17
+      ],
+      [
+        27,
+        18
+      ]
+    ],
+    "npcs": [
+      [
+        29,
+        17
+      ],
+      [
+        29,
+        18
+      ],
+      [
+        28,
+        18
+      ]
+    ],
+    "all_six_tile_only_passability": "clear",
+    "all_six_event_occupancy": "none",
+    "tile_only_cutline": {
+      "entry": [
+        14,
+        10
+      ],
+      "exit": [
+        31,
+        17
+      ],
+      "entry_reaches_exit": true,
+      "entry_reaches_exit_without_trigger_tiles": false,
+      "static_cutline_candidate": true,
+      "runtime_verified": false
+    },
+    "scatter_moves": [
+      3,
+      4,
+      3
+    ],
+    "scatter_destinations": [
+      [
+        30,
+        17
+      ],
+      [
+        29,
+        17
+      ],
+      [
+        29,
+        18
+      ]
+    ]
+  },
+  "hard_blockers": [
+    "Native v0.4 legacy autorun migration implemented in PR #38 but not yet tested in real Essentials; exact digest preflight and rollback required",
+    "Rattata NPC scatter move routes and native player approach/interruptions require actual engine verification",
+    "HnS gate warp and Route22 arrival coordinates need reviewed native mapping; static tile checks are not a playtest"
+  ],
+  "asset_policy": "No original map bytes, event scripts, sprites, or commercial assets included."
+}

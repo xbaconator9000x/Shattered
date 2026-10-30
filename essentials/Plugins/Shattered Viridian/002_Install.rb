@@ -6,7 +6,7 @@ require "digest"
 module ShatteredViridian
   PREFIX = "SHATTERED_VIRIDIAN:"
   SOURCE_UUID = "5e2cbf0c-2a22-47ac-9205-ccca87172d2e"
-  CITY_SIZE = [48, 40].freeze
+  SOURCE_CITY_SIZE = [48, 40].freeze # ROM parity coordinates, not native RMXP geometry
   SOURCE_NPCS = {
     "3.1:npc:1" => [9,16], "3.1:npc:13" => [20,7],
     "3.1:npc:14" => [34,30], "3.1:npc:15" => [36,20],
@@ -61,6 +61,9 @@ module ShatteredViridian
     city_id = integer!(config["city_map_id"], 1, 999, "city_map_id")
     center_id = integer!(config["center_map_id"], 1, 999, "center_map_id")
     raise ArgumentError, "city and Center maps must differ" if city_id == center_id
+    native_size = config["native_city_dimensions"]
+    raise ArgumentError, "reviewed native city dimensions required" unless native_size.is_a?(Array) && native_size.length == 2
+    native_size.each { |v| integer!(v, 1, 200, "native city dimension") }
     center_size = config["center_dimensions"]
     raise ArgumentError, "invalid Center dimensions" unless center_size.is_a?(Array) &&
       center_size.length == 2
@@ -75,23 +78,38 @@ module ShatteredViridian
       raise ArgumentError, "missing #{role}" unless npc.is_a?(Hash)
       source = SOURCE_NPCS[npc["source_event_id"]]
       raise ArgumentError, "unverified #{role} source NPC anchor" unless source &&
-        [npc["x"], npc["y"]] == source
+        npc["source_position"] == source
+      point!([npc["x"], npc["y"]], native_size, "#{role} native position")
       character!(npc["character"])
-      path!(config["#{role}_path"], source, CITY_SIZE, "#{role}_path")
+      path!(config["#{role}_path"], [npc["x"], npc["y"]], native_size, "#{role}_path")
     end
     raise ArgumentError, "NPC source anchors must differ" if
       config["guard"]["source_event_id"] == config["nidoran"]["source_event_id"]
-    marker = point!(config["entry_source_marker"], CITY_SIZE, "entry_source_marker")
+    marker = point!(config["entry_source_marker"], SOURCE_CITY_SIZE, "entry_source_marker")
     raise ArgumentError, "entry marker absent from original Viridian map" unless SOURCE_ENTRIES.include?(marker)
-    entry = point!(config["entry_trigger"], CITY_SIZE, "entry_trigger")
-    raise ArgumentError, "entry trigger too far from source entrance" unless
-      (entry[0]-marker[0]).abs + (entry[1]-marker[1]).abs <= 3
-    ["finish_trigger", "rain_controller"].each { |key| point!(config[key], CITY_SIZE, key) }
+    # A ROM-source coordinate must never be used to infer a native-map landing.
+    raise ArgumentError, "native entrance and warp not reviewed" unless config["native_entrance_reviewed"] == true
+    route_id = integer!(config["route22_map_id"], 1, 999, "route22_map_id")
+    integer!(config["route22_event_id"], 1, 9999, "route22_event_id")
+    raise ArgumentError, "route map must differ from city and Center" if [city_id, center_id].include?(route_id)
+    raise ArgumentError, "native route transfer not reviewed" unless config["native_route22_warp_reviewed"] == true
+    point!(config["native_route22_warp_origin"], [200, 200], "native_route22_warp_origin")
+    entry = point!(config["entry_trigger"], native_size, "entry_trigger")
+    landing = point!(config["native_warp_landing"], native_size, "native_warp_landing")
+    raise ArgumentError, "player-touch entry must be adjacent to (not on) warp landing" unless
+      (entry[0]-landing[0]).abs + (entry[1]-landing[1]).abs == 1
+    ["finish_trigger", "rain_controller"].each { |key| point!(config[key], native_size, key) }
     point!(config["center_trigger"], center_size, "center_trigger")
     city_points = [entry, config["finish_trigger"], config["rain_controller"],
                    [config["guard"]["x"], config["guard"]["y"]],
                    [config["nidoran"]["x"], config["nidoran"]["y"]]]
     raise ArgumentError, "overlapping Viridian events" unless city_points.uniq.length == city_points.length
+    guard_route = config["guard_path"]
+    nidoran_route = config["nidoran_path"]
+    raise ArgumentError, "escort routes intersect" unless (guard_route & nidoran_route).empty?
+    reserved = [entry, landing, config["finish_trigger"]]
+    raise ArgumentError, "escort route crosses player or blocking trigger" unless
+      ((guard_route + nidoran_route) & reserved).empty?
     switches = config["switches"]
     raise ArgumentError, "missing switch map" unless switches.is_a?(Hash)
     ids = ["started", "arrived", "center", "rain"].map do |key|
@@ -193,6 +211,65 @@ module ShatteredViridian
      "finish" => finish_event, "rain" => rain_event, "center" => center_event}
   end
 
+  # Static RMXP tileset check, not a substitute for native movement/playtests.
+  # Reject a proposed event or escort step if its native tile is blocked.
+  def self.native_tile_clear?(map, tilesets, x, y)
+    return false unless map.respond_to?(:data) && map.data &&
+      map.respond_to?(:tileset_id) && tilesets.is_a?(Array)
+    tileset = tilesets[map.tileset_id]
+    return false unless tileset && tileset.respond_to?(:passages) && tileset.passages
+    layers = map.data.respond_to?(:zsize) ? map.data.zsize : 3
+    (layers - 1).downto(0) do |layer|
+      tile = map.data[x, y, layer]
+      next if tile.nil? || tile == 0
+      flag = tileset.passages[tile]
+      return false unless flag.is_a?(Integer)
+      next if (flag & 0x10) != 0
+      return (flag & 0x0f) == 0
+    end
+    false
+  end
+
+  def self.validate_native_passages!(config, city, center)
+    tilesets = load_data("Data/Tilesets.rxdata")
+    city_positions = [config["entry_trigger"], config["finish_trigger"],
+      config["rain_controller"], [config["guard"]["x"], config["guard"]["y"]],
+      [config["nidoran"]["x"], config["nidoran"]["y"]]]
+    city_positions.concat(config["guard_path"]).concat(config["nidoran_path"])
+    city_positions.uniq.each do |x, y|
+      raise "Blocked or unknown native Viridian tile #{x},#{y}" unless
+        native_tile_clear?(city, tilesets, x, y)
+    end
+    x, y = config["center_trigger"]
+    raise "Blocked or unknown native Center tile #{x},#{y}" unless
+      native_tile_clear?(center, tilesets, x, y)
+    true
+  end
+
+  # Require the actual native Route 22 transfer event to land on the reviewed
+  # city square. A manual 'reviewed' boolean alone is not sufficient evidence.
+  # This is a source-map contract, not a runtime warp or movement test.
+  def self.validate_native_route22_transfer!(config)
+    path = format("Data/Map%03d.rxdata", config["route22_map_id"])
+    raise "Missing reviewed native Route22 map" unless File.file?(path) && !File.symlink?(path)
+    route = load_data(path)
+    raise "Invalid native Route22 event collection" unless route.respond_to?(:events) &&
+      route.events.is_a?(Hash) && route.respond_to?(:width) && route.respond_to?(:height)
+    point!(config["native_route22_warp_origin"], [route.width, route.height], "native_route22_warp_origin")
+    event = route.events[config["route22_event_id"]]
+    raise "Reviewed Route22 transfer event is missing" unless event &&
+      [event.x, event.y] == config["native_route22_warp_origin"] && event.respond_to?(:pages)
+    landing = config["native_warp_landing"]
+    target = [0, config["city_map_id"], landing[0], landing[1]]
+    transfers = event.pages.flat_map do |page|
+      (page.list || []).select { |cmd| cmd.code == 201 }.map(&:parameters)
+    end
+    raise "Route22 transfer does not land on reviewed native Viridian tile" unless
+      transfers.any? { |parameters| parameters.is_a?(Array) &&
+        parameters.length == 6 && parameters.first(4) == target }
+    true
+  end
+
   def self.install(config)
     validate(config)
     raise "Refusing to edit unstaged original" unless File.file?("SHATTERED_STAGING_REPORT.json")
@@ -206,11 +283,12 @@ module ShatteredViridian
         File.exist?(path + ".shattered_viridian.bak")
       raise "Missing map #{path}" unless File.file?(path)
     end
+    validate_native_route22_transfer!(config)
     infos = load_data("Data/MapInfos.rxdata")
     raise "City/Center MapInfo missing" unless infos[config["city_map_id"]] && infos[config["center_map_id"]]
     maps = paths.transform_values { |path| load_data(path) }
-    raise "Viridian source must be 48x40" unless
-      [maps["city"].width, maps["city"].height] == CITY_SIZE
+    raise "Native Viridian geometry differs from reviewed plan" unless
+      [maps["city"].width, maps["city"].height] == config["native_city_dimensions"]
     raise "Center dimensions differ from reviewed plan" unless
       [maps["center"].width, maps["center"].height] == config["center_dimensions"]
     maps.each_value { |map| raise "Missing event collection" unless map.events.is_a?(Hash) }
@@ -244,6 +322,10 @@ module ShatteredViridian
                     config["rain_controller"],
                     [config["guard"]["x"], config["guard"]["y"]],
                     [config["nidoran"]["x"], config["nidoran"]["y"]]]
+    validate_native_passages!(config, city, center)
+    # Also refuse paths through unrelated native map events, not just occupied spawn points.
+    route_tiles = (config["guard_path"] + config["nidoran_path"]).uniq
+    raise "Escort path intersects an existing native event" if city.events.values.any? { |e| route_tiles.include?([e.x, e.y]) }
     raise "Occupied city event tile" if city.events.values.any? { |e| planned_city.include?([e.x, e.y]) }
     raise "Occupied Center event tile" if center.events.values.any? { |e| [e.x,e.y] == config["center_trigger"] }
     guard_id = (city.events.keys.max || 0) + 1

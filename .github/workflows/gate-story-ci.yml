@@ -1,0 +1,28 @@
+name: Shattered gate story isolated tests
+
+on:
+  pull_request:
+    paths:
+      - "essentials/Plugins/Shattered Gate Story/**"
+      - "essentials/PBS/SHATTEREDGATEKEY.pbs"
+      - "scripts/install_gate_key_pbs.py"
+      - "tests/test_gate_story.rb"
+      - "tests/test_gate_key_pbs.py"
+      - ".github/workflows/gate-story-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  gate-story:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ruby syntax and synthetic native-event tests
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Gate Story/001_GateStory.rb'
+          ruby -c 'essentials/Plugins/Shattered Gate Story/002_Install.rb'
+          ruby tests/test_gate_story.rb
+      - name: Gate key staged PBS tests
+        run: python3 -m unittest discover -s tests -p 'test_gate_key_pbs.py' -v
