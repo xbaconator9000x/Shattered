@@ -24,6 +24,14 @@ module ShatteredInitialSlice
   ROUTE22_RESERVED = [[36, 16], [36, 17], [36, 18],
                       [38, 17], [39, 16], [39, 18]].freeze
 
+  def self.route22_reserved(config)
+    positions = config.fetch("event_positions", {
+      "triggers" => ROUTE22_RESERVED.first(3),
+      "npcs" => ROUTE22_RESERVED.last(3)
+    })
+    positions.fetch("triggers") + positions.fetch("npcs")
+  end
+
   def self.top
     TOPLEVEL_BINDING.eval("self")
   end
@@ -209,12 +217,13 @@ module ShatteredInitialSlice
       check(!link_positions[[gate_id, position["x"], position["y"]]],
         "Gate Story event overlaps a world-link event: #{name}")
     end
-    check(plan["route22_reserved_positions"].length == ROUTE22_RESERVED.length &&
-      plan["route22_reserved_positions"].sort == ROUTE22_RESERVED.sort,
+    reserved = route22_reserved(configs["route22"])
+    check(plan["route22_reserved_positions"].length == reserved.length &&
+      plan["route22_reserved_positions"].sort == reserved.sort,
       "Route22 event coordinate contract differs from the pinned source")
     configs["world_links"]["events"].each do |event|
       next unless event["map_id"] == route_id
-      check(!ROUTE22_RESERVED.include?([event["x"], event["y"]]),
+      check(!reserved.include?([event["x"], event["y"]]),
         "World-link event overlaps a reserved Route22 event coordinate")
     end
   end
@@ -301,8 +310,9 @@ module ShatteredInitialSlice
     check(!event_name?(route_map, "SHATTERED_ROUTE22:") &&
       !event_name?(route_map, "SHATTERED_LINK:"),
       "Route22 has a partial/duplicate integration install without a receipt")
-    validate_route22_tiles!(route_map, load_native("Data/Tilesets.rxdata"))
-    ROUTE22_RESERVED.each do |x, y|
+    reserved = route22_reserved(configs["route22"])
+    validate_route22_tiles!(route_map, load_native("Data/Tilesets.rxdata"), reserved)
+    reserved.each do |x, y|
       check(!event_at?(route_map, x, y),
         "Route22 event coordinate is occupied: #{x},#{y}")
     end
@@ -649,13 +659,16 @@ module ShatteredInitialSlice
     end
     npc_ids = npc_events.map(&:id)
     route_config = configs["route22"]
-    expected_events = ShatteredRoute22::NPCS.each_with_index.map do |point, index|
+    positions = route_config.fetch("event_positions", {
+      "npcs" => ShatteredRoute22::NPCS, "triggers" => ShatteredRoute22::TRIGGERS
+    })
+    expected_events = positions["npcs"].each_with_index.map do |point, index|
       ShatteredRoute22.build_npc(
         *point, index, route_config["rattata_character"],
         route_config["cleared_switch"]
       )
     end
-    expected_events.concat(ShatteredRoute22::TRIGGERS.each_with_index.map do |point, index|
+    expected_events.concat(positions["triggers"].each_with_index.map do |point, index|
       ShatteredRoute22.build_trigger(*point, index, npc_ids, route_config)
     end)
     expected_events.each do |expected|
