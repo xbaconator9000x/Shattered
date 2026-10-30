@@ -515,7 +515,6 @@ module ShatteredInitialSlice
     check(infos.is_a?(Hash) && (infos.key?(gate_id) || infos.key?(gate_id.to_s)) &&
       (infos.key?(route_id) || infos.key?(route_id.to_s)),
       "Installed map IDs are missing from MapInfos")
-    validate_installed_spawn!(plan)
     gate_map = load_native(native_map_path(gate_id))
     check(gate_map.width == 22 && gate_map.height == 21 && gate_map.events.is_a?(Hash),
       "Installed reception gate map has invalid geometry or events")
@@ -648,6 +647,7 @@ module ShatteredInitialSlice
         "Installed native map data changed since receipt: #{path}")
     end
     validate_installed_maps!(plan, configs)
+    validate_installed_spawn!(plan)
     receipt
   end
 
