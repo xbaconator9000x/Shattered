@@ -62,7 +62,7 @@ module ShatteredRoute22
     event = RPG::Event.new(x, y)
     event.name = PREFIX + "trigger_#{index}"
     initial = page
-    initial.trigger = 2 # player touch
+    initial.trigger = 1 # RMXP Player Touch (2 is Event Touch)
     commands = [command(355, ['pbMessage(_INTL("The Rattata scatter! One turns and attacks!"))'])]
     npc_ids.each_with_index do |npc_id, i|
       route = RPG::MoveRoute.new
@@ -78,10 +78,10 @@ module ShatteredRoute22
     commands << command(0)
     initial.list = commands
     retry_page = page(config["scatter_switch"])
-    retry_page.trigger = 2
+    retry_page.trigger = 1
     retry_page.list = [command(355, [script]), command(0)]
     done_page = page(config["cleared_switch"])
-    done_page.trigger = 2
+    done_page.trigger = 1
     done_page.list = [command(0)]
     event.pages = [initial, retry_page, done_page]
     event
