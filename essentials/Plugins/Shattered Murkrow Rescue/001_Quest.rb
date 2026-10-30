@@ -188,6 +188,14 @@ module ShatteredMurkrowRescue
     raise "Essentials battle hook unavailable: #{battle['hook']}" unless
       receiver.respond_to?(hook, true)
     arguments = battle["arguments"].map { |argument| decode_battle_argument(argument) }
+    # No-Pokéball Shattered encounters must never fall back to ordinary wild
+    # battles when the Essentials battle-rule hook is missing. The rule is
+    # applied immediately before starting the battle, not at quest discovery.
+    if hook == :pbWildBattle
+      raise "Essentials no-capture battle rule unavailable" unless
+        receiver.respond_to?(:setBattleRule, true)
+      receiver.send(:setBattleRule, "disablePokeBalls")
+    end
     receiver.send(hook, *arguments)
   end
 
