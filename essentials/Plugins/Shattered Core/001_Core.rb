@@ -152,8 +152,39 @@ module Shattered
       true
     end
 
+    # The native Essentials v21.1 Battle::Move#pbCalcTypeMod(moveType,user,target)
+    # is the standard defensive type calculation used by battle damage and AI.
+    # HUMAN is stored as a genuine species with Normal PBS typing for data
+    # compatibility, but its defensive chart is intentionally non-standard.
+    def human_type_multiplier(move_type)
+      neutral = Effectiveness::NORMAL_EFFECTIVE_MULTIPLIER
+      return neutral if move_type.nil?
+      return 0 if HUMAN_MATCHUPS[:immune].include?(move_type)
+      return neutral / 2 if HUMAN_MATCHUPS[:resist].include?(move_type)
+      return neutral * 2 if HUMAN_MATCHUPS[:weak].include?(move_type)
+      neutral
+    end
+
+    def install_type_hooks
+      return false unless defined?(Battle::Move) &&
+                          Battle::Move.method_defined?(:pbCalcTypeMod)
+      move_class = Battle::Move
+      return true if move_class.method_defined?(:shattered_core_original_pb_calc_type_mod)
+      move_class.class_eval do
+        alias_method :shattered_core_original_pb_calc_type_mod, :pbCalcTypeMod
+        def pbCalcTypeMod(move_type, user, target)
+          if target && target.respond_to?(:pokemon) && Shattered.human?(target.pokemon)
+            return Shattered.human_type_multiplier(move_type)
+          end
+          shattered_core_original_pb_calc_type_mod(move_type, user, target)
+        end
+      end
+      true
+    end
+
     def install_battle_hooks
       install_capture_protection
+      install_type_hooks
       return false unless defined?(Battle::Battler)
       battler_class = Battle::Battler
       return true if battler_class.method_defined?(:shattered_core_original_pb_try_use_move)
