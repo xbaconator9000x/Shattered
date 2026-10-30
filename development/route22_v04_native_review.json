@@ -1,0 +1,88 @@
+{
+  "schema_version": 1,
+  "kind": "sanitised_private_v04_route22_native_review_not_runtime_acceptance",
+  "source_project": "User-supplied Shattered Essentials v0.4 original Johto gate",
+  "native_map_id": 16,
+  "native_map_sha256": "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b",
+  "native_dimensions": [
+    54,
+    34
+  ],
+  "source_reference_dimensions": [
+    48,
+    24
+  ],
+  "legacy_events": [
+    {
+      "id": 3,
+      "name": "SHATTERED: Rattata ambush",
+      "position": [
+        30,
+        17
+      ],
+      "trigger": "autorun",
+      "action": "existing level-5 Rattata battle; must reconcile to prevent duplicate encounter"
+    },
+    {
+      "id": 4,
+      "name": "SHATTERED: Viridian gate",
+      "position": [
+        32,
+        17
+      ],
+      "action": "existing transfer to Viridian Map010"
+    }
+  ],
+  "candidate": {
+    "triggers": [
+      [
+        27,
+        16
+      ],
+      [
+        27,
+        17
+      ],
+      [
+        27,
+        18
+      ]
+    ],
+    "npcs": [
+      [
+        29,
+        17
+      ],
+      [
+        29,
+        18
+      ],
+      [
+        28,
+        18
+      ]
+    ],
+    "all_six_tile_only_passability": "clear",
+    "all_six_event_occupancy": "none",
+    "tile_only_cutline": {
+      "entry": [
+        14,
+        10
+      ],
+      "exit": [
+        31,
+        17
+      ],
+      "entry_reaches_exit": true,
+      "entry_reaches_exit_without_trigger_tiles": false,
+      "static_cutline_candidate": true,
+      "runtime_verified": false
+    }
+  },
+  "hard_blockers": [
+    "Legacy autorun ambush at (30,17) would produce duplicate battle until a source-verified, transactional migration is implemented",
+    "Rattata NPC scatter move routes and native player approach/interruptions require actual engine verification",
+    "HnS gate warp and Route22 arrival coordinates need reviewed native mapping; static tile checks are not a playtest"
+  ],
+  "asset_policy": "No original map bytes, event scripts, sprites, or commercial assets included."
+}
