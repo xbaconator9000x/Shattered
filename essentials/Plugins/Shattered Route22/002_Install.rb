@@ -10,6 +10,9 @@ module ShatteredRoute22
   TRIGGERS = [[36, 16], [36, 17], [36, 18]].freeze
   NPCS = [[38, 17], [39, 16], [39, 18]].freeze
   MOVES = [3, 4, 1].freeze # RMXP MoveCommand: right, up, down.
+  LEGACY_DISABLED = "SHATTERED_LEGACY_ROUTE22_DISABLED"
+  V04_ROUTE22_SHA256 = "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b"
+  V04_LEGACY_EVENT_SHA256 = "ef8861a24531fedc56be153cc88a80ed6e314103af48b810d85b116aaadfe786"
 
   # The 48x24 positions describe the original source-indexed reference, not
   # every RMXP project. Native adaptations require explicit reviewed geometry
@@ -84,7 +87,56 @@ module ShatteredRoute22
       config["rattata_character"].is_a?(String) &&
       /\A[A-Za-z0-9_ -]+\z/.match(config["rattata_character"])
     geometry(config)
+    if config["expected_map_sha256"] == V04_ROUTE22_SHA256
+      record = config["legacy_migration"]
+      raise ArgumentError, "audited v0.4 requires pinned legacy event migration" unless
+        record.is_a?(Hash) && record == {
+          "event_id" => 3, "event_name" => "SHATTERED: Rattata ambush",
+          "x" => 30, "y" => 17, "event_sha256" => V04_LEGACY_EVENT_SHA256
+        }
+    end
     config
+  end
+
+  # Only the exact audited legacy autorun is eligible for migration. The
+  # original event is replaced inside the same transactional map write, never
+  # in the user's source project. A receipt/backup restores it if installation fails.
+  def self.legacy_event(map, config)
+    record = config["legacy_migration"]
+    legacy_names = map.events.values.select { |e|
+      e.name.to_s.match?(/SHATTERED.*Rattata ambush/i)
+    }
+    if !record
+      raise "Legacy Rattata ambush would cause duplicate mandatory battles" unless legacy_names.empty?
+      raise "Unowned disabled legacy Route22 event" if
+        map.events.values.any? { |e| e.name == LEGACY_DISABLED }
+      return nil
+    end
+    id = record["event_id"]
+    event = map.events[id]
+    raise "Reviewed legacy Rattata event missing" unless event &&
+      event.id == id && event.x == record["x"] && event.y == record["y"]
+    if event.name == LEGACY_DISABLED
+      raise "Tampered disabled legacy Rattata event" unless
+        event.pages.length == 1 && event.pages[0].trigger == 0 &&
+        event.pages[0].through == true &&
+        event.pages[0].list.map(&:code) == [0]
+      return nil
+    end
+    raise "Unexpected legacy Rattata event or duplicate" unless
+      legacy_names.length == 1 && legacy_names.first.equal?(event) &&
+      event.name == record["event_name"] &&
+      Digest::SHA256.hexdigest(Marshal.dump(event)) == record["event_sha256"]
+    event
+  end
+
+  def self.disable_legacy!(event)
+    return unless event
+    event.name = LEGACY_DISABLED
+    blank = page
+    blank.trigger = 0
+    blank.list = [command(0)]
+    event.pages = [blank]
   end
 
   def self.command(code, params = [])
@@ -161,8 +213,7 @@ module ShatteredRoute22
     raise "Route22 map differs from reviewed native geometry" unless
       [map.width, map.height] == dimensions
     raise "Route22 event table missing" unless map.events.is_a?(Hash)
-    raise "Legacy Rattata ambush would cause duplicate mandatory battles" if
-      map.events.values.any? { |e| e.name.to_s.match?(/SHATTERED.*Rattata ambush/i) }
+    legacy = legacy_event(map, config)
     validate_native_tiles!(map, triggers + npcs) if dimensions != SOURCE_DIMENSIONS
     sprite = config["rattata_character"]
     raise "Missing locally licensed Rattata character sprite" unless
@@ -185,6 +236,8 @@ module ShatteredRoute22
     end
     raise "Source map hash changed; verify geometry and passability" unless
       Digest::SHA256.file(map_path).hexdigest == config["expected_map_sha256"]
+    raise "Legacy migration is incomplete without six installed events" if
+      map.events.values.any? { |e| e.name == LEGACY_DISABLED }
     occupied = map.events.values.map { |e| [e.x, e.y] }
     raise "Route22 event tile already occupied" unless (triggers + npcs).none? { |p| occupied.include?(p) }
     next_id = (map.events.keys.max || 0) + 1
@@ -201,6 +254,7 @@ module ShatteredRoute22
       event
     end
     (npc_events + trigger_events).each { |e| map.events[e.id] = e }
+    disable_legacy!(legacy)
     tmp = map_path + ".shattered_route22.tmp"
     backup = map_path + ".shattered_route22.bak"
     raise "Stale Route22 installer backup/temp" if File.exist?(tmp) || File.exist?(backup)
