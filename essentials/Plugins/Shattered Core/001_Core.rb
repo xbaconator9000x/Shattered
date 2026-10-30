@@ -164,11 +164,25 @@ module Shattered
         alias_method :shattered_core_original_pb_reduce_pp_other, :pbReducePPOther
 
         def pbCanChooseMove?(move, commandPhase, showMessages = true, specialUsage = false)
-          allowed = shattered_core_original_pb_can_choose_move(
-            move, commandPhase, showMessages, specialUsage
-          )
-          return false unless allowed
           human = instance_variable_get(:@pokemon)
+          # Essentials checks native move PP before any Shattered stamina check.
+          # A HUMAN technique with zero native PP must still be selectable if
+          # shared stamina can pay for it. Borrow one PP ONLY while running the
+          # original legality checks (Disable, Encore, etc.), then restore it.
+          # Never borrow PP for a companion, an unmapped technique or Struggle.
+          borrow_pp = Shattered.human?(human) && move.respond_to?(:pp) &&
+            move.respond_to?(:pp=) && move.pp == 0 &&
+            Shattered.can_spend_stamina?(human, move.id)
+          original_pp = move.pp if borrow_pp
+          begin
+            move.pp = 1 if borrow_pp
+            allowed = shattered_core_original_pb_can_choose_move(
+              move, commandPhase, showMessages, specialUsage
+            )
+          ensure
+            move.pp = original_pp if borrow_pp
+          end
+          return false unless allowed
           return true unless Shattered.human?(human)
           return true if Shattered.can_spend_stamina?(human, move.id)
           if showMessages
