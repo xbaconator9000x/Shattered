@@ -451,6 +451,24 @@ module ShatteredInitialSlice
 
   # Fail closed on an occupied or impassable native map tile. This is a static
   # RMXP tileset passage check; gameplay movement still requires a real launch.
+  # Static RMXP egress guard. This is not a substitute for an in-engine
+  # movement test: event pages, terrain tags and runtime passage hooks may differ.
+  def self.spawn_neighbor_open?(map, tileset, x, y)
+    return false unless x.between?(0, map.width - 1) && y.between?(0, map.height - 1)
+    return false if event_at?(map, x, y)
+    2.downto(0) do |z|
+      tile_id = map.data[x, y, z]
+      return false unless tile_id.is_a?(Integer) && tile_id >= 0
+      next if tile_id == 0
+      passage = tileset.passages[tile_id]
+      priority = tileset.priorities[tile_id]
+      return false unless passage.is_a?(Integer) && priority.is_a?(Integer)
+      return false unless (passage & 0x0f) == 0
+      return true if priority == 0
+    end
+    false
+  end
+
   def self.validate_spawn_tile!(plan)
     spawn = plan.fetch("new_game_spawn")
     map = load_native(native_map_path(spawn.fetch("map_id")))
@@ -489,6 +507,12 @@ module ShatteredInitialSlice
       end
     end
     check(passable, "New Game spawn has no traversable floor tile")
+    # A locally passable start square is insufficient if all four neighbouring
+    # squares are walls, missing floors or occupied by events.
+    egress = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].any? do |nx, ny|
+      spawn_neighbor_open?(map, tileset, nx, ny)
+    end
+    check(egress, "New Game spawn has no unoccupied traversable adjacent tile")
     true
   end
 

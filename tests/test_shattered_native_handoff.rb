@@ -414,7 +414,7 @@ class ShatteredNativeHandoffTest < Minitest::Test
       previous = Dir.pwd
       Dir.chdir(directory)
       Dir.mkdir("Data")
-      tile_data = NativeTileTable.new({[5, 5, 0] => 384})
+      tile_data = NativeTileTable.new({[5, 5, 0] => 384, [6, 5, 0] => 384})
       map = NativeMapStub.new(22, 21, {}, 1, tile_data)
       tilesets = [nil, NativeTilesetStub.new(
         NativeTileTable.new({[384] => 0}), NativeTileTable.new({[384] => 0}))]
@@ -439,6 +439,44 @@ class ShatteredNativeHandoffTest < Minitest::Test
       save_data(map, "Data/Map101.rxdata")
       error = assert_raises(RuntimeError) { ShatteredInitialSlice.validate_spawn_tile!(@plan) }
       assert_match(/occupied/, error.message)
+    end
+  end
+
+  def test_new_game_spawn_rejects_isolated_passable_tile_without_mutating_system
+    with_native_spawn_fixture do |map, _tilesets, original|
+      map.data = NativeTileTable.new({[5, 5, 0] => 384})
+      save_data(map, "Data/Map101.rxdata")
+      error = assert_raises(RuntimeError) do
+        ShatteredInitialSlice.install_new_game_spawn!(@plan)
+      end
+      assert_match(/no unoccupied traversable adjacent tile/, error.message)
+      assert_equal original, load_data("Data/System.rxdata")
+    end
+  end
+
+  def test_new_game_spawn_rejects_egress_blocked_by_event
+    with_native_spawn_fixture do |map, _tilesets, original|
+      map.events[1] = EventStub.new(1, "Blocking exit", 6, 5, [], nil)
+      save_data(map, "Data/Map101.rxdata")
+      error = assert_raises(RuntimeError) do
+        ShatteredInitialSlice.install_new_game_spawn!(@plan)
+      end
+      assert_match(/no unoccupied traversable adjacent tile/, error.message)
+      assert_equal original, load_data("Data/System.rxdata")
+    end
+  end
+
+  def test_new_game_spawn_rejects_blocked_adjacent_tile
+    with_native_spawn_fixture do |map, tilesets, original|
+      map.data = NativeTileTable.new({[5, 5, 0] => 384, [6, 5, 0] => 385})
+      tilesets[1].passages = NativeTileTable.new({[384] => 0, [385] => 15})
+      save_data(map, "Data/Map101.rxdata")
+      save_data(tilesets, "Data/Tilesets.rxdata")
+      error = assert_raises(RuntimeError) do
+        ShatteredInitialSlice.install_new_game_spawn!(@plan)
+      end
+      assert_match(/no unoccupied traversable adjacent tile/, error.message)
+      assert_equal original, load_data("Data/System.rxdata")
     end
   end
 
