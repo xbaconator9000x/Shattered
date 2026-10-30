@@ -412,13 +412,33 @@
         "Pending source CI and native Viridian map/quest acceptance"
       ],
       "blocker": "Requires reviewed Viridian 48x40 map, sprites, native event installation, actual HUMAN battle, save/reload and Android execution. Source-only Ruby tests cannot close gameplay gates."
+    },
+    {
+      "id": "SE-019C",
+      "title": "Integrate Murkrow rescue with native v21.1 battle outcomes and reviewed private map",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-004",
+        "SE-018"
+      ],
+      "validation": [
+        "Native v21.1 WildBattle/TrainerBattle entry points and numeric outcomes",
+        "No capture, flee/draw/abort never advance saved quest flags",
+        "Reviewed source role, collision, warp, licensed sprite and real engine save/reload"
+      ],
+      "evidence": [
+        "PR #24 merged as af9454f52bd169c0279c8629eb5060a63b265273; source-only quest, transactional installer and synthetic tests integrated, not a native installed rescue.",
+        "2026-10-31 direct authorised v0.4 Data/Scripts.rxdata audit (Overworld_BattleStarting): legacy pbWildBattle/pbTrainerBattle functions do not exist; v21.1 uses WildBattle.start_core and TrainerBattle.start_core, returning numeric outcomes. WildBattle.start returns true even for escape/capture, so a boolean cannot certify victory.",
+        "2026-10-31 source repair PR (new) replaces obsolete hooks, accepts only decision 1, enforces wild Murkrow species and tests retry on 0/2/3/4/5. GitHub CI/native runtime evidence pending."
+      ],
+      "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
   "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%.",
-  "last_verified_source_main_sha": "4ec245abaede1b2d300d14743c5beae4f868efb0",
+  "last_verified_source_main_sha": "703f9eca677beb81773148ed021f4ba10833c732",
   "last_verified_source_ci": [
-    41126659340,
-    41126659314
+    41133497904,
+    41133497909
   ]
 }
