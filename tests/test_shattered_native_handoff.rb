@@ -229,9 +229,9 @@ class ShatteredNativeHandoffTest < Minitest::Test
       [payload.bytesize].pack("N") + name + payload +
         [Zlib.crc32(name + payload)].pack("N")
     end
-    png = "\\x89PNG\\r\\n\\x1a\\n".b +
+    png = "\x89PNG\r\n\x1a\n".b +
       chunk.call("IHDR", [128, 128, 8, 6, 0, 0, 0].pack("NNC5")) +
-      chunk.call("IDAT", Zlib::Deflate.deflate(("\\x00".b * 513) * 128)) +
+      chunk.call("IDAT", Zlib::Deflate.deflate(("\x00".b * 513) * 128)) +
       chunk.call("IEND", "")
     Dir.mktmpdir("shattered-sprite-preflight") do |root|
       Dir.chdir(root) do
@@ -242,9 +242,20 @@ class ShatteredNativeHandoffTest < Minitest::Test
         assert_raises(RuntimeError) do
           ShatteredInitialSlice.validate_character_sheet!("../Aipom")
         end
-        bad = png.dup
-        bad.setbyte(29, bad.getbyte(29) ^ 0x01)
-        File.binwrite(path, bad)
+        bad_header = png.dup
+        bad_header.setbyte(29, bad_header.getbyte(29) ^ 0x01)
+        File.binwrite(path, bad_header)
+        assert_raises(RuntimeError) do
+          ShatteredInitialSlice.validate_character_sheet!("Aipom")
+        end
+        bad_data = png.dup
+        idat = bad_data.index("IDAT")
+        bad_data.setbyte(idat + 4, bad_data.getbyte(idat + 4) ^ 0x01)
+        File.binwrite(path, bad_data)
+        assert_raises(RuntimeError) do
+          ShatteredInitialSlice.validate_character_sheet!("Aipom")
+        end
+        File.binwrite(path, png + "garbage")
         assert_raises(RuntimeError) do
           ShatteredInitialSlice.validate_character_sheet!("Aipom")
         end
