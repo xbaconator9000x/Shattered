@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_runtime_observation_not_full_demo_acceptance",
+  "date": "2026-10-31",
+  "canonical_repository": "xbaconator9000x/Shattered",
+  "source_main_sha": "3d645564089cd7cabb258d523a5eadb57d7a8165",
+  "source_handoff_run": 41140866734,
+  "source_handoff_archive_sha256": "d8cb1e12cd37231232286aceb6cde4bac49f6ccb4a202c4f9e0da9cc7d7fcffa",
+  "private_v04_zip_sha256": "c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e",
+  "native_scripts_rxdata_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+  "core_source_sha256": "aa2d73d622cf06ad796c910792b34670a01ede9aeabe5f0b5b8d32a1382b9b57",
+  "engine": {
+    "origin": "official mkxp-z/mkxp-z GitHub Actions Automatic Build",
+    "run_id": 37848894451,
+    "artifact_id": 11582675594,
+    "artifact_name": "mkxp-z.linux.ubuntu.xenial.x86_64.PR401-9b7b023",
+    "binary_sha256": "9a100525f7d9c40cde09f38630129802808c8df8c1d8256a96f0af3ec6c50345",
+    "runner": "Linux x86_64 Xvfb :98, Mesa llvmpipe OpenGL 4.5, ALSOFT_DRIVERS=null"
+  },
+  "source_stage": {
+    "command": "python scripts/stage_essentials.py --project PRIVATE_V04 --output PRIVATE_STAGE",
+    "result": "passed",
+    "report_sha256": "b60c9987aa5ebecdffa1d3a1a9ed4d523c339d12964ff5973b389fc045d0d090",
+    "human_pbs_appended": true
+  },
+  "native_plugin_archive": {
+    "format": "Essentials v21.1 PluginManager.compilePlugins Marshal+Zlib",
+    "script": "scripts/compile_private_plugins.rb",
+    "source_pr": 45,
+    "source_test_result": "6 tests, 26 assertions, zero failures",
+    "original_plugin_archive_sha256": "f2974f1973356a1b577f6c01a40712400804b4364529305e48b48d665879a7c0",
+    "compiled_plugin_archive_sha256": "24f8742ae6c960b5aa9a15b8406c68a19e7bc4ede7a1e209d8f7428348702ad2",
+    "entries": [
+      "v21.1 Hotfixes 1.0.3",
+      "Shattered Core 0.2.3"
+    ],
+    "idempotent_second_run": true
+  },
+  "runtime_observations": {
+    "original_v04_title_rendered": true,
+    "staged_main_title_rendered": true,
+    "compiled_core_title_rendered": true,
+    "compiled_core_title_screenshot_sha256": "d0235d3b2806e67aae3b41daddf8f3f91d84ef0d08673f4e627668d4f3f76aa3",
+    "diagnostic_core_eval_marker_observed": true,
+    "diagnostic_note": "Separate private instrumented archive appended a marker after Core source; marker observed on real mkxp-z launch, then original uninstrumented archive restored.",
+    "input_transition_to_new_game_verified": false,
+    "pbs_native_compiled": false,
+    "human_battle_verified": false,
+    "gate_story_verified": false,
+    "route22_battle_verified": false,
+    "save_reload_verified": false,
+    "android_verified": false
+  },
+  "blockers": [
+    "Linux X11 injected keyboard input did not advance title screen in this headless probe; investigate runner focus/input mapping.",
+    "Native PBS compilation of HUMAN not yet performed; plugin source archive alone does not add compiled species.",
+    "HnS gate native map/metatile mapping and asset permissions remain unresolved.",
+    "Hotfixes 1.0.9 and third-party plugin archives are not verified/installed.",
+    "No full playable integrated demo candidate yet."
+  ],
+  "distribution": "No user project files, original game graphics, screenshots or commercial assets are committed; hashes and source-only tooling only."
+}

@@ -4,11 +4,13 @@ This project is **independent** from the Shattered FireRed ROM hack and from Ess
 
 ## Working code and claims
 
-- `essentials/Plugins/Shattered Core/`: **real Ruby plugin**, event-facing `Shattered.ensure_human`, `Shattered.befriend`, optional stamina backing store, planned type/technique/equipment data. Does **not** yet hook the battle PP system, modify party menus, disable Poké Balls, apply non-standard typing, or implement the specialisations.
-- `essentials/PBS/HUMAN.pbs`: appended to `PBS/pokemon.txt` by staging tool. HUMAN is currently *Normal type* until a safe battle-level effectiveness hook is implemented.
+- `essentials/Plugins/Shattered Core/`: **real Ruby plugin v0.2.3**, including HUMAN lifecycle, persistent stamina, battle move/PP hooks, HUMAN-specific defensive effectiveness, capture-rule guards and no-ball `Shattered.befriend`. These hooks have source tests and an actual mkxp-z Core evaluation probe, but no genuine HUMAN battle, save/reload or Android acceptance. Full menus, specialisations and equipment UI remain unfinished.
+- `essentials/PBS/HUMAN.pbs`: appended to `PBS/pokemon.txt` by staging. HUMAN's PBS base type is Normal while its special defensive chart is implemented through the Core battle move hook. **PBS species compilation has not yet been executed in the actual staged game**; appending text alone does not create a playable HUMAN.
 - `development/plugin_manifest.json`: catalogue pins, declared dependency/override claims and verification state. Third-party source, version, compatibility and license claims below remain **unverified**; this is not a claim of installation.
 - `scripts/stage_essentials.py`: testable safe installer; its default action stages only Shattered Core/HUMAN. It accepts local third-party ZIPs (`--archive pluginid=/path/to.zip`) but does not verify their provenance, version or license; complete those checks manually first. The tool refuses unsafe/overlapping archive writes by default.
 - `scripts/validate_integration.py`: checks version syntax/compatibility targets, dependency references/cycles and declared dependency-version constraints, duplicate overrides, verification metadata, runtime claims and task readiness.
+- `scripts/compile_private_plugins.rb`: guarded local-only compiler of the native v21.1 `PluginScripts.rxdata` Marshal+Zlib format, based on the original v0.4 `PluginManager.compilePlugins` implementation. Preserves existing compiled Hotfixes, backs up before updates and rejects conflicting sources. This **does not compile PBS or prove gameplay**.
+- `.github/workflows/private-runtime-source-bundle.yml`: produces a short-lived exact-commit source-only GitHub artifact, explicitly excluding game binaries, graphics and audio. Combine it privately with the authorised original v0.4 project; never upload the game files.
 - GitHub Actions runs static validation, Ruby tests and builds an isolated *synthetic* starter project. These tests **cannot replace a native Essentials plugin compilation or an Android playtest**.
 
 ## Catalogue evidence and attribution limits
@@ -37,7 +39,7 @@ The manifest records the desired Essentials target (21.1), not proven upstream c
 
 ### Feral Tank / HUMAN conflict audit
 
-The existing catalogue describes Feral Tank as overriding `Pokemon#calcHP`, `Pokemon#calcStat` and `Pokemon#calc_stats`. These are **unverified override claims**, not a source audit. Such replacements could conflict with another plugin's stat hook or change a Pokémon object's stat calculations when called by custom HUMAN battle logic. Shattered Core currently exposes event-facing APIs and does not implement a HUMAN battle-stat or battle-turn hook, so no compatibility with Feral Tank can yet be claimed. Before modifying or installing either side, inspect the exact upstream methods and hook/alias behavior, then test Pokémon stat recalculation and HUMAN stats independently; avoid competing method replacements until their call order and data model are understood.
+The existing catalogue describes Feral Tank as overriding `Pokemon#calcHP`, `Pokemon#calcStat` and `Pokemon#calc_stats`. These are **unverified override claims**, not a source audit. Such replacements could conflict with another plugin's stat hook or change a Pokémon object's stat calculations when called by custom HUMAN battle logic. Shattered Core now implements HUMAN battle move/stamina and defensive type hooks but does not require Feral Tank; Feral Tank remains optional and **not a prerequisite for the first HUMAN battle**. No compatibility with its stat overrides has been verified. Before modifying or installing either side, inspect the exact upstream methods and hook/alias behavior, then test Pokémon stat recalculation and HUMAN stats independently; avoid competing method replacements until their call order and data model are understood.
 
 ## Test locally
 
@@ -46,9 +48,10 @@ python3 scripts/validate_integration.py
 python3 -m unittest discover -s tests -v
 ruby tests/test_shattered_core.rb
 python3 scripts/stage_essentials.py --project '/path/to/Essentials FRLG' --output '/path/to/Shattered-Essentials-staged'
+ruby scripts/compile_private_plugins.rb --project '/path/to/Shattered-Essentials-staged' --plugin 'Shattered Core'
 ```
 
-Run RPG Maker XP debug compilation / Ctrl-force recompile for installed plugins, **start a NEW game**, and independently test on JoiPlay or NaviaXP. Don't promise Android gameplay without device evidence.
+The private native-format compiler above handles only plugin script archives. Run actual Essentials debug PBS/map compilation, **start a NEW game**, and independently test on JoiPlay or NaviaXP. The 2026-10-31 Linux mkxp-z probe rendered the original/staged title and confirmed Core eval in a separate instrumented diagnostic, but headless input did not advance New Game; no battles or saves were verified. Don't promise Android gameplay without device evidence.
 
 ## Safe upstream archive staging
 

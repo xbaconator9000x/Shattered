@@ -60,7 +60,8 @@
       ],
       "evidence": [
         "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested.",
-        "PR #11 merged on main at 8dbea4be (HUMAN Core v0.2.2); source-level battle/stamina tests and main combined CI passed. Real native battle, save/load, defensive type behavior and Android remain open."
+        "PR #11 merged on main at 8dbea4be (HUMAN Core v0.2.2); source-level battle/stamina tests and main combined CI passed. Real native battle, save/load, defensive type behavior and Android remain open.",
+        "2026-10-31 actual private Essentials v21.1 source staged from main 3d645564, native-format PluginScripts.rxdata with Shattered Core 0.2.3 compiled via guarded compiler and launched in official mkxp-z Linux under Xvfb; real title rendered. A separate instrumented diagnostic confirmed Core Ruby eval executes in the actual engine. HUMAN species PBS compilation, first battle and save/reload NOT verified."
       ]
     },
     {
@@ -357,6 +358,9 @@
         "Save/close/reopen and continue, no softlocks, no Poké Ball capture, proper HUMAN stamina and independent Pokémon PP",
         "Original game remains intact, full dependency manifest and reproducible patch, regression evidence and asset rights verified",
         "No release marked integrated/complete without manual device and true game-engine execution"
+      ],
+      "evidence": [
+        "2026-10-31 official mkxp-z Linux source-staged title smoke and Core eval marker observed; not the required Android JoiPlay/NaviaXP playthrough, New Game, HUMAN battle or save/reload. Exact private hashes and runtime conditions in development/native_linux_runtime_evidence_2026-10-31.json."
       ]
     },
     {
@@ -429,16 +433,38 @@
       "evidence": [
         "PR #24 merged as af9454f52bd169c0279c8629eb5060a63b265273; source-only quest, transactional installer and synthetic tests integrated, not a native installed rescue.",
         "2026-10-31 direct authorised v0.4 Data/Scripts.rxdata audit (Overworld_BattleStarting): legacy pbWildBattle/pbTrainerBattle functions do not exist; v21.1 uses WildBattle.start_core and TrainerBattle.start_core, returning numeric outcomes. WildBattle.start returns true even for escape/capture, so a boolean cannot certify victory.",
-        "2026-10-31 source repair PR (new) replaces obsolete hooks, accepts only decision 1, enforces wild Murkrow species and tests retry on 0/2/3/4/5. GitHub CI/native runtime evidence pending."
+        "2026-10-31 source repair PR (new) replaces obsolete hooks, accepts only decision 1, enforces wild Murkrow species and tests retry on 0/2/3/4/5. GitHub CI/native runtime evidence pending.",
+        "PR #43 merged at e25f202bbb73e32fffef1e2dfc8615d43701e7c3; v21.1 numeric start_core battle decisions and private Murkrow sprite SHA/PNG integrity checks. GitHub validate/murkrow/main handoff passed. Actual rescue remains not installed or played."
       ],
       "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
+    },
+    {
+      "id": "SE-024A",
+      "title": "SE-024A: Private native Linux Essentials compiled-plugin launch and input/gameplay harness",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-003",
+        "SE-004"
+      ],
+      "validation": [
+        "Reproducible rights-safe source-only GitHub handoff from exact main SHA",
+        "Preserve original v0.4 while staging HUMAN PBS and versioned plugin sources privately",
+        "Native PluginScripts.rxdata format compiler passes regression tests and actual mkxp-z loads Shattered Core",
+        "Native New Game input, HUMAN species PBS compilation, gate events, first battle, save/reload then Android runner verified"
+      ],
+      "evidence": [
+        "2026-10-31 PR #44 merged as 3d645564089cd7cabb258d523a5eadb57d7a8165: rights-safe source-only exact-SHA artifact 13018303506; SHA-256 verified and staged original v0.4 privately with HUMAN PBS appended.",
+        "2026-10-31 PR #45 merged as 2d8381d5436747a3935082e6e88abe30fccb340c: guarded local native-format plugin archive compiler, six Ruby tests/26 assertions, GitHub combined CI green; actual private stage compiler output sha256 24f8742ae6c960b5aa9a15b8406c68a19e7bc4ede7a1e209d8f7428348702ad2.",
+        "Official mkxp-z Linux artifact 11582675594 launched exact source-staged private project with Mesa llvmpipe/Xvfb/OpenAL null; title rendered. Instrumented Core plugin eval marker observed in separate diagnostic run. Screenshots/logs and binary/game hashes retained privately; sanitised manifest in development/native_linux_runtime_evidence_2026-10-31.json."
+      ],
+      "blocker": "Native PBS compilation not executed; injected keyboard input did not advance headless title; no New Game, HUMAN battle, save/reload, faithful HnS gate or Android runner acceptance. Official Hotfixes 1.0.9 and reviewed HnS map/asset inputs outstanding."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
-  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%.",
-  "last_verified_source_main_sha": "703f9eca677beb81773148ed021f4ba10833c732",
+  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% reflects integrated source, verified private native project staging, native-format Core archive and actual mkxp-z title/diagnostic Core eval only. New Game, battles, save/reload, gate parity and Android are unverified. Plugin infrastructure indicator remains separately 16%.",
+  "last_verified_source_main_sha": "2d8381d5436747a3935082e6e88abe30fccb340c",
   "last_verified_source_ci": [
-    41133497904,
-    41133497909
+    41141282550,
+    41141282556
   ]
 }
