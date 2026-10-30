@@ -172,6 +172,7 @@ module Shattered
           # Never borrow PP for a companion, an unmapped technique or Struggle.
           borrow_pp = Shattered.human?(human) && move.respond_to?(:pp) &&
             move.respond_to?(:pp=) && move.pp == 0 &&
+            move.id != Shattered::STRUGGLE &&
             Shattered.can_spend_stamina?(human, move.id)
           original_pp = move.pp if borrow_pp
           begin
