@@ -26,6 +26,18 @@ scripts/dialogue, ROM data, music, graphics, or third-party assets. Provide a
 locally held, distributable Murkrow character graphic and verify its rights
 before staging it.
 
+## Private Murkrow overworld artwork found (not distributed)
+
+The HnS source tree includes `graphics/pokemon/murkrow/overworld.png`
+(Git blob `1b72d9093076ba6e750d7773d8ec0aa9eb5a80dc`, source SHA-256
+`d518d65f407c960086a1bae9120361e653cd7912a41632ffc84ad64f618f43fd`).
+A 128×128 four-direction RMXP sheet was converted into a **private local**
+asset workspace, output SHA-256
+`8c0edf25aa451dd9bf8e91c37d7a0044ec075866c63645a97ab7c1de61e2d5d8`.
+It is **not** included in this PR or repository. The upstream repository has
+no confirmed redistribution license, and the converted sheet has not been
+played or animated in Essentials. Keep the asset local pending rights review.
+
 ## Quest behavior
 
 `ShatteredMurkrowRescue` stores discovery, battle, recruitment, reward, and
