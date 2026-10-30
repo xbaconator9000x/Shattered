@@ -1,8 +1,5 @@
 # frozen_string_literal: true
 # SE-019C: saved Murkrow rescue state and native event flow.
-require "json"
-require "base64"
-
 module ShatteredMurkrowRescue
   VERSION = 1
   SPECIES = :MURKROW
@@ -216,8 +213,17 @@ module ShatteredMurkrowRescue
     receiver.start_core(*arguments) == 1
   end
 
+  # New native events pass a reviewed Ruby Hash directly. Legacy JSON event
+  # strings remain supported only when JSON is already available in the host.
+  # Do not require CRuby json/base64 at mkxp-z game startup.
   def self.run_event(encoded_plan)
-    plan = JSON.parse(encoded_plan)
+    plan = if encoded_plan.is_a?(Hash)
+             encoded_plan
+           elsif encoded_plan.is_a?(String) && defined?(JSON)
+             JSON.parse(encoded_plan)
+           else
+             raise ArgumentError, "Unsupported Murkrow event plan"
+           end
     validate_battle!(plan["battle"])
     validate_reward!(plan["reward"])
     value = state
@@ -266,7 +272,9 @@ module ShatteredMurkrowRescue
       end
     end
     true
-  rescue JSON::ParserError, ArgumentError
+  rescue StandardError => error
+    raise unless error.is_a?(ArgumentError) ||
+      (defined?(JSON::ParserError) && error.is_a?(JSON::ParserError))
     false
   end
 end
