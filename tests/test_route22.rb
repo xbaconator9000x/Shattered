@@ -99,6 +99,38 @@ class Route22BattleTest < Minitest::Test
     assert ShatteredRoute22.capture_violation?
     refute ShatteredRoute22.cleared?
   end
+  def test_stale_cleared_switch_cannot_skip_unsolved_mandatory_battle
+    $game_switches[92] = true
+    refute ShatteredRoute22.reconcile(92)
+    refute $game_switches[92]
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, $battle_calls.length
+    assert ShatteredRoute22.cleared?
+  end
+
+  def test_invalid_saved_route_state_is_not_silently_reset
+    $PokemonGlobal.instance_variable_set(:@shattered_route22_rattata,
+      { :version => 999, :cleared => true })
+    $game_switches[92] = true
+    assert_raises(RuntimeError) { ShatteredRoute22.reconcile(92) }
+    assert $game_switches[92]
+    assert_equal 999,
+      $PokemonGlobal.instance_variable_get(:@shattered_route22_rattata)[:version]
+    assert_empty $battle_calls
+  end
+
+  def test_capture_diagnostic_clears_on_new_non_capture_battle
+    $battle_outcome = 4
+    refute ShatteredRoute22.encounter(91, 92)
+    assert ShatteredRoute22.capture_violation?
+    $battle_outcome = 0
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.capture_violation?
+    $battle_outcome = 1
+    assert ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.capture_violation?
+  end
+
   def test_missing_human_cannot_start
     $player.party=[:RATTATA]
     assert_raises(RuntimeError) { ShatteredRoute22.encounter(91,92) }
