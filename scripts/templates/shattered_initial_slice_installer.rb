@@ -1,6 +1,7 @@
 require "json"
 require "digest"
 require "fileutils"
+require "zlib"
 
 module ShatteredInitialSlice
   PLAN_PATH = "Plugins/Shattered Initial Slice Installer/initial_slice_plan.json"
@@ -265,16 +266,21 @@ module ShatteredInitialSlice
       character_name.match?(/\\A[A-Za-z0-9 _-]+\\z/),
       "Unsafe or missing overworld character name")
     path = File.join("Graphics", "Characters", "#{character_name}.png")
-    check(File.file?(path) && !File.symlink?(path),
-      "Required overworld character sprite is missing: #{character_name}")
+    check(File.file?(path) && !File.symlink?(path) && File.size(path).between?(70, 1024 * 1024),
+      "Required overworld character sprite is missing or invalid: #{character_name}")
     File.open(path, "rb") do |file|
       header = file.read(33)
       check(header && header.bytesize == 33 &&
         header.byteslice(0, 8) == "\\x89PNG\\r\\n\\x1a\\n".b &&
+        header.byteslice(8, 4).unpack1("N") == 13 &&
         header.byteslice(12, 4) == "IHDR" &&
         header.byteslice(16, 8).unpack("N2") == [128, 128] &&
-        header.getbyte(24) == 8 && header.getbyte(25) == 6,
+        header.getbyte(24) == 8 && header.getbyte(25) == 6 &&
+        Zlib.crc32(header.byteslice(12, 17)) == header.byteslice(29, 4).unpack1("N"),
         "Overworld character must be a 128x128 RGBA RMXP sheet: #{character_name}")
+      file.seek(-12, IO::SEEK_END)
+      check(file.read(12) == "\\x00\\x00\\x00\\x00IEND\\xaeB\\x60\\x82".b,
+        "Overworld character PNG is truncated: #{character_name}")
     end
     true
   end
