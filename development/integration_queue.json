@@ -439,8 +439,8 @@
       "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
     },
     {
-      "id": "SE-024",
-      "title": "Private native Linux Essentials v21.1 compiled-plugin launch and input/gameplay harness",
+      "id": "SE-024A",
+      "title": "SE-024A: Private native Linux Essentials compiled-plugin launch and input/gameplay harness",
       "status": "in_progress",
       "depends_on": [
         "SE-003",
