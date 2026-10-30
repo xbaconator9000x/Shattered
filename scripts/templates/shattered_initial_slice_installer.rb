@@ -310,9 +310,19 @@ module ShatteredInitialSlice
     check(!event_name?(route_map, "SHATTERED_ROUTE22:") &&
       !event_name?(route_map, "SHATTERED_LINK:"),
       "Route22 has a partial/duplicate integration install without a receipt")
-    check(!route_map.events.values.any? { |event|
-      event.name.to_s.match?(/SHATTERED.*Rattata ambush/i)
-    }, "Legacy Route22 Rattata autorun must be reconciled before installing another encounter")
+    migration = configs["route22"]["legacy_migration"]
+    if migration
+      legacy = route_map.events[migration["event_id"]]
+      check(legacy && legacy.id == migration["event_id"] &&
+        legacy.name == migration["event_name"] &&
+        [legacy.x, legacy.y] == [migration["x"], migration["y"]] &&
+        Digest::SHA256.hexdigest(Marshal.dump(legacy)) == migration["event_sha256"],
+        "Legacy Route22 autorun differs from the reviewed migration source")
+    else
+      check(!route_map.events.values.any? { |event|
+        event.name.to_s.match?(/SHATTERED.*Rattata ambush/i)
+      }, "Legacy Route22 Rattata autorun must be reconciled before another encounter")
+    end
     reserved = route22_reserved(configs["route22"])
     validate_route22_tiles!(route_map, load_native("Data/Tilesets.rxdata"), reserved)
     reserved.each do |x, y|
@@ -680,6 +690,14 @@ module ShatteredInitialSlice
       expected.id = actual.id
       check(Marshal.dump(actual) == Marshal.dump(expected),
         "Route22 event differs from the pinned installer: #{expected.name}")
+    end
+    if (migration = route_config["legacy_migration"])
+      disabled = route_map.events[migration["event_id"]]
+      check(disabled && disabled.name == ShatteredRoute22::LEGACY_DISABLED &&
+        disabled.pages.length == 1 && disabled.pages[0].trigger == 0 &&
+        disabled.pages[0].through == true &&
+        disabled.pages[0].list.map(&:code) == [0],
+        "Legacy Rattata autorun was not safely disabled in the installed map")
     end
     expected_route_events = expected_events.map(&:name).sort
     actual_route_events = route_map.events.values.map(&:name).grep(/\ASHATTERED_ROUTE22:/).sort
