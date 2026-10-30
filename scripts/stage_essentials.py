@@ -52,8 +52,15 @@ def reject_symlinked_project(project):
     for root, dirs, files in os.walk(project, followlinks=False):
         for name in dirs + files:
             entry = Path(root) / name
-            if entry.is_symlink():
+            info = entry.lstat()
+            if stat.S_ISLNK(info.st_mode):
                 raise ValueError(f'project contains symlink: {entry}')
+            if stat.S_ISDIR(info.st_mode):
+                continue
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError(f'project contains unsupported special file: {entry}')
+            if info.st_nlink > 1:
+                raise ValueError(f'project contains hardlinked file: {entry}')
 
 
 def reject_linked_destination(dest, path, overwrite):
