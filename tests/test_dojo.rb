@@ -22,7 +22,16 @@ module RPG
     def initialize(code,indent,params); @code=code; @indent=indent; @parameters=params; end
   end
 end
-DojoMap = Struct.new(:width, :height, :events)
+DojoMap = Struct.new(:width, :height, :events, :tileset_id, :data)
+DojoTileset = Struct.new(:passages)
+class DojoTileData
+  attr_accessor :blocked
+  def initialize; @blocked=[]; end
+  def [](x,y,z)
+    return 0 unless z == 0
+    @blocked.include?([x,y]) ? 385 : 384
+  end
+end
 class DojoPokemon
   attr_accessor :species, :level
   def initialize(species, level=5); @species=species; @level=level; end
@@ -134,7 +143,9 @@ class DojoInstallerTest < Minitest::Test
     File.write("SHATTERED_STAGING_REPORT.json","{}")
     File.write("Graphics/Characters/Instructor.png","stub")
     save_data({45=>Object.new},"Data/MapInfos.rxdata")
-    save_data(DojoMap.new(10,9,{}),"Data/Map045.rxdata")
+    save_data(DojoMap.new(10,9,{},1,DojoTileData.new),"Data/Map045.rxdata")
+    passage=Hash.new(0);passage[385]=15
+    save_data([nil,DojoTileset.new(passage)],"Data/Tilesets.rxdata")
     @plan={
       "schema_version"=>1,
       "source_map_uuid"=>ShatteredDojo::SOURCE_MAP_UUID,
@@ -142,6 +153,9 @@ class DojoInstallerTest < Minitest::Test
       "passability_reviewed"=>true,
       "dojo_map_id"=>45,
       "source_event_id"=>"5.2:npc:1",
+      "source_position"=>[6,4],
+      "native_map_reviewed"=>true,
+      "native_map_dimensions"=>[10,9],
       "event_position"=>[6,4],
       "character"=>"Instructor",
       "expected_map_sha256"=>Digest::SHA256.file("Data/Map045.rxdata").hexdigest
@@ -167,8 +181,39 @@ class DojoInstallerTest < Minitest::Test
     @plan["role_reviewed"]=false
     assert_raises(ArgumentError) { ShatteredDojo.install(@plan) }
     @plan["role_reviewed"]=true
-    @plan["event_position"]=[3,5]
+    @plan["source_position"]=[3,5]
     assert_raises(ArgumentError) { ShatteredDojo.install(@plan) }
+  end
+  def test_native_dojo_map_can_differ_from_rom_source_size_and_position
+    map=DojoMap.new(20,12,{},1,DojoTileData.new)
+    save_data(map,"Data/Map045.rxdata")
+    @plan["expected_map_sha256"]=Digest::SHA256.file("Data/Map045.rxdata").hexdigest
+    @plan["native_map_dimensions"]=[20,12]
+    @plan["event_position"]=[10,6]
+    assert_equal 1,ShatteredDojo.install(@plan)["installed"]
+    event=load_data("Data/Map045.rxdata").events.values.first
+    assert_equal [10,6],[event.x,event.y]
+    assert_equal [6,4],@plan["source_position"]
+  end
+  def test_native_geometry_review_is_mandatory
+    @plan["native_map_reviewed"]=false
+    assert_raises(ArgumentError) { ShatteredDojo.install(@plan) }
+    @plan["native_map_reviewed"]=true
+    @plan["event_position"]=[10,6]
+    assert_raises(ArgumentError) { ShatteredDojo.install(@plan) }
+    @plan["event_position"]=[6,4]
+    @plan["native_map_dimensions"]=[20,12]
+    assert_raises(RuntimeError) { ShatteredDojo.install(@plan) }
+  end
+  def test_native_dojo_blocked_tile_refused_without_writing
+    map=load_data("Data/Map045.rxdata")
+    map.data.blocked << [6,4]
+    save_data(map,"Data/Map045.rxdata")
+    @plan["expected_map_sha256"]=Digest::SHA256.file("Data/Map045.rxdata").hexdigest
+    before=File.binread("Data/Map045.rxdata")
+    error=assert_raises(RuntimeError) { ShatteredDojo.install(@plan) }
+    assert_match(/blocked or unverified/,error.message)
+    assert_equal before,File.binread("Data/Map045.rxdata")
   end
   def test_missing_staging_or_sprite_fail_closed
     File.delete("SHATTERED_STAGING_REPORT.json")
