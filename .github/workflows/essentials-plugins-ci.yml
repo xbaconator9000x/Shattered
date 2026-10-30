@@ -38,6 +38,11 @@ jobs:
         run: ruby -c 'essentials/Plugins/Shattered Core/001_Core.rb'
       - name: Shattered HUMAN API unit tests
         run: ruby tests/test_shattered_core.rb
+      - name: HUMAN equipment and merged Core integration regression
+        run: |
+          ruby -c 'essentials/Plugins/Shattered Equipment/001_Equipment.rb'
+          ruby tests/test_equipment.rb
+          ruby tests/test_equipment_core_integration.rb
       - name: World-link native installer syntax and unit tests
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'
