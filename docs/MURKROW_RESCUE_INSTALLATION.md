@@ -36,13 +36,15 @@ Recruitment checks the party before calling `Shattered.befriend`, so retries
 do not add a second Murkrow. A full party or unavailable reward delivery
 leaves the remaining step retryable.
 
-The checked-in Shattered Core v0.1.0 `befriend` API does not deduplicate
-species and does not provide a battle-start hook. This plugin uses the API
-only after checking its availability and performs its own duplicate check.
+Shattered Core v0.2.3 provides the `befriend` API and lifecycle/battle hooks.
+The rescue still checks for an existing Murkrow before recruitment and
+refuses duplicate quest-specific additions.
 The event plan selects only the Essentials `pbWildBattle` or
 `pbTrainerBattle` helper; the selected helper and arguments must be verified
-against the staged v21.1 project. No battle integration is claimed merely
-because the Core recruitment API exists.
+against the staged v21.1 project. For `pbWildBattle`, the rescue explicitly
+requires and applies Essentials' `setBattleRule("disablePokeBalls")` before
+battle; missing rules abort the encounter without marking it complete.
+No native battle integration is claimed merely because the Ruby tests pass.
 
 The rescue reward is an explicitly reviewed item and quantity. This plugin
 uses no RMXP global switches or variables; `switch_ids` and `variable_ids`
@@ -73,6 +75,7 @@ must both be empty. Persistent quest flags are kept in the save object instead.
    | `target_map_id`, `target_map_size`, `target_position` | Actual Essentials map ID, dimensions, and reviewed event tile |
    | `event_id` | Reviewed, unused event ID on that map |
    | `expected_map_sha256` | SHA-256 of the untouched target `Data/MapNNN.rxdata` |
+   | `expected_tilesets_sha256` | SHA-256 of the reviewed `Data/Tilesets.rxdata`; any change fails closed |
    | `character` | Safe local character filename without `.png`; graphic must be licensed |
    | `switch_ids`, `variable_ids` | Both `[]`; this plugin uses saved quest flags |
    | `destination_warp` | Reviewed `event_id`, destination `map_id`, `x`, `y`, and `reviewed: true` |
@@ -80,8 +83,9 @@ must both be empty. Persistent quest flags are kept in the save object instead.
    | `reward` | Existing item ID and quantity from 1 through 99 |
 
    The installer verifies the source anchor, plan review markers, IDs and
-   dimensions, map hash, event ID and tile, sprite file, route transfer command
-   and destination bounds, plus the empty switch/variable reservations before
+   dimensions, map and tileset hashes, native passage flags for the event tile
+   and at least one unoccupied traversable adjacent approach, sprite file,
+   route transfer command and destination bounds, plus empty reservations before
    it writes a temporary map. It rejects symlinked target files, stale
    temporary/backup files, occupied IDs/tiles, and partial or drifted installs.
 4. From the staged project root, run:
