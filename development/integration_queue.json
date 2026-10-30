@@ -252,7 +252,11 @@
         "Walled Viridian and guard/Nidoran escort, Center, farm, bunkhouse, guardhouse, kitchen and dojo entrances",
         "Door directions, stairs, furniture collision, weather until Center and correct rain SFX",
         "Smoke map transitions, NPC pathing and persisted story flags"
-      ]
+      ],
+      "evidence": [
+        "2026-10-31 private original v0.4 native Map010 inspection: Viridian City is 50x40 with 23 existing vanilla events, including Center door at (26,26) and SHATTERED arrival at (25,20). Draft PR #16 assumes 48x40 ROM-source geometry and will refuse native installation; a reviewed walled map, guard/Nidoran identities and collision-safe coordinates are needed before source adoption. No original RXData uploaded."
+      ],
+      "blocker": "Draft PR #16 is synthetic/source-only and assumes 48x40; actual original v0.4 Map010 is 50x40 vanilla Viridian. Require reviewed walled map, roles, collision, native runtime and source permissions; do not mark installed."
     },
     {
       "id": "SE-019",
@@ -284,7 +288,8 @@
         "Menus, follower spacing, turns and rain events survive save, map transition and mobile screen"
       ],
       "evidence": [
-        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license."
+        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license.",
+        "2026-10-31 PR #39 merged at 364865b55027e512bf3c7eeb89151072c36205ed: asset-free HnS Aipom/Rattata PNG converter, private provenance SHA records and native sprite PNG preflight; merged-main validate, handoff and synthetic-contract all green. Actual character animation and game runtime still unverified."
       ]
     },
     {
@@ -306,7 +311,8 @@
         "Preserve original source and do not publish third-party game assets or copyrighted ROM"
       ],
       "evidence": [
-        "2026-10-31 original v0.4 ZIP recovered locally (SHA256 c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e), 7,675 members; native MapInfos, Tilesets, System and three target maps parsed. It contains an old scripted MACHOP named HUMAN at Crystal Map222; never accept this as genuine HUMAN. New private native audit script/tests on integration branch; licensed HnS map and plugins remain unverified, no compiled candidate."
+        "2026-10-31 original v0.4 ZIP recovered locally (SHA256 c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e), 7,675 members; native MapInfos, Tilesets, System and three target maps parsed. It contains an old scripted MACHOP named HUMAN at Crystal Map222; never accept this as genuine HUMAN. New private native audit script/tests on integration branch; licensed HnS map and plugins remain unverified, no compiled candidate.",
+        "2026-10-31 original v0.4 ZIP rechecked locally: Game.ini uses Data/Scripts.rxdata; Plugins/v21.1 Hotfixes/meta.txt declares 1.0.3 (target 1.0.9), no licensed HnS gate mapping. PR #39 merged source-only, PR #40 under review adds strict source/output sprite SHA pins and atomic private writes. No native Essentials v21.1 build compiled or executed."
       ]
     },
     {

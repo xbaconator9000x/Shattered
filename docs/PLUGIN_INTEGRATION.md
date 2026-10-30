@@ -61,6 +61,25 @@ python3 scripts/stage_essentials.py --project /path/to/base --output /path/to/ne
 
 Staging copies the project instead of modifying the source. Unknown paths, ZIP symlinks, traversal attempts, oversized untrusted packages and collisions cause errors. Some plugins require explicit controlled overwrites of shared Data/Graphics, so inspect the staged diff first.
 
+## Private HnS overworld conversion (Aipom and Rattata)
+
+The HnS source repository contains indexed `graphics/pokemon/{aipom,rattata}/overworld.png` sprite strips. Its repository does **not** declare redistribution rights for those Pokémon assets. Do not commit converted sheets, source PNGs, the game ZIP or licensed graphics to GitHub. After independently checking permissions, use the following SHA-pinned conversion **only in a private, separately staged project**. The pins come from `development/hns_overworld_sprite_provenance.json` and prevent silent upstream sprite drift:
+
+```sh
+python3 scripts/convert_hns_overworld.py \\
+  --source /private/hns/graphics/pokemon/aipom/overworld.png \\
+  --output /private/Shattered-staged/Graphics/Characters/Aipom.png \\
+  --expected-source-sha256 cf313fdb7c650da510f0dcd75082d7170d642d79c2d2698b7761cd9c9fb2f38e \\
+  --expected-output-sha256 d1933daa849c2d4fa5b1e7b991cb2941fbc8324e24cc960b5f117c465198dfd1
+python3 scripts/convert_hns_overworld.py \\
+  --source /private/hns/graphics/pokemon/rattata/overworld.png \\
+  --output /private/Shattered-staged/Graphics/Characters/Rattata.png \\
+  --expected-source-sha256 05e3e63cfbea4809604e09476320eebad923c93484ddd211ff12790013cdcf53 \\
+  --expected-output-sha256 3b7119e99a4bba28ceeab6250792ca9d3aad6f3aa6ca2ead37fdbeb448efef03
+```
+
+The converter refuses mismatched hashes and writes atomically. The native installer separately checks the resulting 128×128 RGBA PNG structure and CRCs. These checks do **not** verify appearance, animation, event timing, or native Essentials/JoiPlay execution.
+
 ## GitHub automation
 
 A CI workflow validates every push/PR with Python and Ruby, including a miniature staged-project test. A separate 15-minute GitHub Actions watchdog reads the durable queue, identifies up to 3 dependency-ready tasks and creates deduplicated GitHub issues. **It coordinates work but does not autonomously write implementation code.** When source packages are provided, staging and consistency checks can run unattended in CI; gameplay still needs a valid engine/Android runner.
