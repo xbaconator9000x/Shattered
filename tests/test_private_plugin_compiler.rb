@@ -113,6 +113,52 @@ class PrivatePluginCompilerTest < Minitest::Test
     end
   end
 
+  def test_all_actual_repository_plugins_compile_only_runtime_scripts_and_load
+    with_stage do |root|
+      names = ShatteredPrivatePluginCompiler::RUNTIME_FILES.keys +
+        (ShatteredPrivatePluginCompiler::INSTALLER_FILES.keys -
+         ShatteredPrivatePluginCompiler::RUNTIME_FILES.keys)
+      source_root = File.expand_path("../essentials/Plugins", __dir__)
+      names.each do |name|
+        FileUtils.rm_rf(File.join(root, "Plugins", name))
+        FileUtils.cp_r(File.join(source_root, name), File.join(root, "Plugins", name))
+      end
+      report = ShatteredPrivatePluginCompiler.compile(root, names)
+      assert_equal ShatteredPrivatePluginCompiler::RUNTIME_FILES.keys, report["added"]
+      assert_equal ["Shattered HnS Gate", "Shattered World Links"].sort,
+        report["offline_only"].sort
+      entries = Marshal.load(File.binread(File.join(root, "Data/PluginScripts.rxdata")))
+      assert_equal 9, entries.length # existing Hotfixes + eight Shattered runtime plugins
+      entries.drop(1).each do |name, _metadata, scripts|
+        assert_equal ShatteredPrivatePluginCompiler::RUNTIME_FILES.fetch(name),
+          scripts.map(&:first)
+        scripts.each do |filename, compressed|
+          source = Zlib::Inflate.inflate(compressed)
+          RubyVM::InstructionSequence.compile(source, filename)
+          refute_match(/^require\s+["']/, source)
+        end
+      end
+      # This is MRI source-load compatibility, NOT mkxp-z gameplay or PBS compilation.
+      # Fork isolates global module and hook definitions from the test runner.
+      pid = fork do
+        begin
+          entries.drop(1).each do |_name, _metadata, scripts|
+            scripts.each do |filename, compressed|
+              eval(Zlib::Inflate.inflate(compressed), TOPLEVEL_BINDING, filename)
+            end
+          end
+          exit! 0
+        rescue Exception => error
+          warn "Native source smoke: #{error.class}: #{error.message}"
+          warn error.backtrace.first(6).join("\n")
+          exit! 1
+        end
+      end
+      _child, status = Process.waitpid2(pid)
+      assert status.success?, "All eight source plugins must load without installer dependencies"
+    end
+  end
+
   def test_compiles_native_archive_and_preserves_hotfixes_and_backup
     with_stage do |root|
       target = File.join(root, "Data/PluginScripts.rxdata")
