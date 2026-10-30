@@ -117,6 +117,14 @@ def safe_zip_install(archive, dest, plugin_id, overwrite=False):
             if target.exists() and not overwrite:
                 raise ValueError(f'overwrite requires review: {path} ({plugin_id})')
             staged.append((member, path))
+        # A ZIP can have valid headers but a corrupt later member. Validate
+        # every member's decompression and CRC before touching the project,
+        # otherwise an early member could be written before a later CRC error.
+        # Stream in bounded chunks; do not hold plugin archives in memory.
+        for member, _path in staged:
+            with z.open(member) as stream:
+                while stream.read(1024 * 1024):
+                    pass
         for member, path in staged:
             target = dest / path
             target.parent.mkdir(parents=True, exist_ok=True)
