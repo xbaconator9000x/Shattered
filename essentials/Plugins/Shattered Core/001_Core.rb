@@ -173,7 +173,9 @@ module Shattered
       move_class.class_eval do
         alias_method :shattered_core_original_pb_calc_type_mod, :pbCalcTypeMod
         def pbCalcTypeMod(move_type, user, target)
-          if target && target.respond_to?(:pokemon) && Shattered.human?(target.pokemon)
+          # Shadow moves retain the engine's special effectiveness rule.
+          if move_type != :SHADOW && target && target.respond_to?(:pokemon) &&
+             Shattered.human?(target.pokemon)
             return Shattered.human_type_multiplier(move_type)
           end
           shattered_core_original_pb_calc_type_mod(move_type, user, target)
