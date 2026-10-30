@@ -16,12 +16,15 @@ In a **separately staged and authorised** Essentials v21.1 game with the Shatter
   "passability_reviewed": false,
   "dojo_map_id": 45,
   "source_event_id": "5.2:npc:1",
+  "source_position": [6, 4],
+  "native_map_reviewed": false,
+  "native_map_dimensions": [10, 9],
   "event_position": [6, 4],
   "character": "REPLACE_WITH_LICENSED_SPRITE_BASENAME",
   "expected_map_sha256": "REPLACE_WITH_REVIEWED_64_CHARACTER_LOWERCASE_SHA256"
 }
 \`\`\`
 
-**The above is deliberately non-installable**: map ID and NPC role are illustrative, and review flags must remain false until checked against the original project. The installer verifies the source NPC anchor, map dimensions, reviewed map hash, staging marker, local sprite, existing events and idempotence; it refuses overwriting an occupied event tile. Inside the staged project, call \`pbInstallShatteredDojo("path/to/reviewed-dojo.json")\` once from an Essentials debug script, then force native script compilation and run the scene.
+**The above is deliberately non-installable**: map ID and NPC role are illustrative, and review flags must remain false until checked against the original project. The ROM-source 10×9 layout is **not** assumed to be the native Essentials interior. The installer separately verifies the source NPC anchor and a reviewed native map size/position, then checks the actual staged tileset's static passage flags, map hash, staging marker, local sprite, existing events and idempotence. It refuses blocked/unknown or occupied native event tiles. These static checks are not proof that the player can reach or activate the instructor. Inside the staged project, call \`pbInstallShatteredDojo("path/to/reviewed-dojo.json")\` once from an Essentials debug script, then force native script compilation and run the scene.
 
 Validation still required: real dojo map and collision, instructor identity, original dialogue/questionnaire logic, native Essentials event execution, HUMAN party and starter ownership, follower appearance, save/close/reopen, quest progression and JoiPlay/NaviaXP gameplay. Passing \`ruby tests/test_dojo.rb\` proves only isolated Ruby behaviour.
