@@ -51,9 +51,9 @@ leaves the remaining step retryable.
 Shattered Core v0.2.3 provides the `befriend` API and lifecycle/battle hooks.
 The rescue still checks for an existing Murkrow before recruitment and
 refuses duplicate quest-specific additions.
-The event plan selects only the Essentials `pbWildBattle` or
-`pbTrainerBattle` helper; the selected helper and arguments must be verified
-against the staged v21.1 project. For `pbWildBattle`, the rescue explicitly
+The event plan selects only the Essentials `WildBattle.start_core` or
+`TrainerBattle.start_core` entry point; the selected helper and arguments must be verified
+against the staged v21.1 project. The original v0.4 Essentials v21.1 `Overworld_BattleStarting` script defines these numeric-returning core entry points; the legacy `pbWildBattle` and `pbTrainerBattle` helpers are not defined. Only outcome `1` counts as victory: loss (`2`), escape (`3`), capture (`4`), draw (`5`) and abort (`0`) must remain retryable. Wild rescue requires `:MURKROW` and a reviewed level. For `WildBattle.start_core`, the rescue explicitly
 requires and applies Essentials' `setBattleRule("disablePokeBalls")` before
 battle; missing rules abort the encounter without marking it complete.
 No native battle integration is claimed merely because the Ruby tests pass.
@@ -91,7 +91,7 @@ must both be empty. Persistent quest flags are kept in the save object instead.
    | `character` | Safe local character filename without `.png`; graphic must be licensed |
    | `switch_ids`, `variable_ids` | Both `[]`; this plugin uses saved quest flags |
    | `destination_warp` | Reviewed `event_id`, destination `map_id`, `x`, `y`, and `reviewed: true` |
-   | `battle` | `hook` is `pbWildBattle` or `pbTrainerBattle`; `arguments` use JSON primitives and `{"symbol":"SPECIES_OR_TYPE"}` for symbols |
+   | `battle` | `hook` is `WildBattle.start_core` or `pbTrainerBattle`; `arguments` use JSON primitives and `{"symbol":"SPECIES_OR_TYPE"}` for symbols |
    | `reward` | Existing item ID and quantity from 1 through 99 |
 
    The installer verifies the source anchor, plan review markers, IDs and
