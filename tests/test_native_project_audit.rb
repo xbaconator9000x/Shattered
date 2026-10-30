@@ -91,6 +91,25 @@ class NativeProjectAuditTest < Minitest::Test
     assert_equal 'clear', report['maps']['222']['current_new_game_start']['tile_status']
   end
 
+  def test_static_cutline_finds_mandatory_route_and_rejects_bypass
+    blocks = (0...34).reject { |y| (16..18).cover?(y) }.map { |y| [27, y] }
+    route = map(54, 34, 1, {}, blocks)
+    tilesets = ShatteredNativeAudit.read_rxdata(Pathname(@project), 'Data/Tilesets.rxdata')
+    triggers = [[27, 16], [27, 17], [27, 18]]
+    report = ShatteredNativeAudit.cutline_report(route, tilesets,
+      entry: [20, 17], exit_point: [31, 17], triggers: triggers)
+    assert report['entry_reaches_exit']
+    refute report['bypass_without_trigger']
+    assert report['static_cutline_candidate']
+    refute report['runtime_verified']
+    bypass = ShatteredNativeAudit.cutline_report(route, tilesets,
+      entry: [20, 17], exit_point: [31, 17],
+      triggers: [[27, 16], [27, 17], [28, 18]])
+    assert bypass['entry_reaches_exit']
+    assert bypass['bypass_without_trigger']
+    refute bypass['static_cutline_candidate']
+  end
+
   def test_rejects_missing_native_file
     File.delete(File.join(@project, 'Data', 'Tilesets.rxdata'))
     error = assert_raises(ArgumentError) { ShatteredNativeAudit.audit(@project) }
