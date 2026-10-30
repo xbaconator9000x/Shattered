@@ -313,6 +313,17 @@ class Route22InstallerTest < Minitest::Test
     assert_equal before, File.binread("Data/Map042.rxdata")
     refute File.exist?("Data/Map042.rxdata.shattered_route22.bak")
   end
+  def test_completed_event_page_rechecks_authoritative_save_before_bypass
+    config = @config.dup
+    trigger = ShatteredRoute22.build_trigger(36, 17, 0, [1, 2, 3], config)
+    done = trigger.pages.last
+    assert_equal 1, done.trigger
+    assert done.condition.switch1_valid
+    assert_equal 93, done.condition.switch1_id
+    assert_equal [355, 0], done.list.map(&:code)
+    assert_equal "ShatteredRoute22.encounter(91, 93)", done.list.first.parameters.first
+  end
+
   def test_plugin_metadata_uses_essentials_v21_format
     metadata=File.read(File.expand_path("../essentials/Plugins/Shattered Route22/meta.txt", __dir__))
     assert_match(/\AName\s*=/, metadata)
