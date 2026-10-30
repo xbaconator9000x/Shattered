@@ -89,6 +89,11 @@ module ShatteredViridian
     raise ArgumentError, "entry marker absent from original Viridian map" unless SOURCE_ENTRIES.include?(marker)
     # A ROM-source coordinate must never be used to infer a native-map landing.
     raise ArgumentError, "native entrance and warp not reviewed" unless config["native_entrance_reviewed"] == true
+    route_id = integer!(config["route22_map_id"], 1, 999, "route22_map_id")
+    integer!(config["route22_event_id"], 1, 9999, "route22_event_id")
+    raise ArgumentError, "route map must differ from city and Center" if [city_id, center_id].include?(route_id)
+    raise ArgumentError, "native route transfer not reviewed" unless config["native_route22_warp_reviewed"] == true
+    point!(config["native_route22_warp_origin"], [200, 200], "native_route22_warp_origin")
     entry = point!(config["entry_trigger"], native_size, "entry_trigger")
     landing = point!(config["native_warp_landing"], native_size, "native_warp_landing")
     raise ArgumentError, "player-touch entry must be adjacent to (not on) warp landing" unless
@@ -99,6 +104,12 @@ module ShatteredViridian
                    [config["guard"]["x"], config["guard"]["y"]],
                    [config["nidoran"]["x"], config["nidoran"]["y"]]]
     raise ArgumentError, "overlapping Viridian events" unless city_points.uniq.length == city_points.length
+    guard_route = config["guard_path"]
+    nidoran_route = config["nidoran_path"]
+    raise ArgumentError, "escort routes intersect" unless (guard_route & nidoran_route).empty?
+    reserved = [entry, landing, config["finish_trigger"]]
+    raise ArgumentError, "escort route crosses player or blocking trigger" unless
+      ((guard_route + nidoran_route) & reserved).empty?
     switches = config["switches"]
     raise ArgumentError, "missing switch map" unless switches.is_a?(Hash)
     ids = ["started", "arrived", "center", "rain"].map do |key|
@@ -235,6 +246,30 @@ module ShatteredViridian
     true
   end
 
+  # Require the actual native Route 22 transfer event to land on the reviewed
+  # city square. A manual 'reviewed' boolean alone is not sufficient evidence.
+  # This is a source-map contract, not a runtime warp or movement test.
+  def self.validate_native_route22_transfer!(config)
+    path = format("Data/Map%03d.rxdata", config["route22_map_id"])
+    raise "Missing reviewed native Route22 map" unless File.file?(path) && !File.symlink?(path)
+    route = load_data(path)
+    raise "Invalid native Route22 event collection" unless route.respond_to?(:events) &&
+      route.events.is_a?(Hash) && route.respond_to?(:width) && route.respond_to?(:height)
+    point!(config["native_route22_warp_origin"], [route.width, route.height], "native_route22_warp_origin")
+    event = route.events[config["route22_event_id"]]
+    raise "Reviewed Route22 transfer event is missing" unless event &&
+      [event.x, event.y] == config["native_route22_warp_origin"] && event.respond_to?(:pages)
+    landing = config["native_warp_landing"]
+    target = [0, config["city_map_id"], landing[0], landing[1]]
+    transfers = event.pages.flat_map do |page|
+      (page.list || []).select { |cmd| cmd.code == 201 }.map(&:parameters)
+    end
+    raise "Route22 transfer does not land on reviewed native Viridian tile" unless
+      transfers.any? { |parameters| parameters.is_a?(Array) &&
+        parameters.length == 6 && parameters.first(4) == target }
+    true
+  end
+
   def self.install(config)
     validate(config)
     raise "Refusing to edit unstaged original" unless File.file?("SHATTERED_STAGING_REPORT.json")
@@ -248,6 +283,7 @@ module ShatteredViridian
         File.exist?(path + ".shattered_viridian.bak")
       raise "Missing map #{path}" unless File.file?(path)
     end
+    validate_native_route22_transfer!(config)
     infos = load_data("Data/MapInfos.rxdata")
     raise "City/Center MapInfo missing" unless infos[config["city_map_id"]] && infos[config["center_map_id"]]
     maps = paths.transform_values { |path| load_data(path) }
