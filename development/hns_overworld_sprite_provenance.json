@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "non_distributable_asset_provenance_and_local_conversion_receipt",
+  "source_repository": "PokemonHnS-Development/pokehns-expansion",
+  "source_ref": "master",
+  "source_repo_license": "not declared in GitHub repository metadata as of 2026-10-31",
+  "license_reviewed": false,
+  "redistribution_authorised": false,
+  "images_embedded": false,
+  "source_layout": "six 32x32 poses in 192x32 indexed PNG: down/down-step/up/up-step/left/left-step",
+  "rmxp_layout": "four 32x32 frames across; rows down/left/right/up; right mirrored",
+  "entries": [
+    {
+      "species": "AIPOM",
+      "source_path": "graphics/pokemon/aipom/overworld.png",
+      "source_git_blob_sha": "90ee83280eae759cabe346dac7e851fbba68fe1f",
+      "source_sha256": "cf313fdb7c650da510f0dcd75082d7170d642d79c2d2698b7761cd9c9fb2f38e",
+      "private_output": "Graphics/Characters/Aipom.png",
+      "private_output_sha256": "d1933daa849c2d4fa5b1e7b991cb2941fbc8324e24cc960b5f117c465198dfd1"
+    },
+    {
+      "species": "RATTATA",
+      "source_path": "graphics/pokemon/rattata/overworld.png",
+      "source_git_blob_sha": "b708b3862c9d221934d872d1954deb091b740006",
+      "source_sha256": "05e3e63cfbea4809604e09476320eebad923c93484ddd211ff12790013cdcf53",
+      "private_output": "Graphics/Characters/Rattata.png",
+      "private_output_sha256": "3b7119e99a4bba28ceeab6250792ca9d3aad6f3aa6ca2ead37fdbeb448efef03"
+    }
+  ],
+  "private_local_staging": {
+    "project": "original user-supplied v0.4 staged copy only",
+    "assets_present": true,
+    "source_unchanged": true,
+    "core_hashes_checked": 5,
+    "essentials_compiled": false,
+    "animation_playtested": false,
+    "android_playtested": false
+  },
+  "blockers": [
+    "HnS repository has no declared license; do not redistribute sprite binaries without rights review",
+    "Source v0.4 remains distinct from fully pinned Essentials v21.1 integrated build",
+    "Native Essentials/RMXP animation and save/reload not executed"
+  ]
+}
