@@ -8,10 +8,14 @@ module ShatteredRoute22
   def self.state(store = (defined?($PokemonGlobal) ? $PokemonGlobal : nil))
     raise "Route 22 requires saved PokemonGlobal" unless store
     value = store.instance_variable_get(:@shattered_route22_rattata)
-    unless value.is_a?(Hash) && value[:version] == 1 &&
-           [true, false].include?(value[:cleared])
+    if value.nil?
       value = { :version => 1, :cleared => false }
       store.instance_variable_set(:@shattered_route22_rattata, value)
+    elsif !value.is_a?(Hash) || value[:version] != 1 ||
+          ![true, false].include?(value[:cleared])
+      # Never silently reset an unknown/partially corrupted save. That would
+      # re-enable the mandatory fight after a completed encounter.
+      raise "Unrecognised Route22 save state; refusing to reset encounter"
     end
     value
   end
@@ -23,8 +27,11 @@ module ShatteredRoute22
   def self.reconcile(cleared_switch)
     validate_id(cleared_switch)
     raise "Game switches unavailable" unless defined?($game_switches) && $game_switches
-    $game_switches[cleared_switch] = true if cleared?
-    cleared?
+    # The saved quest flag is authoritative. A stale RMXP switch from an
+    # interrupted install or older save must not skip the mandatory battle.
+    done = cleared?
+    $game_switches[cleared_switch] = done
+    done
   end
 
   def self.validate_id(value)
@@ -51,6 +58,7 @@ module ShatteredRoute22
       player.party.any? { |member| Shattered.human?(member) }
     return false if @running
     @running = true
+    @last_capture_violation = false
     begin
       $game_variables[outcome_variable] = 0
       setBattleRule("disablePokeBalls")
