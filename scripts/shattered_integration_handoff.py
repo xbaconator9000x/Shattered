@@ -28,6 +28,7 @@ HNS_DIRECTIONS = {
 HNS_SOURCE_REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
 STORY_FLAG_PLAN = "shattered_gate_story_v1"
 ROUTE22_UUID = "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2"
+V04_ROUTE22_SHA256 = "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b"
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 SAFE_BASENAME = re.compile(r"^[A-Za-z0-9_ -]+$")
 # Existing private Essentials projects store species cries in Audio/SE/Cries/.
@@ -134,10 +135,10 @@ def _validate_hns(config, target_id, existing_ids, manifest):
     _fail(grouped == HNS_DIRECTIONS, "HnS warp positions differ from the pinned source")
 
 
-def _validate_world_links(config, gate_id, route_id):
+def _validate_world_links(config, gate_id, route_id, route_dimensions):
     _fail(isinstance(config, dict) and config.get("format") == "shattered-world-links" and
           config.get("format_version") == 1, "invalid world-links config")
-    expected = {gate_id: [22, 21], route_id: [48, 24]}
+    expected = {gate_id: [22, 21], route_id: route_dimensions}
     maps = config.get("maps")
     _fail(isinstance(maps, list) and len(maps) == 2 and
           all(isinstance(item, dict) for item in maps) and
@@ -250,9 +251,22 @@ def _validate_route22(config, route_target, switch_ids, variable_ids):
     _fail(isinstance(config.get("rattata_character"), str) and
           SAFE_BASENAME.fullmatch(config["rattata_character"]),
           "invalid Route22 character basename")
+    dimensions = route_target["dimensions"]
+    if dimensions == [54, 34]:
+        _fail(route_target["sha256"] == V04_ROUTE22_SHA256,
+              "v0.4 Route22 adaptation requires the audited native Map016 hash")
+        _fail(config.get("native_dimensions") == dimensions and
+              config.get("reviewed_native_geometry") is True and
+              isinstance(config.get("event_positions"), dict),
+              "v0.4 Route22 requires explicitly reviewed native placements")
+    else:
+        _fail(dimensions == [48, 24] and
+              config.get("native_dimensions", dimensions) == dimensions and
+              "event_positions" not in config,
+              "source Route22 dimensions/positions differ from the pinned contract")
 
 
-def _route22_reserved_positions(manifest):
+def _route22_reserved_positions(manifest, route_config=None):
     component = next(item for item in manifest["components"] if item["id"] == "route22")
     contract = next(item for item in component["event_contracts"]
                     if item.get("api") == "pbInstallShatteredRoute22")
@@ -261,7 +275,15 @@ def _route22_reserved_positions(manifest):
     _fail(isinstance(trigger_positions, list) and len(trigger_positions) == 3 and
           isinstance(npc_positions, list) and len(npc_positions) == 3,
           "Route22 trigger/NPC positions are missing from the source contract")
-    positions = trigger_positions + npc_positions
+    if route_config and "event_positions" in route_config:
+        positions_config = route_config["event_positions"]
+        _fail(set(positions_config) == {"triggers", "npcs"} and
+              all(isinstance(positions_config[key], list) and
+                  len(positions_config[key]) == 3 for key in ("triggers", "npcs")),
+              "adapted Route22 requires three triggers and three NPC positions")
+        positions = positions_config["triggers"] + positions_config["npcs"]
+    else:
+        positions = trigger_positions + npc_positions
     _fail(all(isinstance(point, list) and len(point) == 2 and
               all(isinstance(value, int) and not isinstance(value, bool) for value in point)
               for point in positions) and len({tuple(point) for point in positions}) == 6,
@@ -381,8 +403,9 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
     route_hash = _sha(route_target.get("sha256"), "Route22 target map hash")
     _fail(integration.sha256(route_path) == route_hash,
           "Route22 target map SHA256 differs from the reviewed handoff plan")
-    _fail(route_target.get("dimensions") == [48, 24],
-          "Route22 target map must match the pinned 48x24 dimensions")
+    route_dimensions = _pair(route_target.get("dimensions"), "Route22 native geometry")
+    _fail(route_dimensions in ([48, 24], [54, 34]),
+          "Route22 must be the pinned source or the audited v0.4 native geometry")
 
     expected_slots = {
         key: value for key, value in build_report["map_targets"].items()
@@ -434,14 +457,14 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
           "all four native installer configurations are required")
     _validate_hns(configs["hns_import"], gate_id, set(existing_by_id), manifest)
     links_positions, links_landings = _validate_world_links(
-        configs["world_links"], gate_id, route_id
+        configs["world_links"], gate_id, route_id, route_dimensions
     )
     _validate_story(
         configs["gate_story"], gate_id, configs["hns_import"],
         links_positions, links_landings,
     )
     _validate_route22(configs["route22"], route_target, switch_ids, variable_ids)
-    route22_reserved = _route22_reserved_positions(manifest)
+    route22_reserved = _route22_reserved_positions(manifest, configs["route22"])
     for event in configs["world_links"]["events"]:
         if event["map_id"] == route_id:
             _fail([event["x"], event["y"]] not in route22_reserved,
@@ -460,11 +483,11 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
               f"HnS warp destination coordinate is outside map {destination['map_id']}")
     _fail(configs["world_links"]["maps"] == [
         {"map_id": gate_id, "width": 22, "height": 21},
-        {"map_id": route_id, "width": 48, "height": 24},
+        {"map_id": route_id, "width": route_dimensions[0], "height": route_dimensions[1]},
     ] or {
         item["map_id"]: [item["width"], item["height"]]
         for item in configs["world_links"]["maps"]
-    } == {gate_id: [22, 21], route_id: [48, 24]},
+    } == {gate_id: [22, 21], route_id: route_dimensions},
         "world-link target map dimensions are inconsistent")
     for event in configs["world_links"]["events"]:
         destination = event["destination"]
@@ -560,7 +583,7 @@ def prepare_native_handoff(project, source_root, plan, manifest, synthetic_fixtu
         "map_targets": {
             "reception_gate": {"id": gate_id, "dimensions": [22, 21], "created_by_installer": True},
             "route22": {
-                "id": route_id, "dimensions": [48, 24], "source_uuid": ROUTE22_UUID,
+                "id": route_id, "dimensions": route_dimensions, "source_uuid": ROUTE22_UUID,
                 "sha256": route_hash,
             },
         },
