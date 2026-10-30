@@ -5,6 +5,17 @@ require "fileutils"
 RPG = Module.new unless defined?(RPG)
 RPG.const_set(:Map, Struct.new(:width, :height, :events)) unless defined?(RPG::Map)
 MapStub = Struct.new(:width, :height, :events)
+SystemStub = Struct.new(:start_map_id, :start_x, :start_y)
+NativeMapStub = Struct.new(:width, :height, :events, :tileset_id, :data)
+NativeTilesetStub = Struct.new(:passages, :priorities)
+class NativeTileTable
+  def initialize(values = {})
+    @values = values
+  end
+  def [](*indices)
+    @values.fetch(indices, 0)
+  end
+end
 CommandStub = Struct.new(:code, :indent, :parameters)
 GraphicStub = Struct.new(:character_name)
 PageStub = Struct.new(:trigger, :through, :always_on_top, :graphic, :list)
@@ -172,7 +183,9 @@ class ShatteredNativeHandoffTest < Minitest::Test
         "reception_gate" => {"id" => @gate_id},
         "route22" => {"id" => @route_id}
       },
-      "route22_reserved_positions" => ShatteredInitialSlice::ROUTE22_RESERVED
+      "route22_reserved_positions" => ShatteredInitialSlice::ROUTE22_RESERVED,
+      "new_game_spawn" => {"map_id" => @gate_id, "x" => 5, "y" => 5,
+                           "reviewed" => true, "passability_attested" => true}
     }
     @configs = {
       "hns_import" => {"warps" => @hns_warps},
@@ -312,19 +325,21 @@ class ShatteredNativeHandoffTest < Minitest::Test
       Dir.chdir(directory)
       Dir.mkdir("Data")
       paths = ["Data/MapInfos.rxdata", "Data/Tilesets.rxdata",
-               "Data/Map101.rxdata", "Data/Map102.rxdata"]
-      contents = ["infos", "tilesets", nil, "route"]
+               "Data/System.rxdata", "Data/Map101.rxdata", "Data/Map102.rxdata"]
+      contents = ["infos", "tilesets", "original system", nil, "route"]
       paths.zip(contents).each do |path, content|
         File.binwrite(path, content) if content
       end
       ShatteredInitialSlice.begin_transaction!(paths)
       File.binwrite("Data/MapInfos.rxdata", "changed infos")
       File.binwrite("Data/Tilesets.rxdata", "changed tilesets")
+      File.binwrite("Data/System.rxdata", "changed start")
       File.binwrite("Data/Map101.rxdata", "new gate")
       File.binwrite("Data/Map102.rxdata", "changed route")
       ShatteredInitialSlice.restore_transaction!
       assert_equal "infos", File.binread("Data/MapInfos.rxdata")
       assert_equal "tilesets", File.binread("Data/Tilesets.rxdata")
+      assert_equal "original system", File.binread("Data/System.rxdata")
       refute File.exist?("Data/Map101.rxdata")
       assert_equal "route", File.binread("Data/Map102.rxdata")
       refute File.exist?(ShatteredInitialSlice::ROLLBACK_DIR)
@@ -394,9 +409,90 @@ class ShatteredNativeHandoffTest < Minitest::Test
     end
   end
 
+  def with_native_spawn_fixture
+    Dir.mktmpdir("shattered-new-game-spawn") do |directory|
+      previous = Dir.pwd
+      Dir.chdir(directory)
+      Dir.mkdir("Data")
+      tile_data = NativeTileTable.new({[5, 5, 0] => 384})
+      map = NativeMapStub.new(22, 21, {}, 1, tile_data)
+      tilesets = [nil, NativeTilesetStub.new(
+        NativeTileTable.new({[384] => 0}), NativeTileTable.new({[384] => 0}))]
+      original = SystemStub.new(12, 3, 4)
+      save_data(map, "Data/Map101.rxdata")
+      save_data(tilesets, "Data/Tilesets.rxdata")
+      save_data(original, "Data/System.rxdata")
+      yield(map, tilesets, original)
+    ensure
+      Dir.chdir(previous)
+    end
+  end
+
+  def test_new_game_spawn_updates_native_system_and_rejects_occupied_tile
+    with_native_spawn_fixture do |map, _tilesets, _original|
+      assert ShatteredInitialSlice.validate_spawn_tile!(@plan)
+      previous = ShatteredInitialSlice.install_new_game_spawn!(@plan)
+      assert_equal [12, 3, 4], previous
+      assert ShatteredInitialSlice.validate_installed_spawn!(@plan)
+      assert_equal [101, 5, 5], load_data("Data/System.rxdata").values
+      map.events[1] = EventStub.new(1, "Occupied", 5, 5, [], nil)
+      save_data(map, "Data/Map101.rxdata")
+      error = assert_raises(RuntimeError) { ShatteredInitialSlice.validate_spawn_tile!(@plan) }
+      assert_match(/occupied/, error.message)
+    end
+  end
+
+  def test_new_game_spawn_rejects_blocked_tile_and_preserves_original_on_rollback
+    with_native_spawn_fixture do |map, tilesets, original|
+      tilesets[1].passages = NativeTileTable.new({[384] => 15})
+      save_data(tilesets, "Data/Tilesets.rxdata")
+      error = assert_raises(RuntimeError) { ShatteredInitialSlice.install_new_game_spawn!(@plan) }
+      assert_match(/blocked/, error.message)
+      assert_equal original, load_data("Data/System.rxdata")
+      tilesets[1].passages = NativeTileTable.new({[384] => 0})
+      save_data(tilesets, "Data/Tilesets.rxdata")
+      paths = ["Data/System.rxdata", "Data/Map101.rxdata"]
+      ShatteredInitialSlice.begin_transaction!(paths)
+      ShatteredInitialSlice.install_new_game_spawn!(@plan)
+      assert_equal [101, 5, 5], load_data("Data/System.rxdata").values
+      ShatteredInitialSlice.restore_transaction!
+      assert_equal original, load_data("Data/System.rxdata")
+    end
+  end
+
+  def test_new_game_spawn_rejects_partial_directional_passages_on_floor
+    with_native_spawn_fixture do |_map, tilesets, original|
+      [1, 2, 4, 8, 3, 7].each do |direction_flags|
+        tilesets[1].passages = NativeTileTable.new({[384] => direction_flags})
+        save_data(tilesets, "Data/Tilesets.rxdata")
+        error = assert_raises(RuntimeError) do
+          ShatteredInitialSlice.install_new_game_spawn!(@plan)
+        end
+        assert_match(/directional movement restrictions/, error.message)
+        assert_equal original, load_data("Data/System.rxdata")
+      end
+    end
+  end
+
+  def test_new_game_spawn_rejects_restricted_upper_layer_over_open_floor
+    with_native_spawn_fixture do |map, tilesets, original|
+      map.data = NativeTileTable.new({[5, 5, 0] => 384, [5, 5, 1] => 385})
+      save_data(map, "Data/Map101.rxdata")
+      tilesets[1].passages = NativeTileTable.new({[384] => 0, [385] => 4})
+      tilesets[1].priorities = NativeTileTable.new({[384] => 0, [385] => 1})
+      save_data(tilesets, "Data/Tilesets.rxdata")
+      error = assert_raises(RuntimeError) do
+        ShatteredInitialSlice.install_new_game_spawn!(@plan)
+      end
+      assert_match(/directional movement restrictions/, error.message)
+      assert_equal original, load_data("Data/System.rxdata")
+    end
+  end
+
   def test_receipt_requires_exact_installed_file_inventory
     plan = {
       "source_pins" => [],
+      "new_game_spawn" => @plan["new_game_spawn"],
       "map_targets" => {
         "reception_gate" => {"id" => @gate_id},
         "route22" => {"id" => @route_id}
@@ -407,6 +503,7 @@ class ShatteredNativeHandoffTest < Minitest::Test
       "plan_sha256" => ShatteredInitialSlice::PLAN_SHA256,
       "source_pins" => [],
       "installer_apis" => ShatteredInitialSlice::INSTALLER_ORDER,
+      "new_game_spawn" => @plan["new_game_spawn"],
       "gameplay_verified" => false,
       "save_reload_verified" => false,
       "android_joiplay_verified" => false,
