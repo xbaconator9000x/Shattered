@@ -29,6 +29,7 @@ HNS_SOURCE_REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
 STORY_FLAG_PLAN = "shattered_gate_story_v1"
 ROUTE22_UUID = "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2"
 V04_ROUTE22_SHA256 = "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b"
+V04_LEGACY_EVENT_SHA256 = "ef8861a24531fedc56be153cc88a80ed6e314103af48b810d85b116aaadfe786"
 HEX_64 = re.compile(r"^[0-9a-f]{64}$")
 SAFE_BASENAME = re.compile(r"^[A-Za-z0-9_ -]+$")
 # Existing private Essentials projects store species cries in Audio/SE/Cries/.
@@ -259,6 +260,10 @@ def _validate_route22(config, route_target, switch_ids, variable_ids):
               config.get("reviewed_native_geometry") is True and
               isinstance(config.get("event_positions"), dict),
               "v0.4 Route22 requires explicitly reviewed native placements")
+        _fail(config.get("legacy_migration") == {
+            "event_id": 3, "event_name": "SHATTERED: Rattata ambush",
+            "x": 30, "y": 17, "event_sha256": V04_LEGACY_EVENT_SHA256,
+        }, "v0.4 Route22 requires exact hash-pinned legacy autorun migration")
     else:
         _fail(dimensions == [48, 24] and
               config.get("native_dimensions", dimensions) == dimensions and
