@@ -184,7 +184,7 @@ class StagingTest(unittest.TestCase):
         with self.assertRaises(zipfile.BadZipFile):
             stage(self.project, output, [f'following_pokemon_ex={archive}'])
         self.assertFalse(output.exists())
-        self.assertEqual('[PIKACHU]\\nName = Pikachu\\n',
+        self.assertEqual('[PIKACHU]\nName = Pikachu\n',
                          (self.project / 'PBS/pokemon.txt').read_text())
 
     def test_clean_plugin_archive_and_dependency(self):
