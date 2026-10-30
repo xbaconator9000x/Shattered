@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 # Shattered Raid v0.1 — Pokémon Essentials 21.1.
-require "digest/sha2"
-require "thread"
+# Native runtime must not load CRuby-only libraries at startup.
+# The map installer loads Digest lazily, outside gameplay.
 
 module ShatteredRaid
   STATE_VERSION = 1
@@ -184,6 +184,7 @@ module ShatteredRaid
     end
 
     def install_staged_map(project_root, config, passability, failure_hook)
+      require "digest/sha2"
       config = validate_install_config(config)
       raise InstallationError, "a passability checker is required" unless passability.respond_to?(:call)
       root = File.expand_path(project_root)
