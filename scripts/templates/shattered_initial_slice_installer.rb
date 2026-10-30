@@ -219,6 +219,36 @@ module ShatteredInitialSlice
     end
   end
 
+  # Conservative native RMXP tile-only check. This rejects definitely blocked
+  # positions; it does not establish that a player can reach or trigger them.
+  def self.route22_tile_open?(map, tileset, x, y)
+    return false unless map.respond_to?(:data) && map.data &&
+      tileset && tileset.respond_to?(:passages) && tileset.passages
+    return false unless x.between?(0, map.width - 1) && y.between?(0, map.height - 1)
+    2.downto(0) do |layer|
+      tile_id = map.data[x, y, layer]
+      next if tile_id.nil? || tile_id == 0
+      passage = tileset.passages[tile_id]
+      return false unless passage.is_a?(Integer)
+      next if (passage & 0x10) != 0
+      return (passage & 0x0f) == 0
+    end
+    false
+  end
+
+  def self.validate_route22_tiles!(map, tilesets, positions = ROUTE22_RESERVED)
+    check(map.respond_to?(:tileset_id) && tilesets.is_a?(Array),
+      "Route22 native tileset information is missing")
+    tileset = tilesets[map.tileset_id]
+    check(tileset && tileset.respond_to?(:passages),
+      "Route22 tileset passage data is missing")
+    positions.each do |x, y|
+      check(route22_tile_open?(map, tileset, x, y),
+        "Route22 event tile is blocked or unverified: #{x},#{y}")
+    end
+    true
+  end
+
   def self.preflight_native!(plan, configs)
     check(defined?(RPG::Map), "Installer must run in a native Essentials/RMXP context")
     %w[pbInstallShatteredHNSReceptionGate pbInstallShatteredWorldLinks
@@ -271,6 +301,7 @@ module ShatteredInitialSlice
     check(!event_name?(route_map, "SHATTERED_ROUTE22:") &&
       !event_name?(route_map, "SHATTERED_LINK:"),
       "Route22 has a partial/duplicate integration install without a receipt")
+    validate_route22_tiles!(route_map, load_native("Data/Tilesets.rxdata"))
     ROUTE22_RESERVED.each do |x, y|
       check(!event_at?(route_map, x, y),
         "Route22 event coordinate is occupied: #{x},#{y}")
