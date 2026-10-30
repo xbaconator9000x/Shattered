@@ -160,6 +160,33 @@ class StagingTest(unittest.TestCase):
             safe_zip_install(archive, self.project, 'following_pokemon_ex')
         self.assertFalse((self.project / 'Plugins/Blocked').exists())
 
+    def test_corrupt_later_zip_member_rejected_before_any_project_write(self):
+        archive = self.root / 'corrupt-later.zip'
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_STORED) as z:
+            z.writestr('Plugins/NewPlugin/first.txt', 'first valid member')
+            z.writestr('Plugins/NewPlugin/second.txt', 'CORRUPT_SECOND_PAYLOAD')
+        original = archive.read_bytes()
+        self.assertEqual(1, original.count(b'CORRUPT_SECOND_PAYLOAD'))
+        archive.write_bytes(original.replace(
+            b'CORRUPT_SECOND_PAYLOAD', b'XORRUPT_SECOND_PAYLOAD', 1))
+        with self.assertRaises(zipfile.BadZipFile):
+            safe_zip_install(archive, self.project, 'following_pokemon_ex')
+        self.assertFalse((self.project / 'Plugins/NewPlugin').exists())
+
+    def test_corrupt_plugin_archive_does_not_publish_staged_project(self):
+        archive = self.root / 'corrupt-stage.zip'
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_STORED) as z:
+            z.writestr('Plugins/NewPlugin/first.txt', 'first valid member')
+            z.writestr('Plugins/NewPlugin/second.txt', 'CORRUPT_SECOND_PAYLOAD')
+        archive.write_bytes(archive.read_bytes().replace(
+            b'CORRUPT_SECOND_PAYLOAD', b'XORRUPT_SECOND_PAYLOAD', 1))
+        output = self.root / 'staged'
+        with self.assertRaises(zipfile.BadZipFile):
+            stage(self.project, output, [f'following_pokemon_ex={archive}'])
+        self.assertFalse(output.exists())
+        self.assertEqual('[PIKACHU]\\nName = Pikachu\\n',
+                         (self.project / 'PBS/pokemon.txt').read_text())
+
     def test_clean_plugin_archive_and_dependency(self):
         p = self.root / 'follower.zip'
         with zipfile.ZipFile(p, 'w') as z:
