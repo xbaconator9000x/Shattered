@@ -43,8 +43,49 @@ def clean_path(name):
     return Path(*parts)
 
 
+def reject_symlinked_project(project):
+    """Never copy a source project through links to data outside the authorised tree."""
+    project = Path(project)
+    for ancestor in (project, *project.parents):
+        if ancestor.is_symlink():
+            raise ValueError(f'project path contains symlink: {ancestor}')
+    for root, dirs, files in os.walk(project, followlinks=False):
+        for name in dirs + files:
+            entry = Path(root) / name
+            info = entry.lstat()
+            if stat.S_ISLNK(info.st_mode):
+                raise ValueError(f'project contains symlink: {entry}')
+            if stat.S_ISDIR(info.st_mode):
+                continue
+            if not stat.S_ISREG(info.st_mode):
+                raise ValueError(f'project contains unsupported special file: {entry}')
+            if info.st_nlink > 1:
+                raise ValueError(f'project contains hardlinked file: {entry}')
+
+
+def reject_linked_destination(dest, path, overwrite):
+    """Prevent archive writes through symlinks or shared hardlinked files."""
+    root = Path(dest).absolute()
+    for ancestor in (root, *root.parents):
+        if ancestor.is_symlink():
+            raise ValueError(f'archive destination contains symlink: {ancestor}')
+    target = root
+    for part in path.parts:
+        target = target / part
+        if target.is_symlink():
+            raise ValueError(f'archive destination contains symlink: {target}')
+    if overwrite and target.exists():
+        # is_file() is false for FIFOs, sockets and directories. Opening a FIFO
+        # for writing could hang the staging job; reject every non-regular target.
+        info = target.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink > 1:
+            raise ValueError(f'unsafe archive overwrite target: {path}')
+
+
 def safe_zip_install(archive, dest, plugin_id, overwrite=False):
     staged = []
+    seen_paths = set()
+    seen_parent_paths = set()
     with zipfile.ZipFile(archive) as z:
         members = z.infolist()
         if len(members) > MAX_ENTRIES or sum(m.file_size for m in members) > MAX_ARCHIVE_BYTES:
@@ -58,6 +99,16 @@ def safe_zip_install(archive, dest, plugin_id, overwrite=False):
             path = clean_path(member.filename)
             if path is None or member.is_dir():
                 continue
+            # RPG Maker projects may be staged on case-insensitive filesystems.
+            # Reject case-only duplicates and file-vs-directory conflicts before
+            # writing any member, regardless of the current host filesystem.
+            key = tuple(part.casefold() for part in path.parts)
+            if (key in seen_paths or key in seen_parent_paths or
+                    any(key[:i] in seen_paths for i in range(1, len(key)))):
+                raise ValueError(f'duplicate archive destination or path conflict: {path}')
+            seen_paths.add(key)
+            seen_parent_paths.update(key[:i] for i in range(1, len(key)))
+            reject_linked_destination(dest, path, overwrite)
             if path.parts[0] == 'PBS' and path.name == 'pokemon.txt':
                 raise ValueError('refusing to replace entire PBS/pokemon.txt')
             if path.parts[0] == 'Data' and path.name == 'Scripts.rxdata':
@@ -66,6 +117,14 @@ def safe_zip_install(archive, dest, plugin_id, overwrite=False):
             if target.exists() and not overwrite:
                 raise ValueError(f'overwrite requires review: {path} ({plugin_id})')
             staged.append((member, path))
+        # A ZIP can have valid headers but a corrupt later member. Validate
+        # every member's decompression and CRC before touching the project,
+        # otherwise an early member could be written before a later CRC error.
+        # Stream in bounded chunks; do not hold plugin archives in memory.
+        for member, _path in staged:
+            with z.open(member) as stream:
+                while stream.read(1024 * 1024):
+                    pass
         for member, path in staged:
             target = dest / path
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -158,7 +217,9 @@ def png_dimensions(data):
 
 
 def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None):
-    project = Path(project).resolve()
+    project = Path(project).absolute()
+    reject_symlinked_project(project)
+    project = project.resolve()
     output = Path(output).resolve()
     if not (project / 'Game.ini').is_file() or not (project / 'PBS' / 'pokemon.txt').is_file():
         raise ValueError('input must contain Game.ini and PBS/pokemon.txt')
