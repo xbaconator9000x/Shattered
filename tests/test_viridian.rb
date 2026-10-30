@@ -31,7 +31,16 @@ module RPG
     def initialize(code,parameters=[]); @code=code; @parameters=parameters; end
   end
 end
-ViridianMap = Struct.new(:width,:height,:events)
+ViridianMap = Struct.new(:width,:height,:events,:tileset_id,:data)
+ViridianTileset = Struct.new(:passages)
+class ViridianTileData
+  attr_accessor :blocked
+  def initialize; @blocked=[]; end
+  def [](x,y,z)
+    return 0 unless z==0
+    @blocked.include?([x,y]) ? 385 : 384
+  end
+end
 def load_data(path); Marshal.load(File.binread(path)); end
 def save_data(value,path); File.binwrite(path, Marshal.dump(value)); end
 load File.expand_path("../essentials/Plugins/Shattered Viridian/001_Entry.rb",__dir__)
@@ -107,8 +116,10 @@ class ViridianInstallerTest < Minitest::Test
     File.write("Graphics/Characters/Guard.png","local fixture")
     File.write("Graphics/Characters/Nidoran.png","local fixture")
     save_data({41=>true,42=>true},"Data/MapInfos.rxdata")
-    save_data(ViridianMap.new(50,40,{}),"Data/Map041.rxdata")
-    save_data(ViridianMap.new(15,10,{}),"Data/Map042.rxdata")
+    save_data(ViridianMap.new(50,40,{},1,ViridianTileData.new),"Data/Map041.rxdata")
+    save_data(ViridianMap.new(15,10,{},1,ViridianTileData.new),"Data/Map042.rxdata")
+    passage=Hash.new(0); passage[385]=15
+    save_data([nil,ViridianTileset.new(passage)],"Data/Tilesets.rxdata")
     @config={
       "schema_version"=>1,
       "source_map_uuid"=>ShatteredViridian::SOURCE_UUID,
@@ -198,6 +209,25 @@ class ViridianInstallerTest < Minitest::Test
     @config["guard_path"]=[[9,16],[10,16]]
     @config["path_passability_reviewed"]=false
     assert_raises(ArgumentError) { ShatteredViridian.install(@config) }
+  end
+  def test_native_tile_collision_refuses_blocked_escort_path_without_writing
+    city=load_data("Data/Map041.rxdata")
+    city.data.blocked << [10,16]
+    save_data(city,"Data/Map041.rxdata")
+    @config["expected_city_sha256"]=Digest::SHA256.file("Data/Map041.rxdata").hexdigest
+    before=[File.binread("Data/Map041.rxdata"),File.binread("Data/Map042.rxdata")]
+    error=assert_raises(RuntimeError) { ShatteredViridian.install(@config) }
+    assert_match(/Blocked or unknown native Viridian tile/,error.message)
+    assert_equal before,[File.binread("Data/Map041.rxdata"),File.binread("Data/Map042.rxdata")]
+  end
+  def test_escort_path_cannot_cross_existing_native_event
+    city=load_data("Data/Map041.rxdata")
+    e=RPG::Event.new(10,16); e.id=1; e.name="Existing NPC"
+    city.events[1]=e
+    save_data(city,"Data/Map041.rxdata")
+    @config["expected_city_sha256"]=Digest::SHA256.file("Data/Map041.rxdata").hexdigest
+    error=assert_raises(RuntimeError) { ShatteredViridian.install(@config) }
+    assert_match(/Escort path intersects/,error.message)
   end
   def test_wrong_hash_blocks_both_map_writes
     @config["expected_city_sha256"]="0"*64
