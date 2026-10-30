@@ -1,4 +1,5 @@
 import json
+import os
 import binascii
 from pathlib import Path
 import struct
@@ -68,6 +69,49 @@ class StagingTest(unittest.TestCase):
             z.writestr(info, 'another-file')
         with self.assertRaises(ValueError):
             safe_zip_install(p, self.project, 'following_pokemon_ex')
+
+    def test_source_project_symlink_cannot_copy_outside_authorised_tree(self):
+        outside = self.root / 'private'
+        outside.mkdir()
+        (outside / 'secret.txt').write_text('private content')
+        (self.project / 'Plugins' / 'linked').symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(ValueError, 'project contains symlink'):
+            stage(self.project, self.root / 'staged')
+        self.assertFalse((self.root / 'staged').exists())
+        self.assertEqual('private content', (outside / 'secret.txt').read_text())
+
+    def test_archive_symlink_parent_rejected_even_with_overwrite(self):
+        outside = self.root / 'private'
+        outside.mkdir()
+        (outside / 'meta.txt').write_text('original')
+        (self.project / 'Plugins' / 'Linked').symlink_to(outside, target_is_directory=True)
+        archive = self.root / 'linked.zip'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('Plugins/Linked/meta.txt', 'modified')
+        with self.assertRaisesRegex(ValueError, 'archive destination contains symlink'):
+            safe_zip_install(archive, self.project, 'hotfixes', overwrite=True)
+        self.assertEqual('original', (outside / 'meta.txt').read_text())
+
+    def test_archive_hardlink_target_rejected_even_with_overwrite(self):
+        outside = self.root / 'private.txt'
+        outside.write_text('original')
+        linked = self.project / 'Plugins' / 'linked.txt'
+        os.link(outside, linked)
+        archive = self.root / 'hardlink.zip'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('Plugins/linked.txt', 'modified')
+        with self.assertRaisesRegex(ValueError, 'unsafe archive overwrite target'):
+            safe_zip_install(archive, self.project, 'hotfixes', overwrite=True)
+        self.assertEqual('original', outside.read_text())
+
+    def test_duplicate_normalised_archive_destination_fails_before_writes(self):
+        archive = self.root / 'duplicate.zip'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('release/Plugins/Following Pokemon EX/meta.txt', 'first')
+            z.writestr('Plugins/Following Pokemon EX/meta.txt', 'second')
+        with self.assertRaisesRegex(ValueError, 'duplicate archive destination'):
+            safe_zip_install(archive, self.project, 'following_pokemon_ex')
+        self.assertFalse((self.project / 'Plugins/Following Pokemon EX').exists())
 
     def test_clean_plugin_archive_and_dependency(self):
         p = self.root / 'follower.zip'
