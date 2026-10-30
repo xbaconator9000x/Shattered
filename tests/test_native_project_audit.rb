@@ -104,7 +104,7 @@ class NativeProjectAuditTest < Minitest::Test
     refute report['runtime_verified']
     bypass = ShatteredNativeAudit.cutline_report(route, tilesets,
       entry: [20, 17], exit_point: [31, 17],
-      triggers: [[27, 16], [27, 17], [28, 18]])
+      triggers: [[27, 16], [27, 17], [28, 16]])
     assert bypass['entry_reaches_exit']
     assert bypass['bypass_without_trigger']
     refute bypass['static_cutline_candidate']
