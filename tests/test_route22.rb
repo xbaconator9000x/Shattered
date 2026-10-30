@@ -99,6 +99,38 @@ class Route22BattleTest < Minitest::Test
     assert ShatteredRoute22.capture_violation?
     refute ShatteredRoute22.cleared?
   end
+  def test_stale_cleared_switch_cannot_skip_unsolved_mandatory_battle
+    $game_switches[92] = true
+    refute ShatteredRoute22.reconcile(92)
+    refute $game_switches[92]
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, $battle_calls.length
+    assert ShatteredRoute22.cleared?
+  end
+
+  def test_invalid_saved_route_state_is_not_silently_reset
+    $PokemonGlobal.instance_variable_set(:@shattered_route22_rattata,
+      { :version => 999, :cleared => true })
+    $game_switches[92] = true
+    assert_raises(RuntimeError) { ShatteredRoute22.reconcile(92) }
+    assert $game_switches[92]
+    assert_equal 999,
+      $PokemonGlobal.instance_variable_get(:@shattered_route22_rattata)[:version]
+    assert_empty $battle_calls
+  end
+
+  def test_capture_diagnostic_clears_on_new_non_capture_battle
+    $battle_outcome = 4
+    refute ShatteredRoute22.encounter(91, 92)
+    assert ShatteredRoute22.capture_violation?
+    $battle_outcome = 0
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.capture_violation?
+    $battle_outcome = 1
+    assert ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.capture_violation?
+  end
+
   def test_missing_human_cannot_start
     $player.party=[:RATTATA]
     assert_raises(RuntimeError) { ShatteredRoute22.encounter(91,92) }
@@ -271,7 +303,7 @@ class Route22InstallerTest < Minitest::Test
     assert_equal [false,true,true], trigger.pages.map { |p| p.condition.switch1_valid }
     assert_equal [355,209,209,209,210,121,355,0], trigger.pages[0].list.map(&:code)
     assert_equal [355,0], trigger.pages[1].list.map(&:code)
-    assert_equal [0], trigger.pages[2].list.map(&:code)
+    assert_equal [355,0], trigger.pages[2].list.map(&:code)
     assert_equal [3,4,1], trigger.pages[0].list.select { |c| c.code == 209 }.map { |c| c.parameters[1].list[0].code }
     assert_equal [92,92,0], trigger.pages[0].list.find { |c| c.code == 121 }.parameters
     assert_equal 93, trigger.pages[2].condition.switch1_id
@@ -281,6 +313,17 @@ class Route22InstallerTest < Minitest::Test
     assert_equal before, File.binread("Data/Map042.rxdata")
     refute File.exist?("Data/Map042.rxdata.shattered_route22.bak")
   end
+  def test_completed_event_page_rechecks_authoritative_save_before_bypass
+    config = @config.dup
+    trigger = ShatteredRoute22.build_trigger(36, 17, 0, [1, 2, 3], config)
+    done = trigger.pages.last
+    assert_equal 1, done.trigger
+    assert done.condition.switch1_valid
+    assert_equal 93, done.condition.switch1_id
+    assert_equal [355, 0], done.list.map(&:code)
+    assert_equal "ShatteredRoute22.encounter(91, 93)", done.list.first.parameters.first
+  end
+
   def test_plugin_metadata_uses_essentials_v21_format
     metadata=File.read(File.expand_path("../essentials/Plugins/Shattered Route22/meta.txt", __dir__))
     assert_match(/\AName\s*=/, metadata)

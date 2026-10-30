@@ -215,7 +215,10 @@ module ShatteredRoute22
     retry_page.list = [command(355, [script]), command(0)]
     done_page = page(config["cleared_switch"])
     done_page.trigger = 1
-    done_page.list = [command(0)]
+    # A stale cleared switch may select this page before a map-setup hook can
+    # reconcile the save. Recheck the authoritative saved quest flag here so
+    # the encounter cannot be bypassed by walking across this cutline.
+    done_page.list = [command(355, [script]), command(0)]
     event.pages = [initial, retry_page, done_page]
     event
   end
