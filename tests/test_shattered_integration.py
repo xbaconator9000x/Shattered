@@ -241,11 +241,14 @@ class ShatteredIntegrationTests(unittest.TestCase):
         targets = {}
         for index, (slot, requirement) in enumerate(self.manifest["target_map_slots"].items(), 1):
             map_id = 100 + index
-            map_path = project / "Data" / f"Map{map_id:03d}.rxdata"
-            map_path.write_bytes(f"synthetic map {slot}".encode())
+            digest = None
+            if requirement.get("status") != "not_imported":
+                map_path = project / "Data" / f"Map{map_id:03d}.rxdata"
+                map_path.write_bytes(f"synthetic map {slot}".encode())
+                digest = hashlib.sha256(map_path.read_bytes()).hexdigest()
             targets[slot] = {
                 "id": map_id,
-                "sha256": hashlib.sha256(map_path.read_bytes()).hexdigest(),
+                "sha256": digest,
                 "dimensions": requirement["dimensions"] or [10, 9],
                 "source_uuid": requirement["source_uuid"] or f"fixture:{slot}",
                 "reviewed": True,
@@ -295,6 +298,8 @@ class ShatteredIntegrationTests(unittest.TestCase):
                 "destination": (
                     "Graphics/Tilesets/ReceptionGate.png"
                     if asset["id"] == "hns_reception_gate_tileset"
+                    else f"Audio/SE/{Path(asset['expected_local_input']).name}"
+                    if asset["kind"] == "sound_effect"
                     else f"Graphics/Characters/{asset['id']}.png"
                 ),
                 "sha256": hashlib.sha256(asset_path.read_bytes()).hexdigest(),

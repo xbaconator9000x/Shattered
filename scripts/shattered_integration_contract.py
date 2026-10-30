@@ -14,7 +14,12 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import shattered_integration as integration
 
 
-def _assemble_contract_tree(source_root, output, manifest):
+def _assemble_contract_tree(source_root, output, manifest, profile=None):
+    profile_config = integration._profile_config(manifest, profile)
+    selected_prs = set(profile_config["source_prs"])
+    selected_components = [
+        item for item in manifest["components"] if item["id"] in profile_config["components"]
+    ]
     output.mkdir(parents=True, exist_ok=False)
     plugins = output / "Plugins"
     pbs = output / "PBS"
@@ -22,7 +27,7 @@ def _assemble_contract_tree(source_root, output, manifest):
     pbs.mkdir()
     source_files = {}
     for item in manifest["required_source_files"]:
-        if not item.get("stage"):
+        if item["pr"] not in selected_prs or not item.get("stage"):
             continue
         source = source_root / f"pr-{item['pr']}" / item["path"]
         source_files[(item["pr"], item["path"])] = source
@@ -47,6 +52,8 @@ def _assemble_contract_tree(source_root, output, manifest):
         installed[name] = version
 
     for item in manifest["required_source_files"]:
+        if item["pr"] not in selected_prs:
+            continue
         target = item.get("pbs_target")
         if not target:
             continue
@@ -62,9 +69,7 @@ def _assemble_contract_tree(source_root, output, manifest):
         with destination.open("ab") as stream:
             stream.write(source.read_bytes())
 
-    expected_names = {
-        component["name"] for component in manifest["components"]
-    }
+    expected_names = {component["name"] for component in selected_components}
     if set(installed) != expected_names:
         raise integration.IntegrationError(
             f"assembled plugin inventory mismatch: missing={sorted(expected_names - set(installed))}, "
@@ -73,12 +78,16 @@ def _assemble_contract_tree(source_root, output, manifest):
     component_names = set(installed)
     archive_names = {
         archive["name"] for archive in manifest["plugin_archives"]
-        if archive.get("required") or archive.get("install") is True
+        if archive["id"] in profile_config["archives"]
     }
+    declared_order = [
+        name for name in manifest["load_order"]
+        if name in expected_names or name in archive_names
+    ]
     return {
         "plugin_count": len(installed),
         "plugin_names": [name for name in manifest["load_order"] if name in component_names],
-        "declared_load_order": manifest["load_order"],
+        "declared_load_order": declared_order,
         "archives_not_in_synthetic_tree": sorted(archive_names),
         "pbs_sections": {
             path.name: integration._pbs_sections(path)
@@ -88,7 +97,8 @@ def _assemble_contract_tree(source_root, output, manifest):
     }
 
 
-def _prepare_test_dependencies(source_root, manifest):
+def _prepare_test_dependencies(source_root, manifest, profile=None):
+    selected_prs = set(integration._profile_config(manifest, profile)["source_prs"])
     prs = {pr["id"]: pr for pr in manifest["pull_requests"]}
     components_by_pr = {component["pr"]: component for component in manifest["components"]}
     sources_by_pr = {}
@@ -97,6 +107,8 @@ def _prepare_test_dependencies(source_root, manifest):
             sources_by_pr.setdefault(item["pr"], []).append(item)
 
     for suite in manifest["contract_test_suites"]:
+        if suite["pr"] not in selected_prs:
+            continue
         component = components_by_pr.get(suite["pr"])
         if not component:
             continue
@@ -120,10 +132,13 @@ def _prepare_test_dependencies(source_root, manifest):
                 shutil.copyfile(source, destination)
 
 
-def _run_tests(source_root, manifest, git_repo):
-    _prepare_test_dependencies(source_root, manifest)
+def _run_tests(source_root, manifest, git_repo, profile=None):
+    selected_prs = set(integration._profile_config(manifest, profile)["source_prs"])
+    _prepare_test_dependencies(source_root, manifest, profile)
     results = []
     for suite in manifest["contract_test_suites"]:
+        if suite["pr"] not in selected_prs:
+            continue
         working_directory = source_root / f"pr-{suite['pr']}"
         for path in suite.get("support_from_main", []):
             integration.safe_relative(path, "main test support file")
@@ -160,23 +175,30 @@ def _run_tests(source_root, manifest, git_repo):
     return results
 
 
-def run_contract(git_repo, manifest):
+def run_contract(git_repo, manifest, profile=None):
     integration.validate_manifest(manifest)
     with tempfile.TemporaryDirectory(prefix="shattered-contract-") as temp:
         temp_root = Path(temp)
         source_root = temp_root / "sources"
         tree_root = temp_root / "assembled"
-        export = integration.export_sources(git_repo, source_root, manifest)
-        lock = integration.verify_source_bundle(source_root, manifest)
-        assembly = _assemble_contract_tree(source_root, tree_root, manifest)
-        integration._verify_first_party_hooks(source_root, manifest)
-        tests = _run_tests(source_root, manifest, git_repo)
+        export = integration.export_sources(git_repo, source_root, manifest, profile=profile)
+        lock = integration.verify_source_bundle(source_root, manifest, profile=profile)
+        assembly = _assemble_contract_tree(source_root, tree_root, manifest, profile=profile)
+        integration._verify_first_party_hooks(
+            source_root, manifest,
+            set(integration._profile_config(manifest, profile)["components"]),
+        )
+        tests = _run_tests(source_root, manifest, git_repo, profile=profile)
         return {
             "status": "synthetic_contract_passed",
             "evidence_tier": "rights-cleared-synthetic-source-contract",
+            "profile": profile or "full",
             "git_verified": export["git_verified"],
             "source_prs": [
-                {"id": pr["id"], "commit": pr["head"], "base": pr["base"]}
+                {
+                    "id": pr["id"], "commit": pr["head"], "base": pr["base"],
+                    "resolved_ref": pr["source_ref"], "resolved_commit": pr["source_commit"],
+                }
                 for pr in lock["pull_requests"]
             ],
             "source_files": len(lock["files"]),
@@ -196,10 +218,15 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--git-repo", required=True, help="full local Shattered Git checkout")
     parser.add_argument("--manifest", default=str(integration.MANIFEST_PATH))
+    parser.add_argument("--profile", choices=["initial_slice"])
     args = parser.parse_args(argv)
     try:
         manifest = integration.load_manifest(args.manifest)
-        print(json.dumps(run_contract(args.git_repo, manifest), indent=2, sort_keys=True))
+        print(json.dumps(
+            run_contract(args.git_repo, manifest, profile=args.profile),
+            indent=2,
+            sort_keys=True,
+        ))
         return 0
     except (integration.IntegrationError, OSError, subprocess.SubprocessError) as exc:
         print(f"integration contract failed: {exc}", file=sys.stderr)

@@ -15,6 +15,10 @@ import tempfile
 import zipfile
 
 
+if __name__ == "__main__":
+    sys.modules.setdefault("shattered_integration", sys.modules[__name__])
+
+
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / "development" / "shattered_integration_manifest.json"
 LOCK_NAME = ".shattered-integration-source.json"
@@ -327,6 +331,25 @@ def validate_manifest(manifest):
                 event_prefixes.append(contract["event_prefix"])
             if contract.get("event_name"):
                 event_names.append(contract["event_name"])
+            if contract.get("api") == "pbInstallShatteredRoute22":
+                trigger_positions = contract.get("source_trigger_positions")
+                npc_positions = contract.get("source_npc_positions")
+                if (
+                    not isinstance(trigger_positions, list) or len(trigger_positions) != 3
+                    or not isinstance(npc_positions, list) or len(npc_positions) != 3
+                ):
+                    raise IntegrationError("Route22 source trigger/NPC position contract is invalid")
+                points = trigger_positions + npc_positions
+                if (
+                    any(
+                        not isinstance(point, list) or len(point) != 2 or
+                        any(not isinstance(value, int) or isinstance(value, bool) or value < 0
+                            for value in point)
+                        for point in points
+                    )
+                    or len({tuple(point) for point in points}) != 6
+                ):
+                    raise IntegrationError("Route22 source trigger/NPC position contract is invalid")
     if len(event_names) != len(set(event_names)):
         raise IntegrationError("duplicate native event name contract")
     if len(event_prefixes) != len(set(event_prefixes)):
@@ -406,12 +429,14 @@ def _verify_git_refs(repo, manifest, selected_prs=None):
     for pr in manifest["pull_requests"]:
         if selected_prs is not None and pr["id"] not in selected_prs:
             continue
-        if _resolve_branch(repo, pr["branch"], pr["id"]) != pr["head"]:
-            raise IntegrationError(f"PR #{pr['id']} branch no longer matches pinned head")
         _git(repo, "cat-file", "-e", f"{pr['base']}^{{commit}}")
         _git(repo, "merge-base", "--is-ancestor", pr["base"], pr["head"])
-        if pr["ancestry_parent"] is None:
-            _git(repo, "merge-base", "--is-ancestor", pr["base"], main["commit"])
+        if pr["state"] == "merged":
+            _git(repo, "cat-file", "-e", f"{pr['head']}^{{commit}}")
+            _git(repo, "merge-base", "--is-ancestor", pr["head"], main["commit"])
+        else:
+            if _resolve_branch(repo, pr["branch"], pr["id"]) != pr["head"]:
+                raise IntegrationError(f"PR #{pr['id']} branch no longer matches pinned head")
 
 
 def _profile_config(manifest, profile):
@@ -452,7 +477,12 @@ def export_sources(repo, output, manifest, profile=None):
             if item["pr"] not in selected_prs:
                 continue
             pid, source_path = item["pr"], item["path"]
-            content = _git(repo, "show", f"{pr_by_id[pid]['head']}:{source_path}", binary=True)
+            resolved_commit = (
+                manifest["main"]["commit"]
+                if pr_by_id[pid]["state"] == "merged"
+                else pr_by_id[pid]["head"]
+            )
+            content = _git(repo, "show", f"{resolved_commit}:{source_path}", binary=True)
             bundle_rel = Path(f"pr-{pid}") / safe_relative(source_path, "source file")
             destination = temp / bundle_rel
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -475,7 +505,18 @@ def export_sources(repo, output, manifest, profile=None):
 
 def _source_lock_record(manifest, selected_prs=None):
     return [
-        {key: pr[key] for key in ("id", "branch", "head", "base_ref", "base", "ancestry_parent")}
+        {
+            **{
+                key: pr[key]
+                for key in (
+                    "id", "state", "branch", "head", "base_ref", "base", "ancestry_parent"
+                )
+            },
+            "source_ref": manifest["main"]["ref"] if pr["state"] == "merged" else pr["branch"],
+            "source_commit": (
+                manifest["main"]["commit"] if pr["state"] == "merged" else pr["head"]
+            ),
+        }
         for pr in manifest["pull_requests"]
         if selected_prs is None or pr["id"] in selected_prs
     ]
@@ -858,10 +899,15 @@ def _validate_plan(plan, manifest, project, inputs, profile=None):
             raise IntegrationError(f"{slot}: target map ID missing or duplicated")
         ids.add(map_id)
         expected_path = Path("Data") / f"Map{map_id:03d}.rxdata"
-        map_path = regular_file(project, expected_path.as_posix(), f"{slot} target map")
-        digest = target.get("sha256")
-        if not isinstance(digest, str) or not HEX_64.fullmatch(digest) or sha256(map_path) != digest:
-            raise IntegrationError(f"{slot}: target map SHA256 mismatch")
+        if requirement.get("status") == "not_imported":
+            if expected_path.exists() or expected_path.is_symlink():
+                raise IntegrationError(f"{slot}: create target map ID is already occupied")
+            digest = None
+        else:
+            map_path = regular_file(project, expected_path.as_posix(), f"{slot} target map")
+            digest = target.get("sha256")
+            if not isinstance(digest, str) or not HEX_64.fullmatch(digest) or sha256(map_path) != digest:
+                raise IntegrationError(f"{slot}: target map SHA256 mismatch")
         expected_dimensions = requirement.get("dimensions")
         if expected_dimensions and target.get("dimensions") != expected_dimensions:
             raise IntegrationError(f"{slot}: target map dimensions do not match source contract")
@@ -873,7 +919,12 @@ def _validate_plan(plan, manifest, project, inputs, profile=None):
             raise IntegrationError(f"{slot}: map identity/target mapping has not been reviewed")
         if target.get("map_info_reviewed") is not True:
             raise IntegrationError(f"{slot}: MapInfos entry has not been reviewed")
-        map_hashes[slot] = {"id": map_id, "sha256": digest, "path": expected_path.as_posix()}
+        map_hashes[slot] = {
+            "id": map_id,
+            "sha256": digest,
+            "path": expected_path.as_posix(),
+            "created_by_installer": requirement.get("status") == "not_imported",
+        }
 
     for kind, profile_key in (("switch_ids", "switch_ids"), ("variable_ids", "variable_ids")):
         required = set(profile_config[profile_key])
@@ -1190,6 +1241,10 @@ def stage_project(
                 shutil.copyfile(source_path, destination)
 
         for slot, target_record in inventory["map_targets"].items():
+            if target_record["created_by_installer"]:
+                if (target / target_record["path"]).exists():
+                    raise IntegrationError(f"create target map became occupied during staging: {slot}")
+                continue
             if sha256(target / target_record["path"]) != target_record["sha256"]:
                 raise IntegrationError(f"target map changed during staging: {slot}")
         for item in selected_sources:
@@ -1246,7 +1301,19 @@ def stage_project(
             "acceptance_target": profile_config.get("acceptance_target"),
             "runtime_status": profile_config.get("runtime_status", "BLOCKED until native acceptance"),
             "source_prs": [
-                {"id": pr["id"], "branch": pr["branch"], "commit": pr["head"], "base": pr["base"]}
+                {
+                    "id": pr["id"],
+                    "branch": pr["branch"],
+                    "commit": pr["head"],
+                    "base": pr["base"],
+                    "state": pr["state"],
+                    "source_ref": (
+                        manifest["main"]["ref"] if pr["state"] == "merged" else pr["branch"]
+                    ),
+                    "source_commit": (
+                        manifest["main"]["commit"] if pr["state"] == "merged" else pr["head"]
+                    ),
+                }
                 for pr in manifest["pull_requests"] if pr["id"] in profile_config["source_prs"]
             ],
             "source_files_verified": len(lock["files"]),
@@ -1283,6 +1350,22 @@ def stage_project(
         (target / "SHATTERED_INTEGRATION_BUILD.json").write_text(
             json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
         )
+        (target / "SHATTERED_STAGING_REPORT.json").write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "engine": "Essentials 21.1",
+                    "profile": report["profile"],
+                    "evidence_tier": report["evidence_tier"],
+                    "source_prs": report["source_prs"],
+                    "native_install_status": "native_install_pending",
+                    "original_project_modified": False,
+                },
+                indent=2,
+                sort_keys=True,
+            ) + "\n",
+            encoding="utf-8",
+        )
         os.replace(target, output)
     except Exception:
         shutil.rmtree(temp, ignore_errors=True)
@@ -1309,7 +1392,20 @@ def main(argv=None):
     stage_parser.add_argument("--output", required=True)
     stage_parser.add_argument("--manifest", default=str(MANIFEST_PATH))
     stage_parser.add_argument("--profile", choices=["initial_slice"])
+    stage_parser.add_argument(
+        "--native-plan",
+        help="optional private reviewed map/event plan; writes the initial-slice native installer",
+    )
     stage_parser.add_argument("--synthetic-fixture", action="store_true", help=argparse.SUPPRESS)
+    handoff_parser = subparsers.add_parser(
+        "prepare-native-install",
+        help="write a source-pinned native initial-slice installer into a private staged copy",
+    )
+    handoff_parser.add_argument("--project", required=True, help="fresh private staged project")
+    handoff_parser.add_argument("--sources", required=True, help="verified source bundle")
+    handoff_parser.add_argument("--plan", required=True, help="private reviewed native map/event plan JSON")
+    handoff_parser.add_argument("--manifest", default=str(MANIFEST_PATH))
+    handoff_parser.add_argument("--synthetic-fixture", action="store_true", help=argparse.SUPPRESS)
     preflight_parser = subparsers.add_parser(
         "preflight", help="report all missing private inputs for a staging profile"
     )
@@ -1340,15 +1436,43 @@ def main(argv=None):
             )
             print(json.dumps(result, indent=2, sort_keys=True))
             return 0 if result["status"] == "READY_TO_STAGE" else 2
+        elif args.command == "prepare-native-install":
+            try:
+                plan = json.loads(Path(args.plan).read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise IntegrationError(f"cannot read private native handoff plan: {exc}") from exc
+            from shattered_integration_handoff import prepare_native_handoff
+            result = prepare_native_handoff(
+                args.project, args.sources, plan, manifest,
+                synthetic_fixture=args.synthetic_fixture,
+            )
         else:
             try:
                 plan = json.loads(Path(args.plan).read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError) as exc:
                 raise IntegrationError(f"cannot read private staging plan: {exc}") from exc
+            native_plan = None
+            if args.command == "stage" and args.native_plan:
+                if args.profile != "initial_slice":
+                    raise IntegrationError("--native-plan requires --profile initial_slice")
+                try:
+                    native_plan = json.loads(Path(args.native_plan).read_text(encoding="utf-8"))
+                except (OSError, json.JSONDecodeError) as exc:
+                    raise IntegrationError(f"cannot read private native handoff plan: {exc}") from exc
             result = stage_project(
                 args.project, args.sources, args.inputs, plan, args.output, manifest,
                 synthetic_fixture=args.synthetic_fixture, profile=args.profile,
             )
+            if native_plan is not None:
+                try:
+                    from shattered_integration_handoff import prepare_native_handoff
+                    result["native_install"] = prepare_native_handoff(
+                        args.output, args.sources, native_plan, manifest,
+                        synthetic_fixture=args.synthetic_fixture,
+                    )
+                except Exception:
+                    shutil.rmtree(args.output, ignore_errors=True)
+                    raise
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0
     except (IntegrationError, OSError, zipfile.BadZipFile, KeyError, TypeError) as exc:

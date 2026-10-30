@@ -95,7 +95,7 @@
       "id": 14,
       "title": "Reception-gate story events",
       "branch": "feat/se016-gate-story-state-and-events",
-      "head": "3de3168601a28c5a67c62dda28bbe43d5fcce463",
+      "head": "053c6480fcbc291cd45ed0493b0606c5b7af3693",
       "base_ref": "main",
       "base": "d680729c1ecfab39b721223a6cbe64be8d9a3e4c",
       "ancestry_parent": null,
@@ -671,6 +671,7 @@
         "hns_reception_gate_mapping",
         "aipom_sprite",
         "aipom_cry",
+        "gate_final_roar",
         "gate_collapse_se_1",
         "gate_collapse_se_2",
         "gate_collapse_se_3",
@@ -1002,6 +1003,20 @@
               18
             ]
           ],
+          "source_npc_positions": [
+            [
+              38,
+              17
+            ],
+            [
+              39,
+              16
+            ],
+            [
+              39,
+              18
+            ]
+          ],
           "battle": "WildBattle.start(:RATTATA, 5); disablePokeBalls; outcome 1 advances"
         }
       ]
@@ -1240,6 +1255,13 @@
       "required": true,
       "rights_status": "not_provided",
       "expected_local_input": "assets/audio/SE/AipomCry.ogg"
+    },
+    {
+      "id": "gate_final_roar",
+      "kind": "sound_effect",
+      "required": true,
+      "rights_status": "not_provided",
+      "expected_local_input": "assets/audio/SE/GateFinalRoar.ogg"
     },
     {
       "id": "gate_collapse_se_1",

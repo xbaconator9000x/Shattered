@@ -9,7 +9,10 @@ after inspecting live PR heads, changed files, and base ancestry.
 
 The manifest and harness do not edit the integration queue, plugin manifest,
 feature plugin files, or `scripts/stage_essentials.py`. They export only the
-allow-listed files in the manifest from the exact pinned Git commits. The
+allow-listed files in the manifest from the exact pinned Git commits. Merged
+components are resolved from the pinned `main` tree; their original PR heads are
+still recorded and checked as ancestors of `main`, without requiring closed PR
+branches to remain fetchable. The
 `scripts/stage_essentials.py` version in PR #10 is not part of this harness's
 owned file set.
 
@@ -22,11 +25,12 @@ available or that a game can be staged:
 python3 scripts/shattered_integration.py validate-manifest
 ```
 
-The CI contract fetches the pinned PR refs, exports allow-listed files, assembles
-all first-party plugins and PBS fragments into a temporary synthetic tree, checks
-compatibility declarations, and runs each listed Python/Ruby suite in a separate
-process. It prints exact source SHAs and does not include game data or copyrighted
-assets:
+The CI contract fetches the pinned initial-slice PR refs, exports allow-listed
+files, assembles the slice plugins and PBS fragments into a temporary synthetic
+tree, checks compatibility declarations, and runs each applicable Python/Ruby
+suite in a separate process. It prints exact source SHAs and does not include
+game data or copyrighted assets. The default local contract profile can test the
+full manifest when every later stacked PR ref is available:
 
 ```sh
 python3 scripts/shattered_integration_contract.py \
@@ -62,8 +66,8 @@ python3 scripts/shattered_integration.py preflight \
  --plan /local/private/Shattered-build-plan.json
 ```
 
-Run the same arguments with `stage` and a fresh `--output` after preflight is
-unblocked. This is the single private initial-slice staging command:
+The single private staging-and-handoff command is `stage --native-plan` with the
+same staging arguments, plus a separate reviewed native plan:
 
 ```sh
 python3 scripts/shattered_integration.py stage \
@@ -72,15 +76,16 @@ python3 scripts/shattered_integration.py stage \
  --sources /local/private/Shattered-initial-slice-sources \
  --inputs /local/private/Shattered-build-inputs \
  --plan /local/private/Shattered-build-plan.json \
+ --native-plan /local/private/Shattered-native-install-plan.json \
  --output /local/private/Shattered-staged
 ```
 
 The minimum authorized project files are `Game.ini`, `Data/Scripts.rxdata`,
-`Data/MapInfos.rxdata`, `PBS/pokemon.txt`, `PBS/items.txt`, the reviewed target
-maps `Data/MapNNN.rxdata` for Reception Gate and Route 22, and corresponding
-MapInfos entries. Map IDs and event resource IDs are intentionally unassigned;
-the real project owner must review and reserve them. The plan/input files remain
-outside this repository.
+`Data/MapInfos.rxdata`, `Data/Tilesets.rxdata`, `PBS/pokemon.txt`,
+`PBS/items.txt`, and reviewed existing HnS warp-destination maps with their
+MapInfos entries. Reception Gate is a new map created by the native importer;
+its reviewed map ID must be unoccupied. Route 22 is an existing 48×24 map with
+a reviewed SHA256. The original project is copied and not edited.
 
 The initial-slice plan must include:
 
@@ -88,9 +93,11 @@ The initial-slice plan must include:
   and a SHA256-pinned local JSON rights record (`rights_record`,
   `rights_record_sha256`). The record identifies `base_project`, has type
   `essentials_project`, and records a non-empty source, license, and basis.
-- `map_targets`: one distinct positive actual map ID, target map file SHA256,
-  source dimensions/UUID where known, `"reviewed": true`, and
-  `"map_info_reviewed": true` for `reception_gate` and `route22`.
+- `map_targets`: distinct positive actual IDs with `"reviewed": true` and
+  `"map_info_reviewed": true`. Reception Gate has the HnS source UUID and no
+  existing map file; Route 22 has the actual staged map SHA256 and 48×24
+  dimensions. `required_existing_maps` must cover all five HnS exit destinations
+  (including Route 22) with dimensions, hashes, and reviewed MapInfos.
 - `switch_ids`: `route22_scatter` and `route22_cleared`; `variable_ids`:
   `route22_outcome`. Each needs a unique positive ID of its resource class,
   allocated against the actual project.
@@ -105,7 +112,7 @@ The initial-slice plan must include:
 - `assets`: exactly the initial profile IDs. Required inputs include
   `assets/tilesets/ReceptionGate.png`, `assets/characters/Aipom.png`,
   `assets/characters/Rattata.png`, the Aipom cry, six gate-collapse SE files,
-  and the reviewed metatile/collision mapping. Each needs its source, SHA256,
+  the final gate roar, and the reviewed metatile/collision mapping. Each needs its source, SHA256,
   staged destination where applicable, and a SHA256-pinned rights record.
   The input filename conventions are in the manifest; the event installer must
   use the matching local asset basenames.
@@ -123,15 +130,53 @@ The initial-slice plan must include:
 The staged output contains only the copied Essentials project, the manifest's
 allow-listed first-party plugin files, local rights-cleared assets, approved
 plugin archive contents, the required HUMAN and Gate Key PBS fragments, and
-`SHATTERED_INTEGRATION_BUILD.json`. The original project is never modified.
+`SHATTERED_INTEGRATION_BUILD.json` plus the Essentials staging marker. With
+`--native-plan`, it also contains the private generated installer, configs, and
+exact plan SHA256. The command removes its new output if the handoff preflight
+fails. The original project is never modified.
 ZIP traversal, symlinks, oversized members, duplicate/unsupported paths,
 replacement of engine archives/PBS, and destination collisions are rejected.
 
 The output build record reports `staged-copy-only` (or
 `synthetic-fixture`) and keeps PBS compile, script compile, game boot, gameplay,
 save/reload, actual Essentials plugin load order, and Android JoiPlay/NaviaXP
-false until separately evidenced. These commands do not execute the native
+false until separately evidenced. Staging alone does not execute the native
 RMXP event installers or compile Essentials.
+
+The native plan contains four reviewed installer configs, exact PR/base/source
+SHAs, hashes for staged scripts/PBS/assets, target map IDs, switch/variable IDs,
+the original south transfer, and all event positions. The installer dependency
+order is HnS map import → World Links → Gate Story → Route22. The HnS importer
+creates five exits, so all four destination maps must exist and be reviewed;
+the build is not ready if one is missing. In the native Essentials debug
+console, run this only after PBS/plugin compilation and game boot:
+
+```ruby
+pbInstallShatteredInitialSlice
+```
+
+The Ruby installer verifies the source/config hashes and reserved IDs, snapshots
+all modified RXData, restores on ordinary errors, and writes a receipt only
+after strict component return/event checks. An interrupted install leaves a
+recovery marker and must not be rerun blindly. Route22's expected map hash is
+computed after World Links changes its map. The Gate Story installer currently
+expects a Hash for `Tilesets.rxdata` while the HnS importer writes an Array; the
+handoff supplies a temporary Hash view and restores the original Array bytes
+before continuing. This adapter does not prove that the plugins compile or that
+the Route22 event trigger semantics work in native RMXP. The handoff remains
+`native_install_pending` until the command runs in the authorized engine.
+Gameplay and save/reload remain unverified afterward.
+
+The private native plan JSON is separate from the staging plan and must contain
+`schema_version: 1`, `profile: "initial_slice"`, reviewed `map_targets`,
+`required_existing_maps`, `switch_ids`, `variable_ids`, and
+`installer_configs` keyed exactly as `hns_import`, `world_links`, `gate_story`,
+and `route22`. Config values must follow the schemas validated by the pinned
+installer APIs; they are serialized into the staged project only after all
+cross-map IDs, coordinates, source hashes, and asset basenames pass preflight.
+If source permissions, licensed art/audio, exact plugin archives, any one of the
+four HnS destination maps, or a unique map/resource ID is missing, staging
+returns a specific blocker and does not produce a staged output.
 
 ## Recorded source and compatibility contracts
 
@@ -164,6 +209,8 @@ Run the harness fixtures:
 
 ```sh
 python3 -m unittest tests/test_shattered_integration.py -v
+python3 -m unittest discover -s tests -p 'test_shattered_native_handoff.py' -v
+ruby tests/test_shattered_native_handoff.rb
 python3 scripts/shattered_integration_contract.py --git-repo /local/full/Shattered-checkout
 ```
 
@@ -204,8 +251,10 @@ Evidence must be reported at the tier actually run:
 - Compile PBS and all plugins in an authorised native Essentials v21.1 project.
   Test HUMAN battle, Poké Ball denial, Rattata/Beedrill progression, event
   recovery, followers/quests, and save/close/reopen.
-- Run the complete Johto gate → Route 22 → Viridian → raid/rescue/dojo/starter
-  route on desktop and Android. Capture logs, results, and project hashes.
+-   Verify Route22 event trigger behavior in native RMXP, then run new game → HUMAN
+  → gate collapse → Aipom key → mandatory Lv5 Route22 Rattata → save/close/reload.
+  The separate Viridian/raid/rescue/dojo/starter route and Android acceptance are
+  later gates. Capture logs, results, and project hashes.
 
 The repository currently has no authorised native Essentials project, licensed
 HnS/art inputs, verified plugin archives, or Android runtime in this task
