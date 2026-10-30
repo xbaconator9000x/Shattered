@@ -229,6 +229,33 @@ class GateInstallerTest < Minitest::Test
     assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
     assert_equal original, File.binread("Data/Map010.rxdata")
   end
+  def test_allows_impassable_south_exit_if_northern_approach_is_walkable
+    map = load_data("Data/Map010.rxdata")
+    map.data[11, 19, 0] = 2
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[2] = 0x0F
+    save_data(tilesets, "Data/Tilesets.rxdata")
+
+    assert_equal 3, ShatteredGateStory.install(@config)["installed"].length
+    installed = load_data("Data/Map010.rxdata")
+    assert_equal "SHATTERED_GATE:johto_block", installed.events[1].name
+    assert_equal 2, installed.data[11, 19, 0]
+  end
+
+  def test_rejects_south_blocker_without_walkable_northern_approach
+    map = load_data("Data/Map010.rxdata")
+    map.data[11, 18, 0] = 2
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[2] = 0x0F
+    save_data(tilesets, "Data/Tilesets.rxdata")
+
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+
   def test_rejects_bad_asset_name_and_flag_plan
     original = File.binread("Data/Map010.rxdata")
     @config["final_roar_sound"] = "../roar"
