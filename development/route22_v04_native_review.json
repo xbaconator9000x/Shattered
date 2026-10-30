@@ -21,7 +21,9 @@
         17
       ],
       "trigger": "autorun",
-      "action": "existing level-5 Rattata battle; must reconcile to prevent duplicate encounter"
+      "action": "existing level-5 Rattata battle; must reconcile to prevent duplicate encounter",
+      "event_sha256": "ef8861a24531fedc56be153cc88a80ed6e314103af48b810d85b116aaadfe786",
+      "migration": "Exact event digest required; transactional replacement with inert page in staged map only; native runtime unverified"
     },
     {
       "id": 4,
@@ -77,10 +79,29 @@
       "entry_reaches_exit_without_trigger_tiles": false,
       "static_cutline_candidate": true,
       "runtime_verified": false
-    }
+    },
+    "scatter_moves": [
+      3,
+      4,
+      3
+    ],
+    "scatter_destinations": [
+      [
+        30,
+        17
+      ],
+      [
+        29,
+        17
+      ],
+      [
+        29,
+        18
+      ]
+    ]
   },
   "hard_blockers": [
-    "Legacy autorun ambush at (30,17) would produce duplicate battle until a source-verified, transactional migration is implemented",
+    "Native v0.4 legacy autorun migration implemented in PR #38 but not yet tested in real Essentials; exact digest preflight and rollback required",
     "Rattata NPC scatter move routes and native player approach/interruptions require actual engine verification",
     "HnS gate warp and Route22 arrival coordinates need reviewed native mapping; static tile checks are not a playtest"
   ],
