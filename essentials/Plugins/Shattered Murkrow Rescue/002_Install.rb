@@ -65,6 +65,9 @@ module ShatteredMurkrowRescue
     sha = plan["expected_map_sha256"]
     raise ArgumentError, "Reviewed target map SHA256 required" unless
       sha.is_a?(String) && /\A[0-9a-f]{64}\z/.match(sha)
+    tilesets_sha = plan["expected_tilesets_sha256"]
+    raise ArgumentError, "Reviewed native tilesets SHA256 required" unless
+      tilesets_sha.is_a?(String) && /\A[0-9a-f]{64}\z/.match(tilesets_sha)
     character = plan["character"]
     raise ArgumentError, "Unsafe character filename" unless
       character.is_a?(String) && /\A[A-Za-z0-9_ -]{1,80}\z/.match(character)
@@ -138,6 +141,39 @@ module ShatteredMurkrowRescue
     true
   end
 
+  # Native RPG Maker XP passage check, not a claim of tested gameplay.
+  # An unknown tile/tileset must block installation rather than trusting a
+  # manually checked 'passability_reviewed' flag alone.
+  def self.passable_tile?(map, tilesets, x, y)
+    return false unless map.respond_to?(:data) && map.data &&
+      map.respond_to?(:tileset_id) && tilesets.is_a?(Array) &&
+      valid_point?([x, y], map.width, map.height)
+    tileset = tilesets[map.tileset_id]
+    return false unless tileset && tileset.respond_to?(:passages) && tileset.passages
+    2.downto(0) do |layer|
+      tile = map.data[x, y, layer]
+      next if tile.nil? || tile == 0
+      flag = tileset.passages[tile]
+      return false unless flag.is_a?(Integer)
+      next if (flag & 0x10) != 0  # star/overhead tile
+      return (flag & 0x0f) == 0
+    end
+    false
+  end
+
+  def self.validate_native_position!(map, tilesets, point)
+    x, y = point
+    raise "Reviewed Murkrow event tile is blocked or unverified" unless
+      passable_tile?(map, tilesets, x, y)
+    neighbours = [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]]
+    reachable = neighbours.any? do |nx, ny|
+      passable_tile?(map, tilesets, nx, ny) &&
+        map.events.values.none? { |event| event.x == nx && event.y == ny }
+    end
+    raise "Reviewed Murkrow event has no open adjacent approach tile" unless reachable
+    true
+  end
+
   def self.install(plan)
     validate_plan!(plan)
     raise "Refusing to modify an unstaged project" unless
@@ -156,6 +192,12 @@ module ShatteredMurkrowRescue
     map_infos = load_game_data(infos_path)
     raise "Reviewed target map ID is absent from MapInfos" unless map_infos[map_id]
     map = load_game_data(path)
+    tilesets_path = "Data/Tilesets.rxdata"
+    raise "Native tilesets file missing or symlinked" unless
+      File.file?(tilesets_path) && !File.symlink?(tilesets_path)
+    raise "Native tileset data changed since review" unless
+      Digest::SHA256.file(tilesets_path).hexdigest == plan["expected_tilesets_sha256"]
+    tilesets = load_game_data(tilesets_path)
     raise "Target map dimensions differ from reviewed plan" unless
       [map.width, map.height] == plan["target_map_size"]
     raise "Target map event collection unavailable" unless map.events.is_a?(Hash)
@@ -163,6 +205,7 @@ module ShatteredMurkrowRescue
     raise "Locally licensed character sprite missing" unless
       File.file?(sprite_path) && !File.symlink?(sprite_path)
     validate_destination_warp!(map, plan, map_infos)
+    validate_native_position!(map, tilesets, plan["target_position"])
 
     managed = map.events.values.select do |event|
       event.name.is_a?(String) && event.name.start_with?(PREFIX)
