@@ -19,10 +19,11 @@ jobs:
         run: |
           python3 - <<'PY'
           import pathlib, subprocess
-          paths = subprocess.check_output(
+          raw = subprocess.check_output(
               ['git', 'ls-files', '-z', '--', 'essentials/Plugins', 'essentials/PBS', 'scripts', 'development']
-          ).decode().strip('\\0').split('\\0')
-          assert paths and len(paths) > 10, 'source inventory unexpectedly empty'
+          )
+          paths = [part.decode() for part in raw.split(bytes([0])) if part]
+          assert len(paths) > 10, 'source inventory unexpectedly empty'
           allowed = {'.rb', '.txt', '.pbs', '.py', '.json', '.md', '.sh'}
           for name in paths:
               path = pathlib.Path(name)
@@ -35,7 +36,7 @@ jobs:
         run: |
           mkdir -p source-bundle
           git archive --format=tar.gz --output=source-bundle/shattered-source.tar.gz HEAD essentials/Plugins essentials/PBS scripts development
-          printf '%s\\n' "$GITHUB_SHA" > source-bundle/main-or-pr-head.sha
+          echo "$GITHUB_SHA" > source-bundle/main-or-pr-head.sha
           (cd source-bundle && sha256sum shattered-source.tar.gz > SHA256SUMS)
           tar -tzf source-bundle/shattered-source.tar.gz | grep -Fq 'essentials/Plugins/Shattered Core/001_Core.rb'
           tar -tzf source-bundle/shattered-source.tar.gz | grep -Fq 'development/plugin_manifest.json'
