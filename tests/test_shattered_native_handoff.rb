@@ -460,6 +460,35 @@ class ShatteredNativeHandoffTest < Minitest::Test
     end
   end
 
+  def test_new_game_spawn_rejects_partial_directional_passages_on_floor
+    with_native_spawn_fixture do |_map, tilesets, original|
+      [1, 2, 4, 8, 3, 7].each do |direction_flags|
+        tilesets[1].passages = NativeTileTable.new({[384] => direction_flags})
+        save_data(tilesets, "Data/Tilesets.rxdata")
+        error = assert_raises(RuntimeError) do
+          ShatteredInitialSlice.install_new_game_spawn!(@plan)
+        end
+        assert_match(/directional movement restrictions/, error.message)
+        assert_equal original, load_data("Data/System.rxdata")
+      end
+    end
+  end
+
+  def test_new_game_spawn_rejects_restricted_upper_layer_over_open_floor
+    with_native_spawn_fixture do |map, tilesets, original|
+      map.data = NativeTileTable.new({[5, 5, 0] => 384, [5, 5, 1] => 385})
+      save_data(map, "Data/Map101.rxdata")
+      tilesets[1].passages = NativeTileTable.new({[384] => 0, [385] => 4})
+      tilesets[1].priorities = NativeTileTable.new({[384] => 0, [385] => 1})
+      save_data(tilesets, "Data/Tilesets.rxdata")
+      error = assert_raises(RuntimeError) do
+        ShatteredInitialSlice.install_new_game_spawn!(@plan)
+      end
+      assert_match(/directional movement restrictions/, error.message)
+      assert_equal original, load_data("Data/System.rxdata")
+    end
+  end
+
   def test_receipt_requires_exact_installed_file_inventory
     plan = {
       "source_pins" => [],
