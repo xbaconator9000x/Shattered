@@ -103,8 +103,9 @@ module ShatteredMurkrowRescue
     page.always_on_top = false
     page.graphic.character_name = plan["character"]
     runtime = { "battle" => plan["battle"], "reward" => plan["reward"] }
-    encoded = Base64.strict_encode64(JSON.generate(runtime))
-    script = "ShatteredMurkrowRescue.run_event(Base64.decode64(\"#{encoded}\"))"
+    # Hash#inspect produces escaped Ruby literals from the validated plan.
+    # No JSON or Base64 library is required when this event runs in mkxp-z.
+    script = "ShatteredMurkrowRescue.run_event(#{runtime.inspect})"
     page.list = [
       RPG::EventCommand.new(355, 0, [script]),
       RPG::EventCommand.new(0, 0, [])
