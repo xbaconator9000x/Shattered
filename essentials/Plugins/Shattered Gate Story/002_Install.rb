@@ -74,11 +74,11 @@ module ShatteredGateStory
     sound_names = config["collapse_sounds"]
     raise ArgumentError, "six sound basenames required" unless sound_names.is_a?(Array) &&
       sound_names.length == MAX_IMPACTS
-    names = sound_names + [config["aipom_cry"], config["final_roar_sound"],
-      config["aipom_character"]]
+    names = sound_names + [config["final_roar_sound"], config["aipom_character"]]
     raise ArgumentError, "unsafe asset basename" unless names.all? { |s| s.is_a?(String) &&
       !s.strip.empty? &&
       /\A[A-Za-z0-9_ -]+\z/.match(s) }
+    raise ArgumentError, "unsafe Aipom cry path" unless valid_cry_name?(config["aipom_cry"])
     transfer = config["expected_south_transfer"]
     raise ArgumentError, "invalid reviewed south transfer" unless
       transfer.is_a?(Array) && transfer.length == 6 &&
