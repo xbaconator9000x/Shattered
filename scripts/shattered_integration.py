@@ -424,8 +424,16 @@ def _resolve_branch(repo, branch, pr_id=None):
 
 def _verify_git_refs(repo, manifest, selected_prs=None):
     main = manifest["main"]
-    if _resolve_branch(repo, main["ref"]) != main["commit"]:
-        raise IntegrationError("fetched main ref does not match pinned commit")
+    # A reviewed source baseline is intentionally immutable. Merging this
+    # integration harness advances main, so requiring exact ref equality would
+    # make the first successful merge invalidate its own reproducible contract.
+    # Accept only fast-forward descendants of the pinned reviewed snapshot;
+    # continue exporting merged sources from the exact pinned commit below.
+    current_main = _resolve_branch(repo, main["ref"])
+    try:
+        _git(repo, "merge-base", "--is-ancestor", main["commit"], current_main)
+    except IntegrationError as exc:
+        raise IntegrationError("current main does not descend from pinned reviewed commit") from exc
     for pr in manifest["pull_requests"]:
         if selected_prs is not None and pr["id"] not in selected_prs:
             continue

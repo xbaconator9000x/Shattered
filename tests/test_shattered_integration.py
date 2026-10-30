@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 
@@ -36,6 +37,23 @@ class ShatteredIntegrationTests(unittest.TestCase):
         manifest["pull_requests"][2]["state"] = "open_draft"
         with self.assertRaisesRegex(integration.IntegrationError, "merged PR ledger differs"):
             integration.validate_manifest(manifest)
+
+    def test_pinned_main_accepts_fast_forward_but_rejects_rewrite(self):
+        # A source baseline must survive this harness being merged into main.
+        pinned = self.manifest["main"]["commit"]
+        advanced_main = "f" * 40
+        with mock.patch.object(integration, "_resolve_branch", return_value=advanced_main), \
+             mock.patch.object(integration, "_git") as git:
+            integration._verify_git_refs(self.root, self.manifest, selected_prs=set())
+            git.assert_called_once_with(
+                self.root, "merge-base", "--is-ancestor", pinned, advanced_main
+            )
+        with mock.patch.object(integration, "_resolve_branch", return_value=advanced_main), \
+             mock.patch.object(integration, "_git", side_effect=integration.IntegrationError("not ancestor")):
+            with self.assertRaisesRegex(
+                integration.IntegrationError, "does not descend from pinned reviewed commit"
+            ):
+                integration._verify_git_refs(self.root, self.manifest, selected_prs=set())
 
     def test_wrong_stacked_branch_ancestry_fails(self):
         manifest = copy.deepcopy(self.manifest)
