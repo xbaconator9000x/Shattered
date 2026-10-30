@@ -477,7 +477,13 @@ module ShatteredInitialSlice
         "New Game spawn tile has no reviewed passage/priority")
       check((passage & 0x0f) != 0x0f,
         "New Game spawn is blocked by the HnS tileset")
-      if (passage & 0x0f) == 0 && priority == 0
+      # The start tile must be freely traversable in all four directions.
+      # A directional passage bit on an upper layer can block movement even
+      # when a lower floor layer is fully passable. Do not accept that floor
+      # as proof that New Game can move away from its spawn.
+      check((passage & 0x0f) == 0,
+        "New Game spawn has directional movement restrictions")
+      if priority == 0
         passable = true
         break
       end
