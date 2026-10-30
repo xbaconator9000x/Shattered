@@ -1,4 +1,5 @@
 require "minitest/autorun"
+require "json"
 
 class Pokemon
   attr_accessor :species, :level, :name
@@ -523,6 +524,18 @@ class ShatteredCoreTest < Minitest::Test
     assert_equal 62, Shattered.stamina(human, @store)
     assert_equal 65, Shattered.restore_stamina(human, @store)
     assert_equal 65, Shattered.stamina(human, @store)
+  end
+
+  def test_core_metadata_version_matches_manifest
+    root = File.expand_path("..", __dir__)
+    metadata = File.read(File.join(root, "essentials/Plugins/Shattered Core/meta.txt"))
+    version = metadata[/^Version\s*=\s*(\S+)$/, 1]
+    manifest = JSON.parse(File.read(File.join(root, "development/plugin_manifest.json")))
+    entry = manifest.fetch("plugins").find { |item| item["id"] == "shattered_core" }
+    refute_nil entry
+    assert_equal "0.2.3", version
+    assert_equal version, entry.fetch("version")
+    assert_equal false, entry.fetch("runtime_verified")
   end
 
   def test_equipment_contract
