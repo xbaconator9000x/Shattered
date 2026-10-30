@@ -156,7 +156,8 @@
       ],
       "evidence": [
         "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
-        "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified."
+        "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified.",
+        "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed."
       ]
     },
     {
@@ -231,9 +232,10 @@
         "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN",
         "PR #15 (stacked on PR #13): six source-anchored native RMXP Rattata NPC/trigger events with one-time scatter, real WildBattle.start(:RATTATA,5) entry, Poké Ball battle rule, persistent victory-only state and retry on flee/loss/abort; synthetic 15 Ruby tests / 70 assertions passed locally.",
         "PR #15 installer refuses unstaged, wrong-size, wrong-hash, occupied, partial/foreign Route22 maps; requires verified local sprite and reserved switch/variable IDs; no native battle, collision or Android validation yet.",
-        "PR #13 world transfers merged at fc5a9d16 and PR #15 Route22 encounter merged at 0ee6e7e7; combined CI passed on main 6e2790da. Actual map collision, battle and save/reload not tested in Essentials."
+        "PR #13 world transfers merged at fc5a9d16 and PR #15 Route22 encounter merged at 0ee6e7e7; combined CI passed on main 6e2790da. Actual map collision, battle and save/reload not tested in Essentials.",
+        "2026-10-31 real v0.4 native RXData inspection: existing Route22 is Map016, 54x34, SHA256 0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b, not the handoff's 48x24 requirement. Four of six proposed source-anchored Route22 trigger/NPC coordinates have directionally blocked tiles (36,16; 36,18; 39,16; 39,18). Legacy v0.4 encounter event remains at (30,17). Do not install on this map without a reviewed rebase or replacement."
       ],
-      "blocker": "Reviewed 48x24 Route22 target map, collision/warp positions, first real HUMAN battle and save/reload remain unverified; source branches are merged."
+      "blocker": "Actual authorised v0.4 Route22 Map016 is 54x34, not the pinned 48x24; 4/6 source-anchored placements are blocked by native tiles. Requires reviewed native map/coordinate adaptation, plus HUMAN battle and save/reload. No guess-based placement."
     },
     {
       "id": "SE-018",
@@ -295,6 +297,9 @@
         "Verified plugin versions and sources, deterministic install manifest, no competing Ruby overrides",
         "Compile actual source-owned game PBS and scripts, run clean new game and save/restore on supported Essentials runtime",
         "Preserve original source and do not publish third-party game assets or copyrighted ROM"
+      ],
+      "evidence": [
+        "2026-10-31 original v0.4 ZIP recovered locally (SHA256 c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e), 7,675 members; native MapInfos, Tilesets, System and three target maps parsed. It contains an old scripted MACHOP named HUMAN at Crystal Map222; never accept this as genuine HUMAN. New private native audit script/tests on integration branch; licensed HnS map and plugins remain unverified, no compiled candidate."
       ]
     },
     {
