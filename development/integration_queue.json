@@ -3,7 +3,7 @@
   "project": "Shattered Essentials v21.1 plugin integration",
   "estimated_integration_completion_percent": 16,
   "measure": "Original plugin integration estimate remains a partial infrastructure indicator, NOT the full demo remake. Copilot SE-002 on PR #6; source rights, runtime compile, mobile playthrough and most demo events unverified.",
-  "max_parallel_active": 3,
+  "max_parallel_active": 4,
   "tasks": [
     {
       "id": "SE-001",
@@ -24,6 +24,9 @@
       "validation": [
         "manifest schema and dependency graph pass",
         "source attribution/permission review"
+      ],
+      "evidence": [
+        "PR #6 merged on main at 05e02a32; manifest validation and combined CI passed on main 6e2790da. Authoritative third-party licenses/versions remain unverified; task is not runtime complete."
       ]
     },
     {
@@ -56,7 +59,8 @@
         "Essentials compile and real JoiPlay runtime"
       ],
       "evidence": [
-        "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested."
+        "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested.",
+        "PR #11 merged on main at 8dbea4be (HUMAN Core v0.2.2); source-level battle/stamina tests and main combined CI passed. Real native battle, save/load, defensive type behavior and Android remain open."
       ]
     },
     {
@@ -151,7 +155,9 @@
         "Do not claim map is imported until actual Essentials runtime load and warp test"
       ],
       "evidence": [
-        "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN."
+        "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
+        "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified.",
+        "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed."
       ]
     },
     {
@@ -181,13 +187,14 @@
         "Authorised original xx0.77 PokéBacon map export inspected privately: 23 maps, 656 event markers (77 NPC, 156 triggers, 423 signs), 567 placed objects and 36 map links; no raw user project file or asset uploaded.",
         "Sanitised development/demo_parity_reference.json records 123 tagged references to 115 unique source events across 7 scene groups, map/warp coordinates and source addresses without original scripts/dialogue/graphics.",
         "scripts/extract_demo_parity.py + 10 new Python tests pass in GitHub Actions (19 total Python tests) and 5 Ruby tests/16 assertions pass; source event -> real RPG Maker XP event ID mapping and native playback remain OPEN.",
-        "Extractor now records source script control identifiers (set/clear flags, written vars, audio cues, movement and warp counts) without copying original event source; regeneration from original raw file is required to enrich the committed reference."
+        "Extractor now records source script control identifiers (set/clear flags, written vars, audio cues, movement and warp counts) without copying original event source; regeneration from original raw file is required to enrich the committed reference.",
+        "PR #12 merged on main at a128b6ca; sanitized parity anchors integrated, but source-to-native event identity and playable parity remain open."
       ]
     },
     {
       "id": "SE-016",
       "title": "Implement Johto collapse cinematic, Aipom key and persistent blocked entrance",
-      "status": "queued",
+      "status": "in_progress",
       "depends_on": [
         "SE-013",
         "SE-015",
@@ -197,7 +204,14 @@
         "Recreate timed tremors/roars/impacts, falling rock blocker and correct directional messages",
         "Aipom with shiny held key, facing/cry/exclamation, event interaction, item pickup and stable state",
         "Test revisit, interruptions, save/restore, no duplicated rewards or softlocks"
-      ]
+      ],
+      "evidence": [
+        "Draft PR SE-016 gate story: native RMXP event installer for verified south exit, six resumable sound beats, persistent Aipom key flag, original key-item PBS staging, Ruby synthetic map tests (10 tests/42 assertions) and Python PBS tests (4); in-engine and Android tests OPEN.",
+        "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified.",
+        "PR #14 merged on main at b35245b8; gate collapse/Aipom source and isolated tests integrated. Existing authorised v0.4 base stores AIPOM cry at Audio/SE/Cries/AIPOM.ogg; source-only fix under review, native scene remains unverified.",
+        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license."
+      ],
+      "blocker": "Aipom RMXP sprite now staged privately, but HnS asset redistribution rights, correct HnS gate tileset/metatile mapping, native Essentials compilation and scene/save/reload still required."
     },
     {
       "id": "SE-017",
@@ -218,9 +232,14 @@
         "Explicit target map/doorway/landing mapping required; no guessed warp destinations, no player landing on transfer triggers",
         "Python and Ruby unit tests added; native Essentials compile, collision/warp, save and Android evidence OPEN",
         "PR #15 (stacked on PR #13): six source-anchored native RMXP Rattata NPC/trigger events with one-time scatter, real WildBattle.start(:RATTATA,5) entry, Poké Ball battle rule, persistent victory-only state and retry on flee/loss/abort; synthetic 15 Ruby tests / 70 assertions passed locally.",
-        "PR #15 installer refuses unstaged, wrong-size, wrong-hash, occupied, partial/foreign Route22 maps; requires verified local sprite and reserved switch/variable IDs; no native battle, collision or Android validation yet."
+        "PR #15 installer refuses unstaged, wrong-size, wrong-hash, occupied, partial/foreign Route22 maps; requires verified local sprite and reserved switch/variable IDs; no native battle, collision or Android validation yet.",
+        "PR #13 world transfers merged at fc5a9d16 and PR #15 Route22 encounter merged at 0ee6e7e7; combined CI passed on main 6e2790da. Actual map collision, battle and save/reload not tested in Essentials.",
+        "2026-10-31 real v0.4 native RXData inspection: existing Route22 is Map016, 54x34, SHA256 0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b, not the handoff's 48x24 requirement. Four of six proposed source-anchored Route22 trigger/NPC coordinates have directionally blocked tiles (36,16; 36,18; 39,16; 39,18). Legacy v0.4 encounter event remains at (30,17). Do not install on this map without a reviewed rebase or replacement.",
+        "2026-10-31 PR #38 source repair: audited original v0.4 Map016 SHA256 0ec2a363..., 54x34; three candidate trigger tiles (27,16),(27,17),(27,18) form a tile-only cutline between the reception-gate approach and Viridian, with three unoccupied passable NPC positions. Replaced hard-coded 48x24 checks across Python/Ruby handoff; added source-digest-pinned transactional migration of legacy autorun event ID3 and static collision/scatter checks, with Ruby/Python regressions. Native Essentials playthrough NOT verified.",
+        "2026-10-31 PR #38 merged as 19bc9dff1db02776fa12c6ae29f49b40ab636058; source-level validate, synthetic-contract and handoff all passed on merged main. Exact native v0.4 legacy event ID3 hash-pinned migration, static 54x34 cutline and scatter validation integrated; real gameplay remains unverified.",
+        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license."
       ],
-      "blocker": "Map 3.41 Route22 must be faithfully staged and its event chokepoint/passability verified; PRs #11/#12/#13/#15 and battle dependencies must be integrated before native HUMAN fight and save/reload tests."
+      "blocker": "Rattata RMXP sprite now staged privately; actual mandatory HUMAN-vs-Rattata battle, native event migration, route transfer, save/reload, Android, and HnS asset licensing remain unverified."
     },
     {
       "id": "SE-018",
@@ -235,10 +254,10 @@
         "Smoke map transitions, NPC pathing and persisted story flags"
       ],
       "evidence": [
-        "Draft SE-018 PR: native RPG Maker XP entry/guard/Nidoran/arrival/rain/Center events and PokemonGlobal persisted state, 2-map transactional staged installer, source-marker checks, Ruby state/install/failure tests; not native Essentials compiled or Android-tested. Actual guard/Nidoran identities, licensed sprites, map IDs, paths and tile passability require source review.",
-        "Viridian isolated CI run 40951970699 passed on 8978646b: 14 Ruby tests / 74 assertions / 0 failures, including occupied-event refusal, stale backups, rollback of two map files, save-state persistence, and blocked NPC movement retry. General integration CI run 40951961883 also passed. Both are fixture/static evidence only."
+        "2026-10-31 private original v0.4 native Map010 inspection: Viridian City is 50x40 with 23 existing vanilla events, including Center door at (26,26) and SHATTERED arrival at (25,20). Draft PR #16 assumes 48x40 ROM-source geometry and will refuse native installation; a reviewed walled map, guard/Nidoran identities and collision-safe coordinates are needed before source adoption. No original RXData uploaded.",
+        "2026-10-31 PR #16 native-geometry repair branch: separate 48x40 ROM-source NPC anchor positions from explicitly reviewed native 50x40 target coordinates, native entrance review and source SHA. Added static Tilesets passage checks for every escort path/event tile, Center trigger and occupied-route collision, plus Ruby fixture tests. Original private Map010 SHA256 0fc83d0c1d55d9286727fc948759730d23d792b9e34524dbe6669f0076879b25, 23 events. This is source implementation only; actual walled Viridian, roles, sprites, gameplay, rain, save/reload and Android remain blocked."
       ],
-      "blocker": "Actual target Viridian and Center RMXP map IDs, approved NPC identities and walkable path/transfer coordinates, source-licensed sprites, native Essentials save/warp/rain test and Android validation are still open. Synthetic test fixture is not a playable map."
+      "blocker": "Source-only PR #16 updated for native 50x40 geometry and static collision; no approved walled Viridian map, guard/Nidoran roles or native playthrough. Do not merge as playable."
     },
     {
       "id": "SE-019",
@@ -268,6 +287,10 @@
         "HUMAN sprite, player genders, Aipom/Staryu/Vulpix/Exeggcute followers and battle/UI art render without palette corruption",
         "Gate impacts, roars, key cry, rain and background music do not overlap or leak maps",
         "Menus, follower spacing, turns and rain events survive save, map transition and mobile screen"
+      ],
+      "evidence": [
+        "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license.",
+        "2026-10-31 PR #39 merged at 364865b55027e512bf3c7eeb89151072c36205ed: asset-free HnS Aipom/Rattata PNG converter, private provenance SHA records and native sprite PNG preflight; merged-main validate, handoff and synthetic-contract all green. Actual character animation and game runtime still unverified."
       ]
     },
     {
@@ -287,6 +310,10 @@
         "Verified plugin versions and sources, deterministic install manifest, no competing Ruby overrides",
         "Compile actual source-owned game PBS and scripts, run clean new game and save/restore on supported Essentials runtime",
         "Preserve original source and do not publish third-party game assets or copyrighted ROM"
+      ],
+      "evidence": [
+        "2026-10-31 original v0.4 ZIP recovered locally (SHA256 c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e), 7,675 members; native MapInfos, Tilesets, System and three target maps parsed. It contains an old scripted MACHOP named HUMAN at Crystal Map222; never accept this as genuine HUMAN. New private native audit script/tests on integration branch; licensed HnS map and plugins remain unverified, no compiled candidate.",
+        "2026-10-31 original v0.4 ZIP rechecked locally: Game.ini uses Data/Scripts.rxdata; Plugins/v21.1 Hotfixes/meta.txt declares 1.0.3 (target 1.0.9), no licensed HnS gate mapping. PR #39 merged source-only, PR #40 under review adds strict source/output sprite SHA pins and atomic private writes. No native Essentials v21.1 build compiled or executed."
       ]
     },
     {
@@ -322,8 +349,67 @@
         "Original game remains intact, full dependency manifest and reproducible patch, regression evidence and asset rights verified",
         "No release marked integrated/complete without manual device and true game-engine execution"
       ]
+    },
+    {
+      "id": "SE-030",
+      "title": "Pin and install the reviewed HnS New Game spawn in native RPG::System",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-013"
+      ],
+      "validation": [
+        "Private System.rxdata baseline hash matches reviewed input",
+        "Native HnS tile passability and event occupancy checked",
+        "System.rxdata included in rollback and installed-file receipt",
+        "Actual native New Game spawn, movement and save/reload verified"
+      ],
+      "evidence": [
+        "PR #31: source-level handoff and native installer transaction changes; Python/Ruby fixture tests; native execution not yet verified",
+        "PR #31 commits 9b86e779 and 7c1a35cb: reject partial directional collision flags on any occupied start-tile layer, with floor and upper-layer Ruby regression cases; both final-head Actions checks 41043252464 and 41043252551 passed on 7c1a35cb. This is source/synthetic verification only.",
+        "Private full and Android Lite v0.4 source archives located in Library on 2026-10-30, but both raw-byte materialisation attempts returned 'does not have an authorized raw-byte materialization path'; no native game candidate assembled.",
+        "PR #33 merged to main at 51314e6b65aa99f20220aa9c038e961e734f59b1; preserves Aipom cry-path regression coverage removed by earlier conflict resolution. Source CI on PR head ea19bd05: validate 41050376695 and synthetic-contract 41050376678 both passed; combined main synthetic contract 41050453615 and plugins CI 41050453381 passed. Native runtime, actual spawn tile and save/reload remain unverified."
+      ],
+      "blocker": "Requires rights-cleared v0.4 System.rxdata with verified hash, licensed HnS tileset mapping, independently attested native spawn tile and a working Essentials v21.1 runtime for actual movement, collision and save/reload. Earlier Library raw-byte materialisation was not authorised."
+    },
+    {
+      "id": "SE-020A",
+      "title": "Integrate six-slot HUMAN equipment and battle-only techniques into the canonical staged game",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-004"
+      ],
+      "validation": [
+        "Real merged Shattered Core v0.2.3 + equipment Ruby integration test passes",
+        "Native PBS item/move IDs preflight before opt-in source staging",
+        "Native Essentials compiled HUMAN battle: gear move selection, one stamina debit, companion PP and item ownership",
+        "Save/close/reload preserves equipment but not temporary battler moves"
+      ],
+      "evidence": [
+        "PR #25: in-repo adapter, Ruby fixture tests and merged Core v0.2.3 compatibility regression; not native gameplay",
+        "PR #25: opt-in stage_essentials --include-equipment fails closed when gear/move PBS IDs are missing and preserves original project"
+      ],
+      "blocker": "Default gear item PBS definitions and rights-cleared base not verified in native project; no actual compiled Essentials battle, equipment UI, item ownership or save/reload evidence."
+    },
+    {
+      "id": "SE-019B",
+      "title": "Integrate retryable non-stacking Beedrill raid source with real HUMAN Core",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-004",
+        "SE-018"
+      ],
+      "evidence": [
+        "PR #19 raid source and isolated Ruby tests rebased onto canonical main with genuine Core compatibility regression, not native engine validation",
+        "Pending source CI and native Viridian map/quest acceptance"
+      ],
+      "blocker": "Requires reviewed Viridian 48x40 map, sprites, native event installation, actual HUMAN battle, save/reload and Android execution. Source-only Ruby tests cannot close gameplay gates."
     }
   ],
   "estimated_full_demo_completion_percent": 4,
-  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%."
+  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% represents source audit, safe staging and isolated implementation work, not native Essentials or Android verification. Plugin infrastructure indicator remains 16%.",
+  "last_verified_source_main_sha": "49ef56bd4e3e145d38db58005950003d1eb27b9c",
+  "last_verified_source_ci": [
+    41056926797,
+    41056926617
+  ]
 }
