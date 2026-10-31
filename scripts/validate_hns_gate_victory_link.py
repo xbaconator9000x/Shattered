@@ -105,8 +105,10 @@ def check(gate, road):
                 abs(target["y"] - exit_warp["y"]) == 1,
                 "gate-to-B2F landing must be adjacent to the source return warp")
         walkable(b2f, target["x"], target["y"])
-    source_gate_index = integer(int(exit_warp["source_destination_warp_id"]),
-                                "source gate warp index")
+    source_warp_id = exit_warp.get("source_destination_warp_id")
+    require(type(source_warp_id) is str and re.fullmatch(r"(?:0|[1-9][0-9]*)", source_warp_id),
+            "source gate warp index must be a canonical ASCII decimal string")
+    source_gate_index = integer(int(source_warp_id), "source gate warp index")
     require(source_gate_index < len(gate_warps), "source gate warp index out of range")
     expected_gate_warp = gate_warps[source_gate_index]
     require(expected_gate_warp["direction"] == "north",
