@@ -71,7 +71,10 @@ class HNSWorldInstallTest < Minitest::Test
 
   def artifacts
     Dir.glob(File.join(@root, "Data", "*.shattered-hns-world.*")) +
-      Dir.glob(File.join(@root, "Data", ".shattered-hns-world-install.lock"))
+      [ShatteredHNSWorldInstall::LOCK, ShatteredHNSGateImport::LOCK_PATH,
+     ShatteredHNSVictoryRoadInstall::LOCK].select do |path|
+      File.exist?(File.join(@root, path))
+    end.map { |path| File.join(@root, path) }
   end
 
   def assert_unchanged
@@ -110,6 +113,30 @@ class HNSWorldInstallTest < Minitest::Test
     assert_equal [0, 302, 30, 46, 2, 0], gate.events[3].pages[0].list[0].parameters
     assert_equal [0, 303, 10, 2, 2, 0],
                  load_data(File.join(@root, "Data/Map302.rxdata")).events[1].pages[0].list[0].parameters
+    assert_empty artifacts
+  end
+
+  def test_combined_transaction_holds_both_standalone_locks_through_commit
+    observed = false
+    original_rename = File.method(:rename)
+    File.stub(:rename, lambda { |from, to|
+      if from == "Data/Tilesets.rxdata"
+        observed = true
+        Dir.chdir(@root) do
+          [ShatteredHNSWorldInstall::LOCK, ShatteredHNSGateImport::LOCK_PATH,
+           ShatteredHNSVictoryRoadInstall::LOCK].each do |lock|
+            assert File.file?(lock), "Combined transaction must hold #{lock}"
+            assert_raises(Errno::EEXIST) do
+              File.open(lock, File::WRONLY | File::CREAT | File::EXCL) {}
+            end
+          end
+        end
+      end
+      original_rename.call(from, to)
+    }) do
+      assert_equal [303, 300, 301, 302], install_world
+    end
+    assert observed, "Native commit never started"
     assert_empty artifacts
   end
 
