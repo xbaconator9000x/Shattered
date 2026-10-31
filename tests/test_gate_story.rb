@@ -211,7 +211,7 @@ class GateInstallerTest < Minitest::Test
     %w[rum1 rum2 rum3 rum4 rum5 rum6 cry roar].each { |n| File.write("Audio/SE/#{n}.ogg", "private") }
     File.write("Graphics/Characters/Aipom.png", "private")
     save_data({10=>RPG::MapInfo.new("Reception Gate")}, "Data/MapInfos.rxdata")
-    save_data({1=>RPG::Tileset.new}, "Data/Tilesets.rxdata")
+    save_data([nil, RPG::Tileset.new], "Data/Tilesets.rxdata")
     south = RPG::Event.new(11,19)
     south.id = 1
     south.name = "Exit south"
@@ -239,7 +239,7 @@ class GateInstallerTest < Minitest::Test
     Dir.chdir(@old)
     FileUtils.remove_entry(@tmp)
   end
-  def test_installs_real_native_script_events
+  def test_native_tilesets_array_is_preserved_byte_for_byte\n    original_tilesets = File.binread("Data/Tilesets.rxdata")\n    assert_instance_of Array, load_data("Data/Tilesets.rxdata")\n    result = ShatteredGateStory.install(@config)\n    assert_equal 3, result.fetch("installed").length\n    assert_equal original_tilesets, File.binread("Data/Tilesets.rxdata")\n    assert_instance_of Array, load_data("Data/Tilesets.rxdata")\n  end\n\n  def test_installs_real_native_script_events
     result = ShatteredGateStory.install(@config)
     assert_equal 3, result["installed"].length
     map = load_data("Data/Map010.rxdata")
