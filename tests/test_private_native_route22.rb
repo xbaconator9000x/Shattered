@@ -76,6 +76,41 @@ class PrivateNativeRoute22Test < Minitest::Test
     assert_raises(RuntimeError) { ShatteredPrivateRoute22.original_script_id_conflicts(scripts.take(401)) }
   end
 
+  def test_mandatory_rattata_cutline_blocks_crystal_and_hns_gate_landings
+    width = 54
+    height = 34
+    depth = 3
+    cells = Array.new(width * height * depth, 384) # blocked terrain
+    [17, 18].each do |y|
+      (24..32).each { |x| cells[x + width * y] = 385 } # corridor
+    end
+    map = RPG::Map.allocate
+    map.width = width
+    map.height = height
+    map.tileset_id = 1
+    map.data = Table._load([3, width, height, depth, cells.length].pack("V5") + cells.pack("s<*"))
+    passage = Array.new(512, 15)
+    passage[385] = 0
+    tileset = RPG::Tileset.allocate
+    tileset.passages = Table._load([1, 512, 1, 1, 512].pack("V5") + passage.pack("s<*"))
+    tilesets = [nil, tileset]
+    exit_point = [32, 17]
+    current = ShatteredPrivateRoute22.config("Rattata")["event_positions"]["triggers"]
+    previous = [[27, 16], [27, 17], [27, 18]]
+    assert_equal [[31, 17], [31, 18], [32, 18]], current
+    for entry in [[30, 17], [24, 17]]
+      report = ShatteredNativeAudit.cutline_report(
+        map, tilesets, entry: entry, exit_point: exit_point, triggers: current)
+      assert report["entry_reaches_exit"]
+      refute report["bypass_without_trigger"]
+      assert report["static_cutline_candidate"]
+    end
+    old_report = ShatteredNativeAudit.cutline_report(
+      map, tilesets, entry: [30, 17], exit_point: exit_point, triggers: previous)
+    assert old_report["bypass_without_trigger"], "old west-side cutline allowed a direct Viridian bypass"
+    refute old_report["static_cutline_candidate"]
+  end
+
   def test_unmarked_or_modified_private_project_is_rejected
     Dir.mktmpdir do |dir|
       assert_raises(RuntimeError) do
