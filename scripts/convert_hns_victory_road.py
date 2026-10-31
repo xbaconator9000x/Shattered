@@ -230,7 +230,10 @@ def verify_private_tilesets(bundle, tilesets_dir):
         ids = {tile for layer in floor["layers"] for tile in layer if tile >= 384}
         if ids and max(ids) >= 384 + available_tiles:
             raise ValueError(f"{name}: tile ID {max(ids)} exceeds image capacity ({available_tiles} tiles)")
-        checked[name] = {"sha256": hashlib.sha256(raw).hexdigest(),
+        actual_sha = hashlib.sha256(raw).hexdigest()
+        if floor["target"].get("tileset_sha256") != actual_sha:
+            raise ValueError(f"{name}: private tileset SHA-256 differs from generated mapping")
+        checked[name] = {"sha256": actual_sha,
                          "dimensions": [width, height], "used_tiles": len(ids)}
     return checked
 
