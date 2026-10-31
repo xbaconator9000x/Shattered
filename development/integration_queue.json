@@ -61,7 +61,8 @@
       "evidence": [
         "Copilot PR #11 adds HUMAN lifecycle/stamina/battle hooks; PR claims 18 Ruby tests/131 assertions, but PR CI is action_required and native runtime remains OPEN; targeted Struggle softlock review requested.",
         "PR #11 merged on main at 8dbea4be (HUMAN Core v0.2.2); source-level battle/stamina tests and main combined CI passed. Real native battle, save/load, defensive type behavior and Android remain open.",
-        "2026-10-31 actual private Essentials v21.1 source staged from main 3d645564, native-format PluginScripts.rxdata with Shattered Core 0.2.3 compiled via guarded compiler and launched in official mkxp-z Linux under Xvfb; real title rendered. A separate instrumented diagnostic confirmed Core Ruby eval executes in the actual engine. HUMAN species PBS compilation, first battle and save/reload NOT verified."
+        "2026-10-31 actual private Essentials v21.1 source staged from main 3d645564, native-format PluginScripts.rxdata with Shattered Core 0.2.3 compiled via guarded compiler and launched in official mkxp-z Linux under Xvfb; real title rendered. A separate instrumented diagnostic confirmed Core Ruby eval executes in the actual engine. HUMAN species PBS compilation, first battle and save/reload NOT verified.",
+        "2026-10-31 private native mkxp-z: HUMAN species compiled by Essentials debug PBS compiler and actual New Game party contained one :HUMAN; Shattered.human? returned true. Native save/Continue retained HUMAN across process restart. First real HUMAN battle, stamina, defensive type, capture and Android remain unverified. Evidence development/native_linux_full_plugin_runtime_2026-10-31.json."
       ]
     },
     {
@@ -360,7 +361,8 @@
         "No release marked integrated/complete without manual device and true game-engine execution"
       ],
       "evidence": [
-        "2026-10-31 official mkxp-z Linux source-staged title smoke and Core eval marker observed; not the required Android JoiPlay/NaviaXP playthrough, New Game, HUMAN battle or save/reload. Exact private hashes and runtime conditions in development/native_linux_runtime_evidence_2026-10-31.json."
+        "2026-10-31 official mkxp-z Linux source-staged title smoke and Core eval marker observed; not the required Android JoiPlay/NaviaXP playthrough, New Game, HUMAN battle or save/reload. Exact private hashes and runtime conditions in development/native_linux_runtime_evidence_2026-10-31.json.",
+        "2026-10-31 actual native mkxp-z New Game and save/Continue diagnostic now verified with HUMAN party; no battle, route quest, HnS gate, normal save-menu or Android acceptance. See development/native_linux_full_plugin_runtime_2026-10-31.json."
       ]
     },
     {
@@ -456,16 +458,17 @@
         "2026-10-31 PR #44 merged as 3d645564089cd7cabb258d523a5eadb57d7a8165: rights-safe source-only exact-SHA artifact 13018303506; SHA-256 verified and staged original v0.4 privately with HUMAN PBS appended.",
         "2026-10-31 PR #45 merged as 2d8381d5436747a3935082e6e88abe30fccb340c: guarded local native-format plugin archive compiler, six Ruby tests/26 assertions, GitHub combined CI green; actual private stage compiler output sha256 24f8742ae6c960b5aa9a15b8406c68a19e7bc4ede7a1e209d8f7428348702ad2.",
         "Official mkxp-z Linux artifact 11582675594 launched exact source-staged private project with Mesa llvmpipe/Xvfb/OpenAL null; title rendered. Instrumented Core plugin eval marker observed in separate diagnostic run. Screenshots/logs and binary/game hashes retained privately; sanitised manifest in development/native_linux_runtime_evidence_2026-10-31.json.",
-        "2026-10-31 PR #47 branch fix/native-runtime-only-plugin-compilation-20261031: concrete native startup repair separates offline-only RMXP installers from compiled runtime scripts via strict allowlist, refuses unexpected files/top-level requires, removes Murkrow JSON/Base64 event runtime dependency, defers Raid Digest to offline installer; Ruby regression tests added. CI and real full-plugin mkxp-z launch still pending; this is NOT native gameplay acceptance."
+        "2026-10-31 PR #47 branch fix/native-runtime-only-plugin-compilation-20261031: concrete native startup repair separates offline-only RMXP installers from compiled runtime scripts via strict allowlist, refuses unexpected files/top-level requires, removes Murkrow JSON/Base64 event runtime dependency, defers Raid Digest to offline installer; Ruby regression tests added. CI and real full-plugin mkxp-z launch still pending; this is NOT native gameplay acceptance.",
+        "2026-10-31 PR #49 actual private Linux runtime: exact source-staged v0.4, eight compiled Shattered gameplay plugins, offline installer isolation (nine files moved out of Plugins) and 222 case-safe map aliases. Official mkxp-z title and all eight plugin Ruby eval markers observed. Actual Essentials debug PBS compilation produced HUMAN species.dat; New Game party was [HUMAN] and Shattered.human? true. Native Game.save diagnostic wrote HUMAN save, engine restarted, actual Continue menu reloaded HUMAN. Original Scripts.rxdata and uninstrumented PluginScripts.rxdata restored byte-for-byte. GitHub PR-head CI 41152649865 passed; source artifact 41152649980 passed. Source-only evidence in development/native_linux_full_plugin_runtime_2026-10-31.json. This does NOT verify normal Save UI, HUMAN battle, gate parity, Route22, Android or full demo."
       ],
-      "blocker": "Full-plugin native mkxp-z startup must be retested after PR #47 source/CI review; original runtime failed at require json from offline installer. HUMAN PBS compilation, New Game input, actual HUMAN battle, save/reload, faithful HnS gate and Android still unverified. Hotfixes 1.0.9 and reviewed HnS art/map inputs outstanding."
+      "blocker": "First native title, HUMAN New Game and instrumented save/Continue are now observed. Remaining: first real HUMAN battle, original gate replacement, Aipom/Route22 installed events, normal save-menu flow and Android. Rights-reviewed HnS gate map/tileset and third-party plugin archives remain missing."
     }
   ],
-  "estimated_full_demo_completion_percent": 4,
-  "full_demo_scope": "Conservative estimate for one COMPLETE playable remake; 4% reflects integrated source, verified private native project staging, native-format Core archive and actual mkxp-z title/diagnostic Core eval only. New Game, battles, save/reload, gate parity and Android are unverified. Plugin infrastructure indicator remains separately 16%.",
-  "last_verified_source_main_sha": "2d8381d5436747a3935082e6e88abe30fccb340c",
+  "estimated_full_demo_completion_percent": 5,
+  "full_demo_scope": "Conservative 5% for ONE COMPLETE playable remake: actual Linux mkxp-z loaded eight Shattered runtime plugins, Essentials debug compiled HUMAN species, New Game created real HUMAN and native diagnostic save/Continue preserved HUMAN across restart. Faithful HnS gate, actual battles, quests, normal Save UI, Android and licensed assets still open. Separate original plugin infrastructure estimate remains 16%.",
+  "last_verified_source_main_sha": "529a4568ae3f722f888dda037e6800773ef23238",
   "last_verified_source_ci": [
-    41141282550,
-    41141282556
+    41146137390,
+    41146137494
   ]
 }
