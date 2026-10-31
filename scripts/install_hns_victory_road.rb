@@ -49,7 +49,7 @@ module ShatteredHNSVictoryRoadInstall
     path = File.join("Graphics", "Tilesets", filename)
     regular!(path)
     raise "Missing reviewed tileset SHA-256" unless expected_sha.is_a?(String) &&
-      /\\A[0-9a-f]{64}\\z/.match?(expected_sha)
+      /\A[0-9a-f]{64}\z/.match?(expected_sha)
     raise "Tileset PNG differs from reviewed SHA-256" unless Digest::SHA256.file(path).hexdigest == expected_sha
     header = File.open(path, "rb") { |f| f.read(24) }
     raise "Invalid RMXP tileset PNG #{path}" unless header && header.bytesize == 24 &&
