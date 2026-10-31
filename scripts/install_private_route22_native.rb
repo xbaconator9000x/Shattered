@@ -107,6 +107,27 @@ module ShatteredPrivateRoute22
     map_path = project.join("Data/Map016.rxdata")
     raise "Original v0.4 Map016 source SHA differs" unless map_path.file? &&
       !map_path.symlink? && Digest::SHA256.file(map_path).hexdigest == SOURCE_MAP_SHA
+    # Gate Map222 transfers to Route22 (30,17), while the Viridian warp is
+    # at (32,17). Previous west-side triggers were completely bypassable.
+    # Static tile-only reachability is necessary but not gameplay proof.
+    route_map = load_data(map_path.to_s)
+    viridian = route_map.events[4]
+    warp = viridian && viridian.pages.first.list.find { |command| command.code == 201 }
+    raise "Reviewed Viridian warp differs" unless viridian &&
+      [viridian.x, viridian.y] == [32, 17] &&
+      warp && warp.parameters == [0, 10, 25, 20, 2, 0]
+    tilesets_path = project.join("Data/Tilesets.rxdata")
+    raise "Missing or unsafe native tilesets" unless tilesets_path.file? &&
+      !tilesets_path.symlink?
+    tilesets = load_data(tilesets_path.to_s)
+    [[30, 17], [24, 17]].each do |entry|
+      cutline = ShatteredNativeAudit.cutline_report(
+        route_map, tilesets, entry: entry, exit_point: [32, 17],
+        triggers: config(sprite)["event_positions"]["triggers"]
+      )
+      raise "Route22 encounter can be bypassed from #{entry.inspect}" unless
+        cutline["static_cutline_candidate"] == true
+    end
     raise "Missing local Rattata sheet" unless
       project.join("Graphics/Characters/#{sprite}.png").file?
     system = load_data(project.join("Data/System.rxdata").to_s)
@@ -158,6 +179,7 @@ module ShatteredPrivateRoute22
       "installed_map_sha256" => Digest::SHA256.file(project.join("Data/Map016.rxdata")).hexdigest,
       "installed" => result["installed"], "switch_ids" => SWITCHES,
       "outcome_variable" => VARIABLE, "native_map_serialization_verified" => true,
+      "static_cutline_from_gate_and_hns_entry_verified" => true,
       "runtime_verified" => false, "save_reload_verified" => false,
       "android_verified" => false, "artwork_distributable" => false
     }
