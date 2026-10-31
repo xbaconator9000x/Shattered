@@ -7,8 +7,10 @@ on:
       - 'scripts/render_hns_tiles.py'
       - 'scripts/install_hns_gate_victory_road.rb'
       - 'scripts/convert_hns_reception_gate.py'
+      - 'scripts/resolve_hns_gate_warps.py'
       - 'essentials/Plugins/Shattered HnS Gate/001_Import.rb'
       - 'tests/test_hns_gate_conversion.py'
+      - 'tests/test_resolve_hns_gate_warps.py'
       - 'tests/test_hns_gate_import.rb'
       - 'tests/test_hns_victory_road*'
       - 'tests/test_render_hns_tiles.py'
@@ -23,8 +25,10 @@ on:
       - 'scripts/render_hns_tiles.py'
       - 'scripts/install_hns_gate_victory_road.rb'
       - 'scripts/convert_hns_reception_gate.py'
+      - 'scripts/resolve_hns_gate_warps.py'
       - 'essentials/Plugins/Shattered HnS Gate/001_Import.rb'
       - 'tests/test_hns_gate_conversion.py'
+      - 'tests/test_resolve_hns_gate_warps.py'
       - 'tests/test_hns_gate_import.rb'
       - 'tests/test_hns_victory_road*'
       - 'tests/test_render_hns_tiles.py'
@@ -52,7 +56,7 @@ jobs:
         run: python3 -m pip install 'Pillow==12.0.0'
       - name: Compile all Victory Road Python modules
         run: |
-          python3 -m py_compile scripts/render_hns_tiles.py scripts/convert_hns_victory_road.py scripts/audit_hns_victory_road.py scripts/convert_hns_reception_gate.py
+          python3 -m py_compile scripts/render_hns_tiles.py scripts/convert_hns_victory_road.py scripts/audit_hns_victory_road.py scripts/convert_hns_reception_gate.py scripts/resolve_hns_gate_warps.py
       - name: Source warp and tile conversion tests (synthetic only)
         run: python3 -m unittest discover -s tests -p 'test_hns_victory_road*.py' -v
       - name: GBA 8px indexed tiles to RMXP 32px render tests (synthetic only)
@@ -64,6 +68,7 @@ jobs:
       - name: Reception Gate conversion and native importer regression tests
         run: |
           python3 -m unittest discover -s tests -p 'test_hns_gate_conversion.py' -v
+          python3 -m unittest discover -s tests -p 'test_resolve_hns_gate_warps.py' -v
           ruby tests/test_hns_gate_import.rb
       - name: Guarded native RMXP importer tests (synthetic Marshal fixtures only)
         run: |
