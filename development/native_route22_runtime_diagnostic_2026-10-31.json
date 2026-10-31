@@ -52,5 +52,67 @@
     "core_script_count": 402,
     "reserved_id_static_conflicts": 0,
     "production_ids_native_runtime_verified": false
-  }
+  },
+  "original_gate_route22_bypass_found": {
+    "source_map222_east_exit_event_id": 7,
+    "source_map222_east_exit_target": [
+      0,
+      16,
+      30,
+      17,
+      2,
+      0
+    ],
+    "source_route22_viridian_event_id": 4,
+    "source_route22_viridian_target": [
+      0,
+      10,
+      25,
+      20,
+      2,
+      0
+    ],
+    "source_route22_viridian_position": [
+      32,
+      17
+    ],
+    "unsafe_prior_triggers": [
+      [
+        27,
+        16
+      ],
+      [
+        27,
+        17
+      ],
+      [
+        27,
+        18
+      ]
+    ],
+    "prior_triggers_bypassable_from_original_gate": true,
+    "reviewed_trigger_cutline": [
+      [
+        31,
+        17
+      ],
+      [
+        31,
+        18
+      ],
+      [
+        32,
+        18
+      ]
+    ],
+    "original_map016_static_tile_reachability": {
+      "from_crystal_gate_30_17_to_viridian_32_17": true,
+      "from_hns_candidate_24_17_to_viridian_32_17": true,
+      "crystal_bypass_with_reviewed_cutline": false,
+      "hns_bypass_with_reviewed_cutline": false
+    },
+    "source_level_only": true,
+    "full_native_runtime_retest_pending": true
+  },
+  "production_ids_native_runtime_verified": false
 }
