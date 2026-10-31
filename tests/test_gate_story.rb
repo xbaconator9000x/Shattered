@@ -357,6 +357,18 @@ class GateInstallerTest < Minitest::Test
     assert_equal original, File.binread("Data/Map010.rxdata")
   end
 
+  def test_rejects_star_only_ground_without_walkable_floor
+    map = load_data("Data/Map010.rxdata")
+    map.data[9, 11, 0] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[3] = 0x10
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+
   def test_accepts_passable_upper_tile_over_walkable_ground
     map = load_data("Data/Map010.rxdata")
     map.data[9, 11, 1] = 3
