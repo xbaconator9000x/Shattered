@@ -72,6 +72,7 @@ class VictoryRoadInstallTest < Minitest::Test
                      "tileset_name" => "ReviewedCave", "tileset_image" => "ReviewedCave.png",
                      "tileset_sha256" => @reviewed_tileset_sha},
         "layers" => [Array.new(w * h, 384), Array.new(w * h, 0), Array.new(w * h, 0)],
+        "source_collision" => Array.new(w * h, 0),
         "tileset_tables" => {"0" => [0, 0, 0], "384" => [0, 0, 0]},
         "warps" => []
       }
