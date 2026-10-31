@@ -1,0 +1,34 @@
+name: Shattered HGSS Victory Road native import tests
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/*hns_victory_road*'
+      - 'tests/test_hns_victory_road*'
+      - '.github/workflows/victory-road-ci.yml'
+  pull_request:
+    paths:
+      - 'scripts/*hns_victory_road*'
+      - 'tests/test_hns_victory_road*'
+      - '.github/workflows/victory-road-ci.yml'
+  workflow_dispatch:
+concurrency:
+  group: shattered-victory-road-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Source warp and tile conversion tests (synthetic only)
+        run: python3 -m unittest discover -s tests -p 'test_hns_victory_road*.py' -v
+      - name: Guarded native RMXP importer tests (synthetic Marshal fixtures only)
+        run: |
+          ruby -c scripts/install_hns_victory_road.rb
+          ruby tests/test_hns_victory_road_install.rb
