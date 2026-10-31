@@ -450,6 +450,12 @@ class ShatteredNativeHandoffTest < Minitest::Test
     end
   end
 
+  def test_initial_slice_calls_gate_story_without_tileset_database_replacement
+    template = File.read(File.expand_path("../scripts/templates/shattered_initial_slice_installer.rb", __dir__))
+    assert_match(/^\s+results << call_api\("pbInstallShatteredGateStory",/, template)
+    refute_match(/with_tileset_hash_view/, template)
+  end
+
   def test_native_installer_does_not_include_tileset_hash_rewrite_shim
     refute_respond_to ShatteredInitialSlice, :with_tileset_hash_view
   end
