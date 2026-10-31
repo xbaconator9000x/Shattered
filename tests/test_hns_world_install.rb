@@ -280,4 +280,37 @@ class HNSWorldInstallTest < Minitest::Test
     assert_equal "do not overwrite", File.read(path)
     @original.each { |name, bytes| assert_equal bytes, File.binread(File.join(@root, name)) }
   end
+
+  def test_corrupt_staged_map_is_rejected_before_any_native_commit
+    original_size = File.method(:size)
+    injected = false
+    File.stub(:size, lambda { |path|
+      if !injected && path.to_s.include?("Map303.rxdata.shattered-hns-world.tmp")
+        File.binwrite(path, "not a native RXData map")
+        injected = true
+      end
+      original_size.call(path)
+    }) do
+      assert_raises(StandardError) { install_world }
+    end
+    assert injected, "Corruption was not injected into the staged Gate map"
+    assert_unchanged
+  end
+
+  def test_wrong_native_object_type_is_rejected_before_commit
+    original_size = File.method(:size)
+    injected = false
+    File.stub(:size, lambda { |path|
+      if !injected && path.to_s.include?("Map303.rxdata.shattered-hns-world.tmp")
+        File.binwrite(path, Marshal.dump([]))
+        injected = true
+      end
+      original_size.call(path)
+    }) do
+      error = assert_raises(RuntimeError) { install_world }
+      assert_match(/wrong native object type/, error.message)
+    end
+    assert injected, "Wrong-type map was not injected"
+    assert_unchanged
+  end
 end
