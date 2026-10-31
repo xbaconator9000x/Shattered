@@ -450,27 +450,7 @@ class ShatteredNativeHandoffTest < Minitest::Test
     end
   end
 
-  def test_tileset_hash_view_restores_exact_array_bytes_even_on_error
-    Dir.mktmpdir("shattered-tileset-view") do |directory|
-      original_directory = Dir.pwd
-      Dir.chdir(directory)
-      Dir.mkdir("Data")
-      original = Marshal.dump([nil, "template", "gate"])
-      File.binwrite("Data/Tilesets.rxdata", original)
-      assert_raises(RuntimeError) do
-        ShatteredInitialSlice.with_tileset_hash_view do
-          assert_equal({1 => "template", 2 => "gate"}, load_data("Data/Tilesets.rxdata"))
-          raise "synthetic gate installer error"
-        end
-      end
-      assert_equal original, File.binread("Data/Tilesets.rxdata")
-      refute File.exist?("Data/Tilesets.rxdata.shattered_initial_slice_view.tmp")
-    ensure
-      Dir.chdir(original_directory)
-    end
-  end
-
-  def test_interrupted_transaction_is_never_reported_as_success
+  def test_native_installer_does_not_include_tileset_hash_rewrite_shim\n    refute_respond_to ShatteredInitialSlice, :with_tileset_hash_view\n  end\n\n  def test_interrupted_transaction_is_never_reported_as_success
     Dir.mktmpdir("shattered-native-interrupted") do |directory|
       original_directory = Dir.pwd
       Dir.chdir(directory)
