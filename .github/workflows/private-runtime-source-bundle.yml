@@ -4,6 +4,9 @@ on:
   push:
     paths:
       - '.github/workflows/private-runtime-source-bundle.yml'
+      - 'scripts/build_private_native_candidate.py'
+      - 'scripts/stage_essentials.py'
+      - 'tests/test_private_native_candidate.py'
       - 'scripts/compile_private_plugins.rb'
       - 'tests/test_private_plugin_compiler.rb'
       - 'scripts/finalize_private_runtime.rb'
