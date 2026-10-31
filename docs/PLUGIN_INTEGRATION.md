@@ -51,7 +51,10 @@ python3 scripts/validate_integration.py
 python3 -m unittest discover -s tests -v
 ruby tests/test_shattered_core.rb
 python3 scripts/stage_essentials.py --project '/path/to/Essentials FRLG' --output '/path/to/Shattered-Essentials-staged'
-ruby scripts/compile_private_plugins.rb --project '/path/to/Shattered-Essentials-staged' --plugin 'Shattered Core'\n# For the eight integrated gameplay modules, repeat --plugin NAME for each module.\nruby scripts/finalize_private_runtime.rb --project '/path/to/Shattered-Essentials-staged'\npython3 scripts/prepare_linux_map_aliases.py --project '/path/to/Shattered-Essentials-staged'  # Linux only
+ruby scripts/compile_private_plugins.rb --project '/path/to/Shattered-Essentials-staged' --plugin 'Shattered Core'
+# For the eight integrated gameplay modules, repeat --plugin NAME for each module.
+ruby scripts/finalize_private_runtime.rb --project '/path/to/Shattered-Essentials-staged'
+python3 scripts/prepare_linux_map_aliases.py --project '/path/to/Shattered-Essentials-staged'  # Linux only
 ```
 
 The private native-format compiler above handles only plugin script archives. Run actual Essentials debug PBS/map compilation, **start a NEW game**, and independently test on JoiPlay or NaviaXP. The 2026-10-31 Linux mkxp-z private probe has now loaded all eight Shattered gameplay modules, executed native debug PBS compilation of HUMAN, entered New Game with a genuine HUMAN party member, and verified native Game.save/Continue across process restart. Save was initiated by a temporary **private diagnostic**, not the normal save menu. The original compiled scripts were restored. See `development/native_linux_full_plugin_runtime_2026-10-31.json` for exact hashes. **HnS gate parity, first HUMAN battle, normal Save UI, quest events and Android remain unverified.**
