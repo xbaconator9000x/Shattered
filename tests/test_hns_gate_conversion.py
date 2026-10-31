@@ -1,4 +1,5 @@
 import json
+from unittest import mock
 from pathlib import Path
 import struct
 import sys
@@ -6,7 +7,8 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-from convert_hns_reception_gate import convert, inspect_source
+from convert_hns_reception_gate import (convert, inspect_source, git_blob_sha1,
+                                         PINNED_GATE_BLOBS)
 
 
 class ReceptionGateConversionTest(unittest.TestCase):
@@ -74,8 +76,32 @@ class ReceptionGateConversionTest(unittest.TestCase):
         }
         self.mapping_json.write_text(json.dumps(self.mapping))
 
+    def test_production_conversion_refuses_lookalike_gate_source(self):
+        # Same geometry, map ID and warp layout are insufficient to prove HnS
+        # provenance. Production conversion must reject a synthetic map.
+        with self.assertRaisesRegex(ValueError, "not the pinned HnS source Git blob"):
+            inspect_source(self.map_json, self.layouts_json, self.map_bin)
+        with self.assertRaisesRegex(ValueError, "not the pinned HnS source Git blob"):
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+
+    def test_exact_git_blob_pins_accept_then_detect_modified_source(self):
+        fixture_pins = {
+            "map": git_blob_sha1(self.map_json),
+            "layouts": git_blob_sha1(self.layouts_json),
+            "blockdata": git_blob_sha1(self.map_bin),
+        }
+        with mock.patch.dict(PINNED_GATE_BLOBS, fixture_pins):
+            source = inspect_source(self.map_json, self.layouts_json, self.map_bin)
+            self.assertEqual(len(source["warps"]), 5)
+            converted = convert(self.map_json, self.layouts_json, self.map_bin,
+                                self.mapping_json)
+            self.assertEqual(converted["dimensions"]["width"], 22)
+            self.map_bin.write_bytes(self.map_bin.read_bytes()[:-2] + b"\x00\x00")
+            with self.assertRaisesRegex(ValueError, "blockdata: not the pinned HnS source"):
+                inspect_source(self.map_json, self.layouts_json, self.map_bin)
+
     def test_reads_actual_geometry_and_named_exit_coordinates(self):
-        source = inspect_source(self.map_json, self.layouts_json, self.map_bin)
+        source = inspect_source(self.map_json, self.layouts_json, self.map_bin, verify_source=False)
         self.assertEqual((22, 21), (source["layout"]["width"], source["layout"]["height"]))
         self.assertEqual(["8:1:0"], source["required_mapping_keys"])
         self.assertEqual([
@@ -87,7 +113,7 @@ class ReceptionGateConversionTest(unittest.TestCase):
         ], [(w["direction"], w["x"], w["y"]) for w in source["warps"]])
 
     def test_decodes_blockdata_to_three_layers_and_table_data(self):
-        output = convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+        output = convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json, verify_source=False)
         self.assertEqual([462, 462, 462], [len(layer) for layer in output["layers"]])
         self.assertEqual([384] * 462, output["layers"][0])
         self.assertEqual([0] * 462, output["layers"][1])
@@ -106,12 +132,12 @@ class ReceptionGateConversionTest(unittest.TestCase):
         self.mapping["target"].pop("tileset_sha256")
         self.mapping_json.write_text(json.dumps(self.mapping))
         with self.assertRaisesRegex(ValueError, "requires a SHA-256"):
-            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json, verify_source=False)
 
     def test_missing_metatile_mapping_is_rejected(self):
         self.map_bin.write_bytes(struct.pack("<462H", *([0x0409] * 462)))
         with self.assertRaisesRegex(ValueError, "missing tile mapping entry 9:1:0"):
-            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json, verify_source=False)
 
     def test_same_xp_tile_cannot_have_conflicting_passages(self):
         self.mapping["entries"]["8:1:0"]["tables"][0]["passage"] = 0
@@ -119,33 +145,33 @@ class ReceptionGateConversionTest(unittest.TestCase):
         self.mapping["entries"]["8:1:0"]["tables"][1]["passage"] = 15
         self.mapping_json.write_text(json.dumps(self.mapping))
         with self.assertRaisesRegex(ValueError, "XP tile 384 is assigned conflicting"):
-            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json, verify_source=False)
 
     def test_wrong_map_dimensions_and_binary_length_are_rejected(self):
         layout = json.loads(self.layouts_json.read_text())
         layout["layouts"][0]["width"] = 21
         self.layouts_json.write_text(json.dumps(layout))
         with self.assertRaisesRegex(ValueError, "expected a 22x21 layout"):
-            inspect_source(self.map_json, self.layouts_json, self.map_bin)
+            inspect_source(self.map_json, self.layouts_json, self.map_bin, verify_source=False)
 
     def test_short_blockdata_is_rejected(self):
         self.map_bin.write_bytes(b"\x00\x00")
         with self.assertRaisesRegex(ValueError, "one little-endian word per map cell"):
-            inspect_source(self.map_json, self.layouts_json, self.map_bin)
+            inspect_source(self.map_json, self.layouts_json, self.map_bin, verify_source=False)
 
 
     def test_missing_source_indexed_north_landing_is_rejected(self):
         self.mapping["warp_targets"].pop("MAP_RECEPTION_GATE_HNS:2")
         self.mapping_json.write_text(json.dumps(self.mapping))
         with self.assertRaisesRegex(ValueError, "requires explicit per-warp landing"):
-            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json, verify_source=False)
 
     def test_two_north_warps_cannot_land_on_same_tile(self):
         self.mapping["warp_targets"]["MAP_RECEPTION_GATE_HNS:2"]["x"] = 30
         self.mapping["warp_targets"]["MAP_RECEPTION_GATE_HNS:2"]["y"] = 46
         self.mapping_json.write_text(json.dumps(self.mapping))
         with self.assertRaisesRegex(ValueError, "collapse onto one landing"):
-            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json, verify_source=False)
 
 
 
