@@ -139,8 +139,8 @@ def build_bundle(source_root, mapping_path, verify_source=True):
                 dest_map = json.loads((map_dir / dest_name / "map.json").read_text(encoding="utf-8"))
                 dest_index = int(source_warp["dest_warp_id"])
                 source_landing = dest_map["warp_events"][dest_index]
-                if abs(x - source_landing["x"]) + abs(y - source_landing["y"]) > 1:
-                    raise ValueError(f"{key}: reviewed landing is not at/adjacent to source destination warp")
+                if abs(x - source_landing["x"]) + abs(y - source_landing["y"]) != 1:
+                    raise ValueError(f"{key}: reviewed landing must be cardinally adjacent to source destination warp")
             direction = destination.get("direction", 0)
             if type(direction) is not int or direction not in (0, 2, 4, 6, 8):
                 raise ValueError(f"{key}: invalid XP landing direction")
