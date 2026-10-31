@@ -19,6 +19,13 @@ LAYOUT_ID = "LAYOUT_RECEPTION_GATE_HNS"
 MAP_ID = "MAP_RECEPTION_GATE_HNS"
 EXPECTED_WIDTH = 22
 EXPECTED_HEIGHT = 21
+# Git blob IDs from development/hns_source_asset_pins.json at SOURCE_REVISION.
+# Reject lookalike/reconstructed map files even when dimensions and exits match.
+PINNED_GATE_BLOBS = {
+    "map": "8651cb350a508181bfd7b69fc216696cb67c6829",
+    "layouts": "a3c3be1b411b1dca5a81494c7e2d4ef100b1e75d",
+    "blockdata": "bb1affeda8bedc75358a7c72813a7e7c6db0c660",
+}
 DIRECTION_BY_DESTINATION = {
     "MAP_ROUTE28_HNS": "west",
     "MAP_ROUTE22_HNS": "east",
@@ -53,7 +60,24 @@ def _classify_warp(warp):
     return DIRECTION_BY_DESTINATION[destination]
 
 
-def inspect_source(map_json, layouts_json, map_bin):
+def git_blob_sha1(path):
+    """Git blob identity, not the ordinary SHA-1 of file contents."""
+    data = Path(path).read_bytes()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\x00" + data).hexdigest()
+
+
+def verify_pinned_gate_source(map_json, layouts_json, map_bin):
+    """Require exact reviewed HnS source files before production conversion."""
+    for label, path in (("map", map_json), ("layouts", layouts_json),
+                        ("blockdata", map_bin)):
+        if git_blob_sha1(path) != PINNED_GATE_BLOBS[label]:
+            raise ValueError(f"{label}: not the pinned HnS source Git blob")
+    return True
+
+
+def inspect_source(map_json, layouts_json, map_bin, *, verify_source=True):
+    if verify_source:
+        verify_pinned_gate_source(map_json, layouts_json, map_bin)
     map_data = _read_json(map_json)
     layouts_data = _read_json(layouts_json)
     binary = Path(map_bin).read_bytes()
@@ -136,8 +160,8 @@ def _mapping_entry(mapping, metatile, collision, elevation):
     return layers, normalized_tables
 
 
-def convert(map_json, layouts_json, map_bin, mapping_json):
-    source = inspect_source(map_json, layouts_json, map_bin)
+def convert(map_json, layouts_json, map_bin, mapping_json, *, verify_source=True):
+    source = inspect_source(map_json, layouts_json, map_bin, verify_source=verify_source)
     mapping = _read_json(mapping_json)
     target = mapping.get("target", {})
     for field in ("map_id", "tileset_template_id", "tileset_name", "tileset_image"):
