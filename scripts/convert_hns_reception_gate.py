@@ -133,7 +133,7 @@ def _mapping_entry(mapping, metatile, collision, elevation):
             not isinstance(tables, list) or len(tables) != 3):
         raise ValueError(f"{key} must define three XP layers and three table records")
     for tile_id in layers:
-        if not isinstance(tile_id, int) or not 0 <= tile_id <= 8191:
+        if type(tile_id) is not int or not 0 <= tile_id <= 8191:
             raise ValueError(f"{key} contains an invalid XP tile ID")
         if tile_id != 0 and tile_id < 384:
             raise ValueError(f"{key} uses an autotile ID without an autotile mapping")
@@ -144,11 +144,11 @@ def _mapping_entry(mapping, metatile, collision, elevation):
         passage = values.get("passage")
         priority = values.get("priority")
         terrain = values.get("terrain")
-        if not isinstance(passage, int) or not 0 <= passage <= 31:
+        if type(passage) is not int or not 0 <= passage <= 31:
             raise ValueError(f"{key} passage must be an XP passage bitmask (0..31)")
-        if not isinstance(priority, int) or not 0 <= priority <= 5:
+        if type(priority) is not int or not 0 <= priority <= 5:
             raise ValueError(f"{key} priority must be between 0 and 5")
-        if not isinstance(terrain, int) or not 0 <= terrain <= 255:
+        if type(terrain) is not int or not 0 <= terrain <= 255:
             raise ValueError(f"{key} terrain tag must be between 0 and 255")
         normalized_tables.append({
             "passage": passage,
@@ -168,7 +168,7 @@ def convert(map_json, layouts_json, map_bin, mapping_json, *, verify_source=True
         if field not in target:
             raise ValueError(f"mapping target is missing {field}")
     for field in ("map_id", "tileset_template_id"):
-        if not isinstance(target[field], int) or target[field] <= 0:
+        if type(target[field]) is not int or target[field] <= 0:
             raise ValueError(f"mapping target {field} must be a positive integer")
     if not re.fullmatch(r"[A-Za-z0-9_-]+", target["tileset_name"]):
         raise ValueError("tileset_name must be a simple filename stem")
