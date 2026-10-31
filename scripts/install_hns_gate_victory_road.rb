@@ -99,17 +99,24 @@ module ShatteredHNSWorldInstall
     [gate_id, road_ids]
   end
 
-  def rollback!(entries)
+  # Only undo writes that THIS invocation completed. A competing process may
+  # create a destination after preflight; never delete that unrelated map on
+  # a lock/pre-commit failure. Preserve backups if restoration itself fails.
+  def rollback!(entries, installed_paths, backed_up_paths, staged_paths)
     failures = []
-    entries.reverse_each do |path, temp, backup, existed|
+    entries.reverse_each do |path, temp, backup, _existed|
       begin
-        if present?(backup)
-          File.delete(path) if present?(path)
-          File.rename(backup, path)
-        elsif !existed && present?(path)
+        if backed_up_paths.include?(path)
+          if present?(backup)
+            File.delete(path) if installed_paths.include?(path) && present?(path)
+            File.rename(backup, path)
+          else
+            failures << "#{path}: missing transaction-owned backup"
+          end
+        elsif installed_paths.include?(path) && present?(path)
           File.delete(path)
         end
-        File.delete(temp) if present?(temp)
+        File.delete(temp) if staged_paths.include?(temp) && present?(temp)
       rescue StandardError => error
         failures << "#{path}: #{error.message}"
       end
@@ -164,6 +171,9 @@ module ShatteredHNSWorldInstall
     end
 
     acquired_locks = []
+    staged_paths = []
+    backed_up_paths = []
+    installed_paths = []
     keep_lock = false
     begin
       # The standalone installers only inspect their own lock paths. Hold
@@ -188,17 +198,31 @@ module ShatteredHNSWorldInstall
       objects = [road_objects[0], gate_objects[1], *road_objects[1, 3], road_objects[4]]
       assert!(objects.size == entries.size, "HnS world object count mismatch")
       entries.zip(objects).each do |entry, object|
+        staged_paths << entry[1]
         save_data(object, entry[1])
         assert!(File.file?(entry[1]) && File.size(entry[1]) > 0,
                 "Failed to stage native HnS world data")
       end
+      # A non-cooperating editor could change databases or add a map while
+      # temporary data is being serialized. Abort BEFORE the first rename.
+      native_hashes.each do |path, expected|
+        assert!(Digest::SHA256.file(regular!(path)).hexdigest == expected,
+                "Native database changed during HnS world staging")
+      end
+      entries.each do |path, _temp, _backup, existed|
+        assert!(!present?(path), "Native map appeared during HnS world staging") unless existed
+      end
       entries.each do |path, temp, backup, existed|
-        File.rename(path, backup) if existed
+        if existed
+          File.rename(path, backup)
+          backed_up_paths << path
+        end
         File.rename(temp, path)
+        installed_paths << path
       end
     rescue StandardError => error
       unless acquired_locks.empty?
-        failures = rollback!(entries)
+        failures = rollback!(entries, installed_paths, backed_up_paths, staged_paths)
         unless failures.empty?
           keep_lock = true
           raise "HnS world install failed (#{error.message}); manual recovery: #{failures.join('; ')}"
@@ -206,10 +230,12 @@ module ShatteredHNSWorldInstall
       end
       raise
     ensure
-      entries.each { |_path, temp, _backup, _existed| File.delete(temp) if present?(temp) } unless keep_lock
+      staged_paths.each { |temp| File.delete(temp) if present?(temp) } unless keep_lock
       acquired_locks.reverse_each { |lock| File.delete(lock) if present?(lock) } unless keep_lock
     end
-    entries.each { |_path, _temp, backup, _existed| File.delete(backup) if present?(backup) }
+    entries.each do |path, _temp, backup, _existed|
+      File.delete(backup) if backed_up_paths.include?(path) && present?(backup)
+    end
     [gate_id, *road_ids]
   end
 end
