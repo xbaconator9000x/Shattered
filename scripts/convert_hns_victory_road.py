@@ -72,6 +72,9 @@ def build_bundle(source_root, mapping_path, verify_source=True):
             raise ValueError(f"{map_id}: invalid tileset filename")
         if target.get("tileset_image") != stem + ".png":
             raise ValueError(f"{map_id}: mismatched tileset image filename")
+        image_sha = target.get("tileset_sha256")
+        if not isinstance(image_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", image_sha):
+            raise ValueError(f"{map_id}: missing reviewed tileset SHA-256")
         if native_id in target_ids:
             raise ValueError("Victory Road target map IDs must be unique")
         target_ids.add(native_id)
