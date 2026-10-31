@@ -163,6 +163,35 @@ class MurkrowRescueTest < Minitest::Test
     assert value[:flags][:battle_won]
   end
 
+  def test_false_saved_quest_value_is_rejected_without_reset
+    @store.instance_variable_set(ShatteredMurkrowRescue::STATE_IVAR, false)
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.state(@store)
+    end
+    assert_equal false, @store.instance_variable_get(ShatteredMurkrowRescue::STATE_IVAR)
+    assert_equal 0, $reward_count
+  end
+
+  def test_inconsistent_murkrow_reward_flags_fail_closed_after_save_reload
+    ShatteredMurkrowRescue.discover!(@store)
+    ShatteredMurkrowRescue.begin_battle!(@store)
+    ShatteredMurkrowRescue.finish_battle!(true, @store)
+    saved = Marshal.load(Marshal.dump(@store))
+    raw = saved.instance_variable_get(ShatteredMurkrowRescue::STATE_IVAR)
+    raw[:flags][:reward_claimed] = true
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.state(saved)
+    end
+    assert_equal :befriending, raw[:stage]
+    assert_equal 0, $reward_count
+    raw[:flags][:reward_claimed] = false
+    raw[:flags][:murkrow_recruited] = true
+    raw[:flags][:battle_won] = false
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.state(saved)
+    end
+  end
+
   def test_recruitment_is_non_ball_and_idempotent
     ready_to_befriend
     friend = ShatteredMurkrowRescue.recruit!(@player, @store)
