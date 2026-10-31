@@ -60,6 +60,9 @@ def verify_raw_source_bytes(gate, road, source_root):
         source = map_data.get("source")
         if not isinstance(pinned, dict) or not isinstance(source, dict):
             raise ValueError(f"{layout_id}: missing raw source provenance")
+        if map_data is gate and (source.get("map_path") != pinned.get("map_json_path") or
+                                 source.get("blockdata_path") != pinned.get("blockdata_path")):
+            raise ValueError("Reception Gate source paths differ from pinned raw files")
         for path_key, blob_key, digest_key in (
                 ("map_json_path", "map_json_sha1", "map_sha256"),
                 ("blockdata_path", "blockdata_sha1", "blockdata_sha256")):
