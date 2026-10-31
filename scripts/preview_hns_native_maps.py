@@ -19,6 +19,65 @@ IMAGE_NAME = re.compile(r"\A[A-Za-z0-9_-]+\.png\Z")
 MAPS = ("gate", "victory_1f", "victory_b1f", "victory_b2f")
 
 
+# These are identities from the pinned HnS source converters, not invented
+# names for concept artwork. This review must fail closed if the caller
+# supplies an unrelated or reordered map under a familiar filename.
+SOURCE_REPOSITORY = "PokemonHnS-Development/pokehns-expansion"
+SOURCE_REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
+SOURCE_MAPS = (
+    ("MAP_RECEPTION_GATE_HNS", "LAYOUT_RECEPTION_GATE_HNS", (22, 21), 5),
+    ("MAP_VICTORY_ROAD_KANTO_1F_HNS", "LAYOUT_VICTORY_ROAD_KANTO_1F_HNS", (50, 30), 10),
+    ("MAP_VICTORY_ROAD_KANTO_B1F_HNS", "LAYOUT_VICTORY_ROAD_KANTO_B1F_HNS", (60, 30), 10),
+    ("MAP_VICTORY_ROAD_KANTO_B2F_HNS", "LAYOUT_VICTORY_ROAD_KANTO_B2F_HNS", (40, 50), 2),
+)
+
+
+def verify_review_identity(gate, road):
+    """Check source identities/geometry, NOT the actual upstream source bytes."""
+    source = gate.get("source")
+    if not isinstance(source, dict) or (
+        source.get("repository") != "https://github.com/" + SOURCE_REPOSITORY
+        or source.get("revision") != SOURCE_REVISION
+        or source.get("map_path") != "data/maps/ReceptionGate_hns/map.json"
+        or source.get("blockdata_path") != "data/layouts/ReceptionGate_hns/map.bin"
+        or source.get("layout_id") != SOURCE_MAPS[0][1]
+    ):
+        raise ValueError("unrecognized pinned Reception Gate source identity")
+    if road.get("source_repository") != SOURCE_REPOSITORY or road.get("source_revision") != SOURCE_REVISION:
+        raise ValueError("unrecognized pinned Victory Road source identity")
+    floors = road.get("floors")
+    if not isinstance(floors, list) or len(floors) != 3:
+        raise ValueError("expected exactly three pinned Victory Road floors")
+    map_ids = []
+    for index, item in enumerate([gate, *floors]):
+        expected_map, expected_layout, expected_size, expected_warps = SOURCE_MAPS[index]
+        if index and (item.get("source_map_id") != expected_map or
+                      item.get("source_layout_id") != expected_layout):
+            raise ValueError(f"{MAPS[index]}: wrong or reordered source floor")
+        size = item.get("dimensions", {})
+        if not isinstance(size, dict) or (size.get("width"), size.get("height")) != expected_size:
+            raise ValueError(f"{MAPS[index]}: wrong pinned source dimensions")
+        if size.get("tile_pixels") != 32:
+            raise ValueError(f"{MAPS[index]}: not a 32px RMXP conversion")
+        warps = item.get("warps")
+        if not isinstance(warps, list) or len(warps) != expected_warps:
+            raise ValueError(f"{MAPS[index]}: wrong pinned source warp count")
+        target = item.get("target")
+        map_id = target.get("map_id") if isinstance(target, dict) else None
+        if type(map_id) is not int or map_id < 1 or map_id in map_ids:
+            raise ValueError("missing or overlapping native review map IDs")
+        map_ids.append(map_id)
+        source_hashes = source if index == 0 else item.get("source")
+        if not isinstance(source_hashes, dict) or any(
+            not isinstance(source_hashes.get(field), str) or
+            not re.fullmatch(r"[0-9a-f]{64}", source_hashes[field])
+            for field in ("map_sha256", "blockdata_sha256")
+        ):
+            raise ValueError(f"{MAPS[index]}: missing source file SHA-256 provenance")
+    return True
+
+
+
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -36,7 +95,7 @@ def checked_map(map_data, tilesets_dir):
         raise ValueError("missing complete three-layer map")
     collision = map_data.get("source_collision")
     if not isinstance(collision, list) or len(collision) != width * height or any(
-        type(c) is not int or c not in range(64) for c in collision
+        type(c) is not int or c not in range(4) for c in collision
     ):
         raise ValueError("missing or invalid source collision grid")
     tables = map_data.get("tileset_tables")
@@ -128,6 +187,7 @@ def build_review(gate_path, road_path, tilesets_dir, output_dir):
     floors = road.get("floors")
     if not isinstance(floors, list) or len(floors) != 3:
         raise ValueError("expected exactly three Victory Road floors")
+    verify_review_identity(gate, road)
     maps = [gate, *floors]
     checked = [checked_map(item, tilesets_dir) for item in maps]
     output_dir = Path(output_dir)
@@ -140,6 +200,8 @@ def build_review(gate_path, road_path, tilesets_dir, output_dir):
         manifest = {
             "purpose": "private visual review only; NOT game-ready or native-runtime evidence",
             "imported_into_game": False, "native_gameplay_verified": False,
+            "pinned_source_identity_checked": True,
+            "raw_upstream_source_bytes_verified_by_preview": False,
             "source_bundles_sha256": {"gate": digest(gate_path), "victory_road": digest(road_path)},
             "maps": {},
         }
