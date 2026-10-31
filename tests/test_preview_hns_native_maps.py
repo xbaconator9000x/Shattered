@@ -38,7 +38,7 @@ class ReviewTest(unittest.TestCase):
                 "layers": [ground, [0] * cells, [0] * cells],
                 "source_collision": collision,
                 "tileset_tables": {"0": [0, 0, 0], "384": [0, 0, 0], "385": [0, 0, 0]},
-                "warps": [{"x": i + 1, "y": 1} for i in range(warp_count)],
+                "warps": [{"source_warp_index": i, "x": i + 1, "y": 1} for i in range(warp_count)],
                 "target": {"map_id": native_id, "tileset_image": "Demo.png",
                            "tileset_sha256": sha},
                 "source": {"map_sha256": "a" * 64, "blockdata_sha256": "b" * 64},
@@ -46,6 +46,16 @@ class ReviewTest(unittest.TestCase):
 
         self.gate = {"format": "shattered-hns-rmxp-map",
                      **map_fixture(22, 21, 300, 5)}
+        gate_exits = (
+            ("west", "MAP_ROUTE28_HNS"),
+            ("east", "MAP_ROUTE22_HNS"),
+            ("north", "MAP_VICTORY_ROAD_KANTO_B2F_HNS"),
+            ("north", "MAP_VICTORY_ROAD_KANTO_B2F_HNS"),
+            ("south", "MAP_ROUTE26NORTH_HNS"),
+        )
+        for warp, (direction, destination) in zip(self.gate["warps"], gate_exits):
+            warp["direction"] = direction
+            warp["source_destination"] = destination
         self.gate["source"].update({
             "repository": "https://github.com/" + source_repo,
             "revision": source_revision,
@@ -196,6 +206,28 @@ class ReviewTest(unittest.TestCase):
         self.gate["source_collision"][0] = 4
         self.write()
         with self.assertRaisesRegex(ValueError, "source collision grid"):
+            self.build()
+        self.assertFalse(self.out.exists())
+
+
+    def test_rejects_wrong_gate_exit_destination(self):
+        self.gate["warps"][1]["source_destination"] = "MAP_ROUTE28_HNS"
+        self.write()
+        with self.assertRaisesRegex(ValueError, "exit directions/destinations"):
+            self.build()
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_duplicate_source_warp_position(self):
+        self.road["floors"][0]["warps"][1]["x"] = self.road["floors"][0]["warps"][0]["x"]
+        self.write()
+        with self.assertRaisesRegex(ValueError, "duplicate source warp coordinates"):
+            self.build()
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_swapped_source_warp_indices(self):
+        self.road["floors"][1]["warps"][1]["source_warp_index"] = 0
+        self.write()
+        with self.assertRaisesRegex(ValueError, "source warp indices"):
             self.build()
         self.assertFalse(self.out.exists())
 
