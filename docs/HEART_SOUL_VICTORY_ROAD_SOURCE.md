@@ -14,6 +14,33 @@ The pinned source has **22 source warps**. The B2F reception gate exit is
 `(30,47)` and the 1F Route 23 exit is `(28,2)`. Source `dest_warp_id`
 values are zero-based **source** warp indices, not RPG Maker XP map IDs.
 
+
+## Private source-authentic visual review (before installation)
+
+The four-map preview CLI now requires the **actual local HnS source tree** at
+the pinned revision. It verifies the Reception Gate and all three Victory Road
+map JSON/blockdata files against the checked-in Git blob SHA-1 pins **and**
+the converter bundles' SHA-256 source receipts. A lookalike map or metadata
+claim alone cannot qualify as an authentic preview.
+
+```sh
+python3 scripts/preview_hns_native_maps.py \
+  --gate-bundle /private/converted/gate.json \
+  --victory-road-bundle /private/converted/victory-road.json \
+  --tilesets-dir /private/approved-rmxp-tilesets \
+  --source-root /private/pokehns-expansion \
+  --output-dir /private/review-hns
+```
+
+This produces clean and collision/warp views plus a review manifest.
+`raw_upstream_source_bytes_verified_by_preview: true` means only that
+the eight pinned source files match the receipts; it **does not** mean the
+commercial art is licensed for redistribution, the rendered RMXP tiles are
+visually approved, or the game has been installed, compiled or played. The
+test API can still generate synthetic fixtures without a source root, but
+marks those outputs explicitly unverified. Do not commit raw source, game
+assets, generated previews or native game files to GitHub.
+
 ## Actual conversion source
 
 `scripts/audit_hns_victory_road.py` validates source map identifiers,
