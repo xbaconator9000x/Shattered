@@ -116,8 +116,9 @@ module ShatteredHNSVictoryRoadInstall
         raise "Source warp index mismatch" unless warp["source_warp_index"] == i
         expected = SOURCE_WARPS[index][i]
         actual = [warp["x"], warp["y"], warp["source_destination"],
-                  warp["source_destination_warp_id"].to_i]
-        raise "Pinned source warp record mismatch" unless actual == expected
+                  warp["source_destination_warp_id"]]
+        raise "Pinned source warp record mismatch" unless
+          actual == [expected[0], expected[1], expected[2], expected[3].to_s]
         x = integer!(warp["x"], "source warp x", 0, width - 1)
         y = integer!(warp["y"], "source warp y", 0, height - 1)
         raise "Duplicate source warp position" if seen[[x, y]]
