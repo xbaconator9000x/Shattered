@@ -193,13 +193,13 @@ def verify_private_tilesets(bundle, tilesets_dir):
     checked = {}
     for floor in bundle["floors"]:
         name = floor["target"]["tileset_image"]
-        if not re.fullmatch(r"[A-Za-z0-9_-]+\\.png", name):
+        if not re.fullmatch(r"[A-Za-z0-9_-]+\.png", name):
             raise ValueError(f"invalid private tileset filename: {name!r}")
         path = root / name
         if path.is_symlink() or not path.is_file():
             raise ValueError(f"missing or unsafe private tileset: {name}")
         raw = path.read_bytes()
-        if raw[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or len(raw) < 45:
+        if raw[:8] != b"\x89PNG\r\n\x1a\n" or len(raw) < 45:
             raise ValueError(f"{name}: not a complete PNG")
         offset = 8
         width = height = None
