@@ -214,6 +214,19 @@ class VictoryRoadInstallTest < Minitest::Test
     assert_unchanged
   end
 
+  def test_upper_passable_tile_cannot_hide_blocked_ground_landing
+    landing = @bundle["floors"][0]["warps"][1]["target"]
+    floor = @bundle["floors"][1]
+    index = landing["y"] * DIMENSIONS[1][0] + landing["x"]
+    floor["layers"][1][index] = 385
+    floor["tileset_tables"]["385"] = [0, 1, 0]
+    floor["tileset_tables"]["384"] = [15, 0, 0]
+    write_bundle
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/Internal landing blocked/, error.message)
+    assert_unchanged
+  end
+
   def test_wrong_internal_warp_destination_refused
     @bundle["floors"][0]["warps"][1]["target"]["map_id"] = 302
     write_bundle
