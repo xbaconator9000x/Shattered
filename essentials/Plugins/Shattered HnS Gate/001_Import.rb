@@ -24,7 +24,7 @@ module ShatteredHNSGateImport
     File.file?(path) && !File.symlink?(path)
   end
 
-  def preflight!(config)
+  def preflight!(config, pending_destinations = {})
     marker = File.join(Dir.pwd, "SHATTERED_STAGING_REPORT.json")
     raise "Reception gate import requires a staged project" unless regular_file?(marker)
     report = JSON.parse(File.read(marker))
@@ -112,12 +112,21 @@ module ShatteredHNSGateImport
       target_direction = integer!(target["direction"], "destination direction", 0, 8)
       raise "Invalid destination direction" unless [0, 2, 4, 6, 8].include?(target_direction)
       fade = integer!(target["fade"], "destination fade", 0, 1)
-      raise "Reception gate destination map is missing" unless
-        map_infos.key?(target_map_id) && regular_file?(sprintf("Data/Map%03d.rxdata", target_map_id))
-      destination_map = load_data(sprintf("Data/Map%03d.rxdata", target_map_id))
-      unless destination_map.respond_to?(:width) && destination_map.respond_to?(:height) &&
-             target_x < destination_map.width && target_y < destination_map.height
-        raise "Reception gate warp destination is outside its map"
+      if map_infos.key?(target_map_id)
+        path = sprintf("Data/Map%03d.rxdata", target_map_id)
+        raise "Reception gate destination map is missing" unless regular_file?(path)
+        destination_map = load_data(path)
+        raise "Reception gate warp destination is outside its map" unless
+          destination_map.respond_to?(:width) && destination_map.respond_to?(:height) &&
+          target_x < destination_map.width && target_y < destination_map.height
+      else
+        # Only the atomic Gate + Victory Road installer may supply this context.
+        # Standalone imports still reject every missing destination.
+        raise "Reception gate destination map is missing" unless
+          warp["direction"] == "north" &&
+          warp["source_destination"] == "MAP_VICTORY_ROAD_KANTO_B2F_HNS" &&
+          pending_destinations[target_map_id] == [40, 50] &&
+          target_x < 40 && target_y < 50
       end
       warp_targets << [target_map_id, target_x, target_y, target_direction, fade]
     end
