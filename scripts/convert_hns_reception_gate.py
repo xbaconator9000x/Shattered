@@ -148,6 +148,9 @@ def convert(map_json, layouts_json, map_bin, mapping_json):
         raise ValueError("tileset_name must be a simple filename stem")
     if target["tileset_image"] != target["tileset_name"] + ".png":
         raise ValueError("tileset_image must be the PNG named by tileset_name")
+    image_sha = target.get("tileset_sha256")
+    if not isinstance(image_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", image_sha):
+        raise ValueError("generated gate tileset requires a SHA-256 from the private renderer")
 
     destinations = mapping.get("destinations", {})
     output_warps = []
@@ -206,6 +209,7 @@ def convert(map_json, layouts_json, map_bin, mapping_json):
             "tileset_template_id": target["tileset_template_id"],
             "tileset_name": target["tileset_name"],
             "tileset_image": target["tileset_image"],
+            "tileset_sha256": image_sha,
         },
         "source": {
             "repository": SOURCE_REPOSITORY,
