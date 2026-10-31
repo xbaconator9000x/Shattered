@@ -13,7 +13,7 @@ module ShatteredRoute22
   LEGACY_DISABLED = "SHATTERED_LEGACY_ROUTE22_DISABLED"
   V04_ROUTE22_SHA256 = "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b"
   V04_LEGACY_EVENT_SHA256 = "ef8861a24531fedc56be153cc88a80ed6e314103af48b810d85b116aaadfe786"
-  V04_TRIGGERS = [[27, 16], [27, 17], [27, 18]].freeze
+  V04_TRIGGERS = [[31, 17], [31, 18], [32, 18]].freeze
   V04_NPCS = [[29, 17], [29, 18], [28, 18]].freeze
   V04_SCATTER_MOVES = [3, 4, 3].freeze
   MOVE_DELTAS = {1 => [0, 1], 2 => [-1, 0], 3 => [1, 0], 4 => [0, -1]}.freeze
