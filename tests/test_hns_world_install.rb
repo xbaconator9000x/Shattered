@@ -176,6 +176,76 @@ class HNSWorldInstallTest < Minitest::Test
     assert_empty artifacts
   end
 
+  def test_competing_map_created_during_lock_acquisition_is_preserved
+    foreign_path = "Data/Map300.rxdata"
+    original_open = File.method(:open)
+    File.stub(:open, lambda { |path, *args, &block|
+      if path == ShatteredHNSWorldInstall::LOCK &&
+         args.first == (File::WRONLY | File::CREAT | File::EXCL)
+        File.binwrite(foreign_path, "external map - do not delete")
+      end
+      original_open.call(path, *args, &block)
+    }) do
+      error = assert_raises(RuntimeError) { install_world }
+      assert_match(/Native map appeared during HnS world lock acquisition/, error.message)
+    end
+    assert_equal "external map - do not delete",
+                 File.binread(File.join(@root, foreign_path))
+    @original.each { |path, bytes| assert_equal bytes, File.binread(File.join(@root, path)) }
+    (301..303).each do |id|
+      refute File.exist?(File.join(@root, format("Data/Map%03d.rxdata", id)))
+    end
+    assert_empty artifacts
+  end
+
+  def test_competing_map_created_during_staging_is_preserved
+    foreign_path = "Data/Map300.rxdata"
+    original_size = File.method(:size)
+    injected = false
+    File.stub(:size, lambda { |path|
+      if !injected && path.to_s.end_with?(".shattered-hns-world.tmp")
+        File.binwrite(foreign_path, "external map during serialization")
+        injected = true
+      end
+      original_size.call(path)
+    }) do
+      error = assert_raises(RuntimeError) { install_world }
+      assert_match(/Native map appeared during HnS world staging/, error.message)
+    end
+    assert injected
+    assert_equal "external map during serialization",
+                 File.binread(File.join(@root, foreign_path))
+    @original.each { |path, bytes| assert_equal bytes, File.binread(File.join(@root, path)) }
+    (301..303).each do |id|
+      refute File.exist?(File.join(@root, format("Data/Map%03d.rxdata", id)))
+    end
+    assert_empty artifacts
+  end
+
+  def test_native_database_changed_during_staging_is_preserved
+    external_bytes = @original.fetch("Data/MapInfos.rxdata") + "external update"
+    original_size = File.method(:size)
+    injected = false
+    File.stub(:size, lambda { |path|
+      if !injected && path.to_s.end_with?(".shattered-hns-world.tmp")
+        File.binwrite("Data/MapInfos.rxdata", external_bytes)
+        injected = true
+      end
+      original_size.call(path)
+    }) do
+      error = assert_raises(RuntimeError) { install_world }
+      assert_match(/Native database changed during HnS world staging/, error.message)
+    end
+    assert injected
+    assert_equal external_bytes, File.binread(File.join(@root, "Data/MapInfos.rxdata"))
+    assert_equal @original.fetch("Data/Tilesets.rxdata"),
+                 File.binread(File.join(@root, "Data/Tilesets.rxdata"))
+    (300..303).each do |id|
+      refute File.exist?(File.join(@root, format("Data/Map%03d.rxdata", id)))
+    end
+    assert_empty artifacts
+  end
+
   def test_source_collision_blocks_gate_to_b2f
     @road["floors"][2]["source_collision"][46 * 40 + 30] = 1
     write_road
