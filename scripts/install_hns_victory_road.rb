@@ -55,6 +55,31 @@ module ShatteredHNSVictoryRoadInstall
     height
   end
 
+  # The converter verifies source-relative landings, but a private JSON bundle
+  # can be edited after conversion. Recheck the geometry here before writing
+  # any native map: landing ON a Player Touch warp can bounce immediately back.
+  # The only safe automatic placement is a cardinal neighbour with a clear
+  # native XP tile. This is a static guard, NOT an in-engine collision test.
+  def safe_internal_landing!(floor, x, y, destination_index, source_warp_index)
+    source_warp = SOURCE_WARPS[destination_index][source_warp_index]
+    raise "Unrecognised source destination warp" unless source_warp
+    distance = (x - source_warp[0]).abs + (y - source_warp[1]).abs
+    raise "Internal landing must be adjacent to source warp, not on it" unless distance == 1
+    width = DIMENSIONS[destination_index][0]
+    tile_index = y * width + x
+    2.downto(0) do |layer|
+      tile_id = floor["layers"][layer][tile_index]
+      next if tile_id == 0
+      values = floor["tileset_tables"][tile_id.to_s]
+      raise "Internal landing has no reviewed XP passage table" unless values.is_a?(Array)
+      passage = values[0]
+      next if (passage & 0x10) != 0 # star-priority overlay
+      raise "Internal landing blocked by XP passage flags" unless (passage & 0x0f).zero?
+      return true
+    end
+    raise "Internal landing has no walkable XP floor tile"
+  end
+
   def preflight!(bundle)
     marker = "SHATTERED_STAGING_REPORT.json"
     regular!(marker)
@@ -140,6 +165,10 @@ module ShatteredHNSVictoryRoadInstall
           index = IDS.index(destination_source)
           raise "Internal Victory Road warp targets wrong native floor" unless id == native_ids[index]
           dw, dh = DIMENSIONS[index]
+          source_index = warp["source_destination_warp_id"]
+          raise "Invalid internal source warp index" unless
+            source_index.is_a?(String) && /\\A(?:0|[1-9]\\d*)\\z/.match?(source_index)
+          safe_internal_landing!(floors[index], x, y, index, source_index.to_i)
         else
           raise "Unreviewed external Victory Road destination" unless %w[MAP_RECEPTION_GATE_HNS MAP_ROUTE23_HNS].include?(destination_source)
           raise "External warp incorrectly targets a new Victory Road floor" if native_ids.include?(id)
