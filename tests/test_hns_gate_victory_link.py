@@ -27,7 +27,7 @@ def fixture():
     ]
     b2f = floor("MAP_VICTORY_ROAD_KANTO_B2F_HNS", 303, 40, 50)
     b2f["warps"] = [{"x": 30, "y": 47, "source_destination": "MAP_RECEPTION_GATE_HNS",
-                     "source_destination_warp_id": 2,
+                     "source_destination_warp_id": "2",
                      "target": {"map_id": 300, "x": 10, "y": 2}}]
     road = {"format": "shattered-hns-victory-road-rmxp-bundle", "format_version": 1,
             "source_revision": "167aa6d537b109bb229c231ddce4616974c4da71",
@@ -78,6 +78,14 @@ class GateRoadLinkTests(unittest.TestCase):
         self.road["floors"][2]["warps"][0]["source_destination_warp_id"] = 0
         with self.assertRaisesRegex(ValueError, "not refer to a north gate warp"):
             check(self.gate, self.road)
+
+    def test_source_warp_index_must_match_native_installer_contract(self):
+        self.assertEqual(1, check(self.gate, self.road)["b2f_return_exits_checked"])
+        for invalid in (2, True, " 2", "+2", "-1", "02", "2.0", "２", ""):
+            with self.subTest(invalid=invalid):
+                self.road["floors"][2]["warps"][0]["source_destination_warp_id"] = invalid
+                with self.assertRaisesRegex(ValueError, "canonical ASCII decimal string"):
+                    check(self.gate, self.road)
 
     def test_reject_missing_image_hash(self):
         del self.gate["target"]["tileset_sha256"]
