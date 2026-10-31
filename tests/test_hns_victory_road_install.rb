@@ -70,7 +70,7 @@ class VictoryRoadInstallTest < Minitest::Test
         "target" => {"map_id" => 300 + i, "tileset_template_id" => 1,
                      "tileset_name" => "ReviewedCave", "tileset_image" => "ReviewedCave.png"},
         "layers" => [Array.new(w * h, 384), Array.new(w * h, 0), Array.new(w * h, 0)],
-        "tileset_tables" => {"0" => [0, 0, 0], "384" => [15, 0, 0]},
+        "tileset_tables" => {"0" => [0, 0, 0], "384" => [0, 0, 0]},
         "warps" => []
       }
     end
@@ -83,11 +83,17 @@ class VictoryRoadInstallTest < Minitest::Test
                         when "MAP_ROUTE23_HNS" then 1
                         when "MAP_RECEPTION_GATE_HNS" then 2
                         end
+        landing_x, landing_y = if IDS.include?(dest)
+          source_warp = ShatteredHNSVictoryRoadInstall::SOURCE_WARPS[IDS.index(dest)][dest_index]
+          [source_warp[0] + 1, source_warp[1]] # reviewed cardinal neighbour, not warp tile
+        else
+          [1, 1] # external destination validation is separate
+        end
         @bundle["floors"][i]["warps"] << {
           "source_warp_index" => j, "x" => x, "y" => y,
           "source_destination" => dest,
           "source_destination_warp_id" => dest_index.to_s,
-          "target" => {"map_id" => target_map_id, "x" => 1, "y" => 1,
+          "target" => {"map_id" => target_map_id, "x" => landing_x, "y" => landing_y,
                        "direction" => 2, "fade" => 0}
         }
       end
@@ -128,10 +134,10 @@ class VictoryRoadInstallTest < Minitest::Test
       assert_equal 384, map.data[0, 0, 0]
       assert_equal i + 2, map.tileset_id
       assert_equal @bundle["floors"][i]["warps"].size, map.events.size
-      assert_equal 15, tilesets[map.tileset_id].passages[384]
+      assert_equal 0, tilesets[map.tileset_id].passages[384]
       assert_match(/Victory Road/, infos[300 + i].name)
     end
-    assert_equal [0, 301, 1, 1, 2, 0], load_data(File.join(@root, "Data/Map300.rxdata")).events[2].pages[0].list[0].parameters
+    assert_equal [0, 301, 6, 2, 2, 0], load_data(File.join(@root, "Data/Map300.rxdata")).events[2].pages[0].list[0].parameters
     assert_empty artifacts
   end
 
@@ -160,6 +166,34 @@ class VictoryRoadInstallTest < Minitest::Test
     @bundle["floors"][0]["tileset_tables"]["400"] = [15, 0, 0]
     write_bundle
     assert_raises(RuntimeError) { install }
+    assert_unchanged
+  end
+
+  def test_native_import_rejects_tampered_internal_landing_far_from_source_warp
+    @bundle["floors"][0]["warps"][1]["target"]["x"] = 20
+    write_bundle
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/Internal landing must be adjacent/, error.message)
+    assert_unchanged
+  end
+
+  def test_native_import_rejects_internal_landing_on_player_touch_warp
+    @bundle["floors"][0]["warps"][1]["target"]["x"] = 5
+    write_bundle
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/Internal landing must be adjacent/, error.message)
+    assert_unchanged
+  end
+
+  def test_native_import_rejects_internal_landing_on_blocked_tile
+    landing = @bundle["floors"][0]["warps"][1]["target"]
+    floor = @bundle["floors"][1]
+    index = landing["y"] * DIMENSIONS[1][0] + landing["x"]
+    floor["layers"][0][index] = 385
+    floor["tileset_tables"]["385"] = [15, 0, 0]
+    write_bundle
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/Internal landing blocked/, error.message)
     assert_unchanged
   end
 
