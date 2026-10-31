@@ -24,7 +24,7 @@ module ShatteredMurkrowRescue
   def self.state(store = nil, recover_interrupted = true)
     store = saved_store(store)
     value = store.instance_variable_get(STATE_IVAR)
-    unless value
+    if value.nil?
       value = {
         :version => VERSION,
         :stage => :undiscovered,
@@ -45,6 +45,13 @@ module ShatteredMurkrowRescue
         [true, false].include?(flags[key])
       end
     raise InvalidState, "Unknown Murkrow rescue save data; refusing to reset quest flags" unless valid
+    # A partially corrupted or imported save must never skip the rescue battle,
+    # adopt an unrelated Murkrow or claim the reward twice.
+    consistent = (!flags[:battle_won] || flags[:discovered]) &&
+      (!flags[:murkrow_recruited] || flags[:battle_won]) &&
+      (!flags[:reward_claimed] || flags[:murkrow_recruited]) &&
+      (!flags[:complete] || flags[:reward_claimed])
+    raise InvalidState, "Inconsistent Murkrow rescue progress" unless consistent
     if recover_interrupted && value[:stage] == :battle_pending
       value[:stage] = :discovered
     elsif flags[:reward_claimed]
