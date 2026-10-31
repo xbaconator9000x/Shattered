@@ -256,8 +256,47 @@ def png_dimensions(data):
     return width, height
 
 
+
+
+def install_shattered_runtime_set(dest):
+    """Stage the reviewed Shattered plugin set for native archive compilation.
+
+    This is not a native compilation or gameplay test. The subsequent guarded
+    compiler and offline-tool isolation steps remain mandatory.
+    """
+    import re
+    from pathlib import Path
+    from shutil import copytree
+
+    from_names = (
+        "Shattered Dojo", "Shattered Equipment", "Shattered Gate Story",
+        "Shattered HnS Gate", "Shattered Murkrow Rescue", "Shattered Raid",
+        "Shattered Route22", "Shattered Viridian", "Shattered World Links",
+    )
+    plugins = dest / "Plugins"
+    sources = ROOT / "essentials" / "Plugins"
+    # Preflight all destinations before copying any source.
+    for name in from_names:
+        source = sources / name
+        if not source.is_dir() or source.is_symlink():
+            raise ValueError(f"missing or unsafe reviewed plugin: {name}")
+        if not (source / "meta.txt").is_file():
+            raise ValueError(f"missing metadata: {name}")
+        if any(p.is_symlink() for p in source.rglob("*")):
+            raise ValueError(f"symlink in reviewed plugin: {name}")
+        if (plugins / name).exists() or (plugins / name).is_symlink():
+            raise ValueError(f"runtime plugin destination collision: {name}")
+    for name in from_names:
+        copytree(sources / name, plugins / name)
+    return {
+        "staged": list(from_names),
+        "native_compiled": False,
+        "offline_installers_isolated": False,
+        "gameplay_verified": False,
+    }
+
 def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None,
-          include_equipment=False):
+          include_equipment=False, include_runtime_set=False):
     project = Path(project).absolute()
     reject_symlinked_project(project)
     project = project.resolve()
@@ -301,6 +340,11 @@ def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_im
                   'caveats': ['Requires Essentials debug compilation of PluginScripts.rxdata',
                               'JoiPlay/NaviaXP testing not done',
                               'Plugin version/license/manual conflict review required']}
+        if include_runtime_set:
+            if include_equipment:
+                raise ValueError("use --include-runtime-set OR --include-equipment, not both")
+            report["runtime_set"] = install_shattered_runtime_set(target)
+            report["caveats"].append("Full Shattered runtime set staged only; compile and isolate offline installers before launch")
         if include_equipment:
             report['equipment'] = install_shattered_equipment(target)
             report['caveats'].append(
@@ -324,13 +368,14 @@ def main():
     p.add_argument('--output', required=True)
     p.add_argument('--archive', action='append', default=[], help='pluginid=/local/verified.zip')
     p.add_argument('--allow-overwrite', action='store_true', help='only after reviewing collisions')
-    p.add_argument('--include-equipment', action='store_true',
+    p.add_argument('--include-runtime-set', action='store_true',
+                   help='stage all reviewed Shattered runtime and offline installer modules')\n    p.add_argument('--include-equipment', action='store_true',
                    help='stage in-repo equipment adapter only after validating native item/move PBS IDs')
     p.add_argument('--gate-data', help='converted SE-013 reception gate JSON bundle')
     p.add_argument('--gate-tileset-image', help='rights-cleared 256px-wide XP tileset PNG')
     a = p.parse_args()
     print(json.dumps(stage(a.project, a.output, a.archive, a.allow_overwrite,
-                           a.gate_data, a.gate_tileset_image, a.include_equipment), indent=2))
+                           a.gate_data, a.gate_tileset_image, a.include_equipment, a.include_runtime_set), indent=2))
 
 
 if __name__ == '__main__':
