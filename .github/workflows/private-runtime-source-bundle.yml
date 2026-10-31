@@ -8,10 +8,14 @@ on:
       - 'tests/test_private_plugin_compiler.rb'
       - 'scripts/finalize_private_runtime.rb'
       - 'tests/test_private_runtime_isolation.rb'
+      - 'scripts/prepare_linux_map_aliases.py'
+      - 'tests/test_linux_map_aliases.py'
   pull_request:
     paths:
       - 'scripts/finalize_private_runtime.rb'
       - 'tests/test_private_runtime_isolation.rb'
+      - 'scripts/prepare_linux_map_aliases.py'
+      - 'tests/test_linux_map_aliases.py'
       - '.github/workflows/private-runtime-source-bundle.yml'
   workflow_dispatch:
 
