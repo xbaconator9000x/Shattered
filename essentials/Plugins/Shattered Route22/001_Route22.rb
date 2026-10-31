@@ -24,13 +24,23 @@ module ShatteredRoute22
     !!state[:cleared]
   end
 
+  # Essentials Game_Switches#[]= does not automatically refresh native map
+  # event pages. Without this, a victorious Rattata encounter can leave the
+  # three overworld sprites visible even after saving and reloading.
+  def self.request_map_refresh
+    map = defined?($game_map) ? $game_map : nil
+    map.need_refresh = true if map && map.respond_to?(:need_refresh=)
+  end
+
   def self.reconcile(cleared_switch)
     validate_id(cleared_switch)
     raise "Game switches unavailable" unless defined?($game_switches) && $game_switches
     # The saved quest flag is authoritative. A stale RMXP switch from an
     # interrupted install or older save must not skip the mandatory battle.
     done = cleared?
+    previous = $game_switches[cleared_switch]
     $game_switches[cleared_switch] = done
+    request_map_refresh if previous != done || done
     done
   end
 
@@ -68,6 +78,7 @@ module ShatteredRoute22
       if decision == 1
         $game_switches[cleared_switch] = true
         state[:cleared] = true
+        request_map_refresh
         return true
       end
       # A result of 4 is an explicit violation of the no-capture acceptance gate.
