@@ -63,7 +63,7 @@ def _classify_warp(warp):
 def git_blob_sha1(path):
     """Git blob identity, not the ordinary SHA-1 of file contents."""
     data = Path(path).read_bytes()
-    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\x00" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\x00" + data).hexdigest()
 
 
 def verify_pinned_gate_source(map_json, layouts_json, map_bin):
