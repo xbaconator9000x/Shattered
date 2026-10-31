@@ -32,6 +32,63 @@ SOURCE_MAPS = (
 )
 
 
+# The review is not source-authentic merely because its JSON metadata names
+# the right map. Prove the exact raw inputs against Git blob pins before
+# marking a private preview as source-verified.
+SOURCE_PINS_PATH = Path(__file__).resolve().parents[1] / "development" / "hns_source_asset_pins.json"
+
+
+def git_blob_sha1(payload):
+    return hashlib.sha1(b"blob " + str(len(payload)).encode("ascii") + b"\0" + payload).hexdigest()
+
+
+def verify_raw_source_bytes(gate, road, source_root):
+    root = Path(source_root)
+    if not root.is_dir() or root.is_symlink():
+        raise ValueError("missing or unsafe private HnS source directory")
+    pins = json.loads(SOURCE_PINS_PATH.read_text(encoding="utf-8"))
+    if (pins.get("source_repository") != SOURCE_REPOSITORY or
+            pins.get("source_revision") != SOURCE_REVISION):
+        raise ValueError("HnS source pins differ from pinned source revision")
+    layouts = pins.get("layouts")
+    if not isinstance(layouts, dict):
+        raise ValueError("missing HnS source layout pins")
+
+    for map_data, (_map_id, layout_id, _size, _warps) in zip(
+            [gate, *road["floors"]], SOURCE_MAPS):
+        pinned = layouts.get(layout_id)
+        source = map_data.get("source")
+        if not isinstance(pinned, dict) or not isinstance(source, dict):
+            raise ValueError(f"{layout_id}: missing raw source provenance")
+        for path_key, blob_key, digest_key in (
+                ("map_json_path", "map_json_sha1", "map_sha256"),
+                ("blockdata_path", "blockdata_sha1", "blockdata_sha256")):
+            relative = pinned.get(path_key)
+            blob = pinned.get(blob_key)
+            expected = source.get(digest_key)
+            if (not isinstance(relative, str) or
+                    not isinstance(blob, str) or not re.fullmatch(r"[0-9a-f]{40}", blob) or
+                    not isinstance(expected, str) or not re.fullmatch(r"[0-9a-f]{64}", expected)):
+                raise ValueError(f"{layout_id}: invalid pinned source path or digest")
+            parts = Path(relative)
+            if parts.is_absolute() or not parts.parts or any(
+                    part in (".", "..") for part in parts.parts):
+                raise ValueError(f"{layout_id}: unsafe pinned source path")
+            candidate = root
+            for part in parts.parts:
+                candidate = candidate / part
+                if candidate.is_symlink():
+                    raise ValueError(f"{layout_id}: symlinked private HnS source input")
+            if not candidate.is_file() or candidate.stat().st_size > 8 * 1024 * 1024:
+                raise ValueError(f"{layout_id}: missing or oversized private source input")
+            payload = candidate.read_bytes()
+            if git_blob_sha1(payload) != blob:
+                raise ValueError(f"{layout_id}: raw source Git blob SHA-1 mismatch")
+            if hashlib.sha256(payload).hexdigest() != expected:
+                raise ValueError(f"{layout_id}: converted bundle raw source SHA-256 mismatch")
+    return True
+
+
 def verify_review_identity(gate, road):
     """Check source identities/geometry, NOT the actual upstream source bytes."""
     source = gate.get("source")
@@ -199,7 +256,7 @@ def draw_map(data, overlay=False):
     return canvas
 
 
-def build_review(gate_path, road_path, tilesets_dir, output_dir):
+def build_review(gate_path, road_path, tilesets_dir, output_dir, source_root=None):
     gate_path, road_path = Path(gate_path), Path(road_path)
     gate = json.loads(gate_path.read_text(encoding="utf-8"))
     road = json.loads(road_path.read_text(encoding="utf-8"))
@@ -209,6 +266,7 @@ def build_review(gate_path, road_path, tilesets_dir, output_dir):
     if not isinstance(floors, list) or len(floors) != 3:
         raise ValueError("expected exactly three Victory Road floors")
     verify_review_identity(gate, road)
+    raw_verified = verify_raw_source_bytes(gate, road, source_root) if source_root is not None else False
     maps = [gate, *floors]
     checked = [checked_map(item, tilesets_dir) for item in maps]
     output_dir = Path(output_dir)
@@ -222,7 +280,7 @@ def build_review(gate_path, road_path, tilesets_dir, output_dir):
             "purpose": "private visual review only; NOT game-ready or native-runtime evidence",
             "imported_into_game": False, "native_gameplay_verified": False,
             "pinned_source_identity_checked": True,
-            "raw_upstream_source_bytes_verified_by_preview": False,
+            "raw_upstream_source_bytes_verified_by_preview": raw_verified,
             "source_bundles_sha256": {"gate": digest(gate_path), "victory_road": digest(road_path)},
             "maps": {},
         }
@@ -261,9 +319,11 @@ def main():
     parser.add_argument("--victory-road-bundle", required=True)
     parser.add_argument("--tilesets-dir", required=True)
     parser.add_argument("--output-dir", required=True)
+    parser.add_argument("--source-root", required=True,
+                        help="Private HnS source tree at pinned revision; never upload source assets")
     args = parser.parse_args()
     result = build_review(args.gate_bundle, args.victory_road_bundle,
-                          args.tilesets_dir, args.output_dir)
+                          args.tilesets_dir, args.output_dir, args.source_root)
     print(json.dumps({"maps": list(result["maps"]), "imported_into_game": False}, indent=2))
 
 
