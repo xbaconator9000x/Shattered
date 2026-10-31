@@ -475,6 +475,25 @@
         "2026-10-31 PR #53 adds a single-command private native candidate assembly with atomic rollback and explicit source SHA/dirty-checkout guard; GitHub Actions 41156346708 passed (133 Python tests, Ruby regressions). Native v0.4 candidate and opening map events not launched in this invocation; separate private engine verification still required."
       ],
       "blocker": "Real HUMAN New Game, battle victory and diagnostic save/Continue now observed on Linux mkxp-z. Remaining: actual HnS reception gate map, Aipom/Route22 installed native events, stamina/type/capture verification, normal Save UI, follower/quests and Android."
+    },
+    {
+      "id": "SE-031",
+      "title": "Integrate Heart & Soul 2.0 three-floor Kanto Victory Road with native RMXP gate links",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-003",
+        "SE-013"
+      ],
+      "validation": [
+        "Convert pinned 1F/B1F/B2F blockdata using a rights-reviewed native tileset and SHA-pinned mapping",
+        "Import 3 native maps and 22 source warps into one preserved private Essentials project with safe adjacent landings",
+        "Test actual collision, map transfers, story events and save/reload in mkxp-z; separately test Android"
+      ],
+      "evidence": [
+        "PR #57 contains SHA-pinned upstream source audit, 3-floor blockdata conversion and rollback-protected offline RPG Maker XP installer. Synthetic tests exist but GitHub Actions jobs are failing before runner allocation (0 steps, runner_id 0), so no current CI pass claim.",
+        "2026-10-31 PR #57 follow-up: converter and importer now both reject same-tile and non-adjacent internal warp landings; importer checks target XP tile passability and independently verifies SHA-256 of each private rights-reviewed tileset PNG. New negative regression tests added; not yet run in CI or native engine."
+      ],
+      "blocker": "Original Heart & Soul source has no verified asset redistribution licence; reviewed private tileset PNG/metatile mapping and actual native import/playthrough are absent. This Victory Road expansion is NOT a prerequisite for first gate-to-Route22 demo."
     }
   ],
   "estimated_full_demo_completion_percent": 6,
