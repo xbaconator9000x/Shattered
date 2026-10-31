@@ -179,6 +179,62 @@ def build_bundle(source_root, mapping_path, verify_source=True):
     }
 
 
+
+def verify_private_tilesets(bundle, tilesets_dir):
+    """Verify approved local XP tilesheets actually cover every emitted tile ID.
+
+    RMXP reserves IDs 0..383 for blank/autotiles and arranges ordinary tiles
+    eight columns wide starting at 384. This does not establish visual parity
+    or verify that source GBA metatiles were decoded correctly.
+    """
+    import binascii
+    import struct
+    root = Path(tilesets_dir)
+    checked = {}
+    for floor in bundle["floors"]:
+        name = floor["target"]["tileset_image"]
+        if not re.fullmatch(r"[A-Za-z0-9_-]+\\.png", name):
+            raise ValueError(f"invalid private tileset filename: {name!r}")
+        path = root / name
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"missing or unsafe private tileset: {name}")
+        raw = path.read_bytes()
+        if raw[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or len(raw) < 45:
+            raise ValueError(f"{name}: not a complete PNG")
+        offset = 8
+        width = height = None
+        saw_idat = saw_end = False
+        while offset + 12 <= len(raw):
+            size = struct.unpack_from(">I", raw, offset)[0]
+            end = offset + 12 + size
+            if end > len(raw):
+                raise ValueError(f"{name}: truncated PNG chunk")
+            chunk_type = raw[offset + 4:offset + 8]
+            payload = raw[offset + 8:end - 4]
+            crc = struct.unpack_from(">I", raw, end - 4)[0]
+            if binascii.crc32(raw[offset + 4:end - 4]) & 0xFFFFFFFF != crc:
+                raise ValueError(f"{name}: invalid PNG CRC")
+            if offset == 8:
+                if chunk_type != b"IHDR" or size != 13:
+                    raise ValueError(f"{name}: invalid PNG header")
+                width, height = struct.unpack_from(">II", payload)
+            if chunk_type == b"IDAT":
+                saw_idat = True
+            if chunk_type == b"IEND":
+                saw_end = size == 0 and end == len(raw)
+                break
+            offset = end
+        if not saw_idat or not saw_end or width != 256 or not height or height % 32:
+            raise ValueError(f"{name}: RMXP tilesheet must be complete, 256px wide and 32px-row aligned")
+        available_tiles = (height // 32) * 8
+        ids = {tile for layer in floor["layers"] for tile in layer if tile >= 384}
+        if ids and max(ids) >= 384 + available_tiles:
+            raise ValueError(f"{name}: tile ID {max(ids)} exceeds image capacity ({available_tiles} tiles)")
+        checked[name] = {"sha256": hashlib.sha256(raw).hexdigest(),
+                         "dimensions": [width, height], "used_tiles": len(ids)}
+    return checked
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-root", required=True,
@@ -186,8 +242,11 @@ def main():
     parser.add_argument("--mapping", required=True,
                         help="reviewed XP tiles, passage tables, floor IDs and explicit warp landings")
     parser.add_argument("--output", required=True, help="private generated JSON bundle")
+    parser.add_argument("--tilesets-dir", help="private approved XP tilesheets to validate against emitted IDs")
     args = parser.parse_args()
     bundle = build_bundle(args.source_root, args.mapping)
+    if args.tilesets_dir:
+        bundle["private_tileset_validation"] = verify_private_tilesets(bundle, args.tilesets_dir)
     output = Path(args.output)
     if output.exists():
         raise ValueError("refusing to overwrite an existing Victory Road bundle")
