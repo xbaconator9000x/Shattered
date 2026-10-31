@@ -4,6 +4,7 @@
 # the user's original v0.4 project. Requires separately held Rattata artwork.
 require "json"
 require "digest"
+require "zlib"
 require "optparse"
 require "pathname"
 require_relative "private_rgss_writer"
@@ -11,6 +12,8 @@ require_relative "private_rgss_writer"
 module ShatteredPrivateRoute22
   ROOT = File.expand_path("..", __dir__)
   SOURCE_MAP_SHA = "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b"
+  SOURCE_SCRIPTS_SHA = "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05"
+  SOURCE_SCRIPT_COUNT = 402
   SOURCE_UUID = "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2"
   LEGACY_EVENT_SHA = "ef8861a24531fedc56be153cc88a80ed6e314103af48b810d85b116aaadfe786"
   SWITCHES = [991, 992].freeze
@@ -63,6 +66,29 @@ module ShatteredPrivateRoute22
     conflicts
   end
 
+  # Static audit of the original v0.4 compiled script archive. The exact
+  # original archive is SHA-pinned: an altered or unreviewed script must not
+  # silently reuse the production Route22 switch/variable allocation.
+  # This does not prove dynamic references absent; the digest pin is required.
+  def self.original_script_id_conflicts(scripts)
+    raise "Original script archive inventory differs" unless
+      scripts.is_a?(Array) && scripts.length == SOURCE_SCRIPT_COUNT
+    conflicts = []
+    scripts.each_with_index do |entry, index|
+      raise "Malformed original script entry #{index}" unless
+        entry.is_a?(Array) && entry.length >= 3 && entry[2].is_a?(String)
+      begin
+        source = Zlib::Inflate.inflate(entry[2])
+      rescue Zlib::Error
+        raise "Unparseable original script entry #{index}"
+      end
+      if source.match?(/\\$game_(?:switches|variables)\\s*\\[\\s*(?:991|992)\\s*\\]/)
+        conflicts << [index, entry[1].to_s]
+      end
+    end
+    conflicts
+  end
+
   def self.preflight!(project, sprite)
     raise "Invalid private sprite basename" unless /\A[A-Za-z0-9_ -]+\z/.match?(sprite)
     raise "Project directory missing or symlinked" unless project.directory? && !project.symlink?
@@ -71,6 +97,13 @@ module ShatteredPrivateRoute22
     receipt = JSON.parse(marker.read)
     raise "Candidate source commit is unpinned" unless
       receipt["source_sha"].is_a?(String) && /\A[0-9a-f]{40}\z/.match?(receipt["source_sha"])
+    script_path = project.join("Data/Scripts.rxdata")
+    raise "Original v0.4 Scripts.rxdata differs or is missing" unless
+      script_path.file? && !script_path.symlink? &&
+      Digest::SHA256.file(script_path).hexdigest == SOURCE_SCRIPTS_SHA
+    script_conflicts = original_script_id_conflicts(load_data(script_path.to_s))
+    raise "Reserved Route22 IDs collide in original scripts: #{script_conflicts.inspect}" unless
+      script_conflicts.empty?
     map_path = project.join("Data/Map016.rxdata")
     raise "Original v0.4 Map016 source SHA differs" unless map_path.file? &&
       !map_path.symlink? && Digest::SHA256.file(map_path).hexdigest == SOURCE_MAP_SHA
@@ -120,6 +153,8 @@ module ShatteredPrivateRoute22
       "kind" => "private_native_route22_install_not_runtime_acceptance",
       "source_sha" => receipt["source_sha"],
       "source_map_sha256" => SOURCE_MAP_SHA,
+      "original_scripts_sha256" => SOURCE_SCRIPTS_SHA,
+      "original_script_count_checked" => SOURCE_SCRIPT_COUNT,
       "installed_map_sha256" => Digest::SHA256.file(project.join("Data/Map016.rxdata")).hexdigest,
       "installed" => result["installed"], "switch_ids" => SWITCHES,
       "outcome_variable" => VARIABLE, "native_map_serialization_verified" => true,
