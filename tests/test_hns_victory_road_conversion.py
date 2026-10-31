@@ -40,7 +40,8 @@ class VictoryRoadConversionTests(unittest.TestCase):
         self.mapping = {
             "floors": {map_id: {"map_id": 400 + i, "tileset_template_id": 1,
                                "tileset_name": "reviewed_cave",
-                               "tileset_image": "reviewed_cave.png"}
+                               "tileset_image": "reviewed_cave.png",
+                               "tileset_sha256": "0" * 64}
                        for i, map_id in enumerate(MAP_IDS)},
             "entries": {
                 "1:0:0": {"layers": [384, 385, 0],
@@ -94,6 +95,17 @@ class VictoryRoadConversionTests(unittest.TestCase):
         self.mapping["entries"]["2:1:2"]["tables"][2]["passage"] = 15
         self.write_mapping()
         with self.assertRaisesRegex(ValueError, "transparent XP tile"):
+            build_bundle(self.root, self.mapping_path, verify_source=False)
+
+    def test_missing_or_invalid_reviewed_tileset_digest_rejected(self):
+        target = self.mapping["floors"][MAP_IDS[0]]
+        del target["tileset_sha256"]
+        self.write_mapping()
+        with self.assertRaisesRegex(ValueError, "missing reviewed tileset SHA-256"):
+            build_bundle(self.root, self.mapping_path, verify_source=False)
+        target["tileset_sha256"] = "not-a-real-sha"
+        self.write_mapping()
+        with self.assertRaisesRegex(ValueError, "missing reviewed tileset SHA-256"):
             build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_missing_tile_mapping_rejected(self):
