@@ -200,8 +200,15 @@ module ShatteredHNSWorldInstall
       entries.zip(objects).each do |entry, object|
         staged_paths << entry[1]
         save_data(object, entry[1])
-        assert!(File.file?(entry[1]) && File.size(entry[1]) > 0,
+        assert!(File.file?(entry[1]) && !File.symlink?(entry[1]) &&
+                File.size(entry[1]) > 0,
                 "Failed to stage native HnS world data")
+        # A nonempty RXData file is not necessarily loadable. Decode every
+        # staged native object BEFORE any original database is renamed.
+        # A corrupt or wrong-type serialization must roll back all temps.
+        decoded = load_data(entry[1])
+        assert!(decoded.class == object.class,
+                "Staged HnS world RXData has the wrong native object type")
       end
       # A non-cooperating editor could change databases or add a map while
       # temporary data is being serialized. Abort BEFORE the first rename.
