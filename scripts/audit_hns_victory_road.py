@@ -12,7 +12,13 @@ from pathlib import Path
 
 FLOORS = ("VictoryRoadKanto_1F_hns", "VictoryRoadKanto_B1F_hns",
           "VictoryRoadKanto_B2F_hns")
-MAP_IDS = tuple("MAP_" + n.upper() for n in FLOORS)
+MAP_IDS = ("MAP_VICTORY_ROAD_KANTO_1F_HNS",
+           "MAP_VICTORY_ROAD_KANTO_B1F_HNS",
+           "MAP_VICTORY_ROAD_KANTO_B2F_HNS")
+LAYOUT_IDS = ("LAYOUT_VICTORY_ROAD_KANTO_1F_HNS",
+              "LAYOUT_VICTORY_ROAD_KANTO_B1F_HNS",
+              "LAYOUT_VICTORY_ROAD_KANTO_B2F_HNS")
+EXPECTED_DIMENSIONS = ((50, 30), (60, 30), (40, 50))
 EXTERNAL = {"MAP_RECEPTION_GATE_HNS", "MAP_ROUTE23_HNS"}
 
 
@@ -20,21 +26,32 @@ def audit(maps_dir, layouts_path):
     layouts = json.loads(Path(layouts_path).read_text(encoding="utf-8"))["layouts"]
     layouts_by_id = {item["id"]: item for item in layouts}
     maps = {}
-    for name, map_id in zip(FLOORS, MAP_IDS):
+    for name, map_id, layout_id, dimensions in zip(FLOORS, MAP_IDS, LAYOUT_IDS, EXPECTED_DIMENSIONS):
         data = json.loads((Path(maps_dir) / name / "map.json").read_text(encoding="utf-8"))
         if data.get("id") != map_id:
             raise ValueError(f"{name}: unexpected map ID")
-        layout = layouts_by_id[data["layout"]]
+        if data.get("layout") != layout_id or layout_id not in layouts_by_id:
+            raise ValueError(f"{name}: unexpected or missing source layout")
+        layout = layouts_by_id[layout_id]
         width, height = layout["width"], layout["height"]
-        if width <= 0 or height <= 0:
-            raise ValueError(f"{name}: invalid dimensions")
-        warps = data["warp_events"]
+        if (width, height) != dimensions:
+            raise ValueError(f"{name}: expected {dimensions} dimensions")
+        warps = data.get("warp_events")
         if not isinstance(warps, list):
             raise ValueError(f"{name}: missing warp events")
+        positions = set()
         for index, warp in enumerate(warps):
+            position = (warp["x"], warp["y"])
+            if position in positions:
+                raise ValueError(f"{name} warp {index}: duplicate source position")
+            positions.add(position)
             if not (0 <= warp["x"] < width and 0 <= warp["y"] < height):
                 raise ValueError(f"{name} warp {index}: out of bounds")
         maps[map_id] = {"name": name, "width": width, "height": height, "warps": warps}
+    if not any(w["dest_map"] == "MAP_RECEPTION_GATE_HNS" for w in maps[MAP_IDS[2]]["warps"]):
+        raise ValueError("Victory Road B2F has no reception gate exit")
+    if not any(w["dest_map"] == "MAP_ROUTE23_HNS" for w in maps[MAP_IDS[0]]["warps"]):
+        raise ValueError("Victory Road 1F has no Route23 exit")
     links = []
     anomalies = []
     for map_id, data in maps.items():
