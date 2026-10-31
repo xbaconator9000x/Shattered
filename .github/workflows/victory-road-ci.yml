@@ -4,7 +4,9 @@ on:
     branches: [main]
     paths:
       - 'scripts/*hns_victory_road*'
+      - 'scripts/render_hns_tiles.py'
       - 'tests/test_hns_victory_road*'
+      - 'tests/test_render_hns_tiles.py'
       - '.github/workflows/victory-road-ci.yml'
   pull_request:
     paths:
@@ -26,8 +28,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install Pillow for indexed GBA source tile rendering
+        run: python3 -m pip install 'Pillow==12.0.0'
       - name: Source warp and tile conversion tests (synthetic only)
         run: python3 -m unittest discover -s tests -p 'test_hns_victory_road*.py' -v
+      - name: GBA 8px indexed tiles to RMXP 32px render tests (synthetic only)
+        run: python3 -m unittest discover -s tests -p 'test_render_hns_tiles.py' -v
+      - name: Private PNG preflight tests (synthetic only)
+        run: python3 -m unittest discover -s tests -p 'test_hns_private_tilesets.py' -v
       - name: Guarded native RMXP importer tests (synthetic Marshal fixtures only)
         run: |
           ruby -c scripts/install_hns_victory_road.rb
