@@ -127,6 +127,19 @@ class VictoryRoadInstallTest < Minitest::Test
       Dir.glob(File.join(@root, "Data", ".shattered-victory-road-install.lock"))
   end
 
+  # The source map encodes internal warp indices as canonical decimal strings.
+  # A double-escaped Ruby regexp (\\\\A instead of \\A) rejected EVERY
+  # internal transfer, including this unmodified source-grounded fixture.
+  def test_native_preflight_accepts_valid_internal_warp_indices
+    Dir.chdir(@root) do
+      values = ShatteredHNSVictoryRoadInstall.preflight!(@bundle)
+      assert_equal [300, 301, 302], values[1]
+      assert_equal ShatteredHNSVictoryRoadInstall::IDS,
+                   values[0].map { |floor| floor["source_map_id"] }
+    end
+    assert_unchanged
+  end
+
   def test_native_import_writes_three_floors_with_correct_tiles_and_warps
     assert_equal [300, 301, 302], install
     tilesets = load_data(File.join(@root, "Data/Tilesets.rxdata"))
