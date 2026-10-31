@@ -129,14 +129,23 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
         for layer_index, image in enumerate((base_layer, upper_layer)):
             offset = i * 2 + layer_index
             sheet.alpha_composite(image, ((offset % 8) * 32, (offset // 8) * 32))
+        primary_count = len(primary["metatiles"]) // 16
+        source = primary if metatile < primary_count else secondary
+        local_metatile = metatile if source is primary else metatile - primary_count
+        attr = struct.unpack_from("<H", source["attrs"], local_metatile * 2)[0]
+        layer_type = (attr >> 12) & 15
+        if layer_type not in (0, 1, 2):
+            raise ValueError(f"metatile {metatile} has unsupported GBA layer type {layer_type}")
         blocked = collision != 0
         base_passage = 15 if blocked else passage[str(metatile)]
         if type(base_passage) is not int or not 0 <= base_passage <= 31:
             raise ValueError(f"invalid reviewed passage for metatile {metatile}")
+        upper_priority = 0 if layer_type == 1 else 1
+        upper_passage = base_passage if layer_type == 1 else 0
         entries[f"{metatile}:{collision}:{elevation}"] = {
             "layers": [base_id, base_id + 1, 0],
             "tables": [{"passage": base_passage, "priority": 0, "terrain": 0},
-                       {"passage": 0, "priority": 1, "terrain": 0},
+                       {"passage": upper_passage, "priority": upper_priority, "terrain": 0},
                        {"passage": 0, "priority": 0, "terrain": 0}]}
     png_path, mapping_path = Path(png_path), Path(mapping_path)
     if png_path.exists() or mapping_path.exists():
