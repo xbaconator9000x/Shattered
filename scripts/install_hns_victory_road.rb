@@ -71,6 +71,7 @@ module ShatteredHNSVictoryRoadInstall
     raise "Internal landing must be adjacent to source warp, not on it" unless distance == 1
     width = DIMENSIONS[destination_index][0]
     tile_index = y * width + x
+    found_floor = false
     2.downto(0) do |layer|
       tile_id = floor["layers"][layer][tile_index]
       next if tile_id == 0
@@ -78,10 +79,13 @@ module ShatteredHNSVictoryRoadInstall
       raise "Internal landing has no reviewed XP passage table" unless values.is_a?(Array)
       passage = values[0]
       next if (passage & 0x10) != 0 # star-priority overlay
+      # Never accept a permissive upper tile before inspecting the base:
+      # an edited bundle could otherwise bypass a blocked ground layer.
       raise "Internal landing blocked by XP passage flags" unless (passage & 0x0f).zero?
-      return true
+      found_floor = true if layer == 0
     end
-    raise "Internal landing has no walkable XP floor tile"
+    raise "Internal landing has no walkable XP floor tile" unless found_floor
+    true
   end
 
   def preflight!(bundle)
