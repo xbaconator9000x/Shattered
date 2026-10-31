@@ -1,5 +1,6 @@
 require "fileutils"
 require "json"
+require "digest"
 require "minitest/autorun"
 require "minitest/mock"
 require "tmpdir"
@@ -75,10 +76,11 @@ class ShatteredHNSGateImportTest < Minitest::Test
     FileUtils.mkdir_p([File.join(@root, "Data"), File.join(@root, "Graphics", "Tilesets"), @plugin_dir])
     File.write(File.join(@root, "SHATTERED_STAGING_REPORT.json"),
                JSON.generate("engine" => "Essentials 21.1"))
-    File.write(File.join(@plugin_dir, "reception_gate.json"), JSON.generate(bundle))
     File.binwrite(File.join(@root, "Graphics", "Tilesets", "Gate.png"),
                   "\x89PNG\r\n\x1A\n".b + ("\0" * 4) + "IHDR" +
                     [256, 32].pack("NN") + ("\0" * 4))
+    @image_sha = Digest::SHA256.file(File.join(@root, "Graphics", "Tilesets", "Gate.png")).hexdigest
+    File.write(File.join(@plugin_dir, "reception_gate.json"), JSON.generate(bundle))
 
     map_infos = { 1 => RPG::MapInfo.new }
     tilesets = [nil, FakeTileset.new]
@@ -105,7 +107,8 @@ class ShatteredHNSGateImportTest < Minitest::Test
         "map_id" => 300,
         "tileset_template_id" => 1,
         "tileset_name" => "Gate",
-        "tileset_image" => "Gate.png"
+        "tileset_image" => "Gate.png",
+        "tileset_sha256" => @image_sha
       },
       "layers" => [
         Array.new(462, 384),
@@ -155,6 +158,22 @@ class ShatteredHNSGateImportTest < Minitest::Test
   def transaction_artifacts
     Dir.glob(File.join(@root, "Data", "*.se013-import.*")) +
       Dir.glob(File.join(@root, "Data", ".shattered-hns-gate-import.lock"))
+  end
+
+  def test_rejects_modified_gate_art_before_writing
+    File.binwrite(File.join(@root, "Graphics", "Tilesets", "Gate.png"), "modified image")
+    assert_raises(RuntimeError) { import }
+    assert_original_project_unchanged
+    assert_empty transaction_artifacts
+  end
+
+  def test_rejects_substituted_valid_header_gate_art
+    image = File.join(@root, "Graphics", "Tilesets", "Gate.png")
+    File.open(image, "ab") { |f| f.write("changed but valid header") }
+    error = assert_raises(RuntimeError) { import }
+    assert_match(/SHA-256 mismatch/, error.message)
+    assert_original_project_unchanged
+    assert_empty transaction_artifacts
   end
 
   def test_import_requires_staging_marker_before_writing
