@@ -473,27 +473,6 @@ module ShatteredInitialSlice
     raise "Native installer failed and rollback requires recovery (#{error.message}); preserve #{ROLLBACK_DIR}"
   end
 
-  def self.with_tileset_hash_view
-    path = "Data/Tilesets.rxdata"
-    original_bytes = File.binread(path)
-    tilesets = load_native(path)
-    return yield unless tilesets.is_a?(Array)
-    hash_view = {}
-    tilesets.each_with_index { |tileset, index| hash_view[index] = tileset unless tileset.nil? }
-    temporary = path + ".shattered_initial_slice_view.tmp"
-    check(!File.exist?(temporary) && !File.symlink?(temporary),
-      "Stale temporary tileset compatibility view")
-    begin
-      save_native(hash_view, temporary)
-      File.delete(path)
-      File.rename(temporary, path)
-      yield
-    ensure
-      File.binwrite(path, original_bytes)
-      File.delete(temporary) if File.exist?(temporary)
-    end
-  end
-
   def self.transfer_matches?(event, name, x, y, parameters)
     page = event.pages.first if event.respond_to?(:pages) && event.pages.is_a?(Array) &&
       event.pages.length == 1
@@ -835,9 +814,9 @@ module ShatteredInitialSlice
       validate_hns_import_result!(plan, configs["hns_import"], results.last)
       results << call_api("pbInstallShatteredWorldLinks",
         plan["config_paths"]["world_links"])
-      results << with_tileset_hash_view do
-        call_api("pbInstallShatteredGateStory", plan["config_paths"]["gate_story"])
-      end
+      # Gate Story reads the native Array tileset directly; never replace
+      # Data/Tilesets.rxdata with a temporary Hash compatibility view.
+      results << call_api("pbInstallShatteredGateStory", plan["config_paths"]["gate_story"])
 
       route_config = configs["route22"].dup
       route_config["expected_map_sha256"] = file_sha(native_map_path(
