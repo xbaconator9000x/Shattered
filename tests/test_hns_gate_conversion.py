@@ -76,6 +76,16 @@ class ReceptionGateConversionTest(unittest.TestCase):
         }
         self.mapping_json.write_text(json.dumps(self.mapping))
 
+    def test_gate_git_blob_pins_match_versioned_source_manifest(self):
+        pins = json.loads((Path(__file__).resolve().parents[1] /
+                           "development" / "hns_source_asset_pins.json").read_text())
+        layout = pins["layouts"]["LAYOUT_RECEPTION_GATE_HNS"]
+        self.assertEqual(PINNED_GATE_BLOBS, {
+            "map": layout["map_json_sha1"],
+            "layouts": pins["layouts_sha1"],
+            "blockdata": layout["blockdata_sha1"],
+        })
+
     def test_production_conversion_refuses_lookalike_gate_source(self):
         # Same geometry, map ID and warp layout are insufficient to prove HnS
         # provenance. Production conversion must reject a synthetic map.
