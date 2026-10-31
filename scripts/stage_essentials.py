@@ -369,7 +369,8 @@ def main():
     p.add_argument('--archive', action='append', default=[], help='pluginid=/local/verified.zip')
     p.add_argument('--allow-overwrite', action='store_true', help='only after reviewing collisions')
     p.add_argument('--include-runtime-set', action='store_true',
-                   help='stage all reviewed Shattered runtime and offline installer modules')\n    p.add_argument('--include-equipment', action='store_true',
+                   help='stage all reviewed Shattered runtime and offline installer modules')
+    p.add_argument('--include-equipment', action='store_true',
                    help='stage in-repo equipment adapter only after validating native item/move PBS IDs')
     p.add_argument('--gate-data', help='converted SE-013 reception gate JSON bundle')
     p.add_argument('--gate-tileset-image', help='rights-cleared 256px-wide XP tileset PNG')
