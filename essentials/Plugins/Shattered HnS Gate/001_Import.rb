@@ -1,4 +1,5 @@
 require "json"
+require "digest"
 
 module ShatteredHNSGateImport
   FORMAT = "shattered-hns-rmxp-map"
@@ -58,6 +59,11 @@ module ShatteredHNSGateImport
 
     image_path = File.join("Graphics", "Tilesets", "#{tileset_name}.png")
     raise "Reception gate tileset image is missing or invalid" unless valid_tileset_image?(image_path)
+    expected_image_sha = target_config["tileset_sha256"]
+    raise "Reception gate requires a generated tileset SHA-256" unless
+      expected_image_sha.is_a?(String) && /\A[0-9a-f]{64}\z/.match?(expected_image_sha)
+    raise "Reception gate tileset image SHA-256 mismatch" unless
+      Digest::SHA256.file(image_path).hexdigest == expected_image_sha
 
     layers = config["layers"]
     raise "Reception gate import must have three tile layers" unless
