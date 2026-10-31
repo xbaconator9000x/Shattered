@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import struct
 
+from resolve_hns_gate_warps import resolve_warp_targets
+
 
 SOURCE_REPOSITORY = "https://github.com/PokemonHnS-Development/pokehns-expansion"
 SOURCE_REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
@@ -152,29 +154,14 @@ def convert(map_json, layouts_json, map_bin, mapping_json):
     if not isinstance(image_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", image_sha):
         raise ValueError("generated gate tileset requires a SHA-256 from the private renderer")
 
-    destinations = mapping.get("destinations", {})
-    output_warps = []
-    for warp in source["warps"]:
-        destination = destinations.get(warp["source_destination"])
-        if not isinstance(destination, dict):
-            raise ValueError(f"missing target destination for {warp['source_destination']}")
-        for field in ("map_id", "x", "y"):
-            minimum = 1 if field == "map_id" else 0
-            if not isinstance(destination.get(field), int) or destination[field] < minimum:
-                raise ValueError(f"target warp destination requires nonnegative {field}")
-        direction = destination.get("direction", 0)
-        if direction not in (0, 2, 4, 6, 8):
-            raise ValueError("target warp direction must be 0, 2, 4, 6, or 8")
-        output_warps.append({
-            **warp,
-            "target": {
-                "map_id": destination["map_id"],
-                "x": destination["x"],
-                "y": destination["y"],
-                "direction": direction,
-                "fade": destination.get("fade", 0),
-            },
-        })
+    # Destination-only mappings cannot distinguish the two northern exits,
+    # which lead to the same source map but must have distinct native landings.
+    # The pinned map.json warp_events order is the stable source index.
+    targets = resolve_warp_targets(source["warps"], mapping)
+    output_warps = [
+        {**warp, "source_warp_index": index, "target": target}
+        for index, (warp, target) in enumerate(zip(source["warps"], targets))
+    ]
 
     width = source["layout"]["width"]
     height = source["layout"]["height"]
