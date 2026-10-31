@@ -61,6 +61,16 @@ def _INTL(message); message; end
 load File.expand_path("../essentials/Plugins/Shattered Route22/001_Route22.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Route22/002_Install.rb", __dir__)
 
+class Route22TestPlayer
+  attr_reader :x, :y
+  def initialize(x, y)
+    @x, @y = x, y
+  end
+  def moveto(x, y)
+    @x, @y = x, y
+  end
+end
+
 class Route22BattleTest < Minitest::Test
   def setup
     $PokemonGlobal=Object.new
@@ -154,6 +164,24 @@ class Route22BattleTest < Minitest::Test
     $battle_raises=false
     assert ShatteredRoute22.encounter(91,92)
   end
+  def test_nonvictory_returns_player_to_safe_gate_side_only_on_route22
+    $game_player = Route22TestPlayer.new(31, 17)
+    $game_map.map_id = 16
+    $battle_outcome = 3 # escape
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.return_to_entry(16, 30, 17)
+    assert_equal [30, 17], [$game_player.x, $game_player.y]
+    assert $game_map.need_refresh
+    $game_player.moveto(31, 17)
+    $game_map.map_id = 10 # blackout moved to another map
+    refute ShatteredRoute22.return_to_entry(16, 30, 17)
+    assert_equal [31, 17], [$game_player.x, $game_player.y]
+    $game_map.map_id = 16
+    ShatteredRoute22.state[:cleared] = true
+    assert ShatteredRoute22.return_to_entry(16, 30, 17)
+    assert_equal [31, 17], [$game_player.x, $game_player.y]
+  end
+
   def test_bad_ids_rejected_before_battle
     [0,-1,10000,"91",true].each do |id|
       assert_raises(ArgumentError) { ShatteredRoute22.encounter(id,92) }
@@ -333,6 +361,15 @@ class Route22InstallerTest < Minitest::Test
     assert_equal 93, done.condition.switch1_id
     assert_equal [355, 0], done.list.map(&:code)
     assert_equal "ShatteredRoute22.encounter(91, 93)", done.list.first.parameters.first
+  end
+
+  def test_native_v04_trigger_rejects_escape_and_defeat_bypass
+    config = @config.merge("expected_map_sha256" => ShatteredRoute22::V04_ROUTE22_SHA256)
+    trigger = ShatteredRoute22.build_trigger(31, 17, 0, [1, 2, 3], config)
+    script = "ShatteredRoute22.encounter(91, 93) || ShatteredRoute22.return_to_entry(42, 30, 17)"
+    assert_equal script, trigger.pages.first.list.select { |cmd| cmd.code == 355 }.last.parameters.first
+    assert_equal script, trigger.pages[1].list.first.parameters.first
+    assert_equal script, trigger.pages[2].list.first.parameters.first
   end
 
   def test_plugin_metadata_uses_essentials_v21_format
