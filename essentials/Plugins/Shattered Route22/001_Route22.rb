@@ -89,6 +89,25 @@ module ShatteredRoute22
     end
   end
 
+  # A failed or escaped mandatory battle must not let the player walk from
+  # the trigger tile straight into Viridian. Return to the safe west side if
+  # still on Route22; never teleport someone after a blackout/map transfer.
+  def self.return_to_entry(map_id, x, y)
+    validate_id(map_id)
+    raise ArgumentError, "Invalid Route22 retry position" unless
+      x.instance_of?(Integer) && y.instance_of?(Integer) &&
+      x.between?(0, 255) && y.between?(0, 255)
+    return true if cleared?
+    map = defined?($game_map) ? $game_map : nil
+    return false unless map && map.respond_to?(:map_id) && map.map_id == map_id
+    player = defined?($game_player) ? $game_player : nil
+    raise "Game player cannot return to mandatory encounter entry" unless
+      player && player.respond_to?(:moveto)
+    player.moveto(x, y)
+    request_map_refresh
+    false
+  end
+
   def self.capture_violation?
     !!@last_capture_violation
   end
