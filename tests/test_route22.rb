@@ -193,7 +193,7 @@ class Route22InstallerTest < Minitest::Test
   end
   def native_v04_fixture(blocked = nil, legacy = false)
     positions = {
-      "triggers" => [[27, 16], [27, 17], [27, 18]],
+      "triggers" => [[31, 17], [31, 18], [32, 18]],
       "npcs" => [[29, 17], [29, 18], [28, 18]]
     }
     tiles = {}
@@ -260,7 +260,7 @@ class Route22InstallerTest < Minitest::Test
   end
 
   def test_native_adaptation_rejects_blocked_and_legacy_event
-    native_v04_fixture([27, 17])
+    native_v04_fixture([31, 17])
     before = File.binread("Data/Map042.rxdata")
     assert_raises(RuntimeError) { ShatteredRoute22.install(@config) }
     assert_equal before, File.binread("Data/Map042.rxdata")
@@ -288,7 +288,7 @@ class Route22InstallerTest < Minitest::Test
       "event_sha256" => ShatteredRoute22::V04_LEGACY_EVENT_SHA256
     }
     ShatteredRoute22.validate_config(@config)
-    @config["event_positions"]["triggers"][0] = [26, 16]
+    @config["event_positions"]["triggers"][0] = [30, 16]
     assert_raises(ArgumentError) { ShatteredRoute22.validate_config(@config) }
   end
 
