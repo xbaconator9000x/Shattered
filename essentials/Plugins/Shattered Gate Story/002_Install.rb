@@ -34,7 +34,10 @@ module ShatteredGateStory
       raise "Gate map contains invalid tile ID" unless tile_id.instance_of?(Integer) && tile_id >= 0
       passage = tileset.passages[tile_id]
       raise "Gate tileset passage data missing" unless passage.instance_of?(Integer) && passage.between?(0, 31)
-      next if (passage & 0x10) != 0
+      # Star-priority decoration may be ignored above the floor, but a
+      # star-priority BASE tile cannot establish a walkable story trigger.
+      next if z > 0 && (passage & 0x10) != 0
+      return false if (passage & 0x10) != 0
       return false unless (passage & 0x0F) == 0
     end
     true
