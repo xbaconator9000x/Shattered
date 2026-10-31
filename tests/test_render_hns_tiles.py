@@ -76,6 +76,23 @@ class RenderHnsTests(unittest.TestCase):
         self.assertEqual({"passage": 15, "priority": 0, "terrain": 0},
                          result["entries"]["0:1:0"]["tables"][1])
 
+    def test_normal_upper_layer_cannot_bypass_blocked_ground(self):
+        (self.root / "data/layouts/Test/map.bin").write_bytes(struct.pack("<H", 1 << 10))
+        result = self.convert()
+        tables = result["entries"]["0:1:0"]["tables"]
+        self.assertEqual(15, tables[0]["passage"])
+        self.assertEqual(15, tables[1]["passage"])
+        self.assertEqual(1, tables[1]["priority"])
+
+    def test_directional_review_applies_to_both_layers(self):
+        self.base.write_text(json.dumps({
+            "target": {"tileset_name": "approved", "tileset_image": "approved.png"},
+            "passage_by_metatile": {"0": 4}}))
+        result = self.convert()
+        tables = result["entries"]["0:0:0"]["tables"]
+        self.assertEqual(4, tables[0]["passage"])
+        self.assertEqual(4, tables[1]["passage"])
+
     def test_missing_reviewed_collision_fails(self):
         self.base.write_text(json.dumps({
             "target": {"tileset_name": "approved", "tileset_image": "approved.png"},
