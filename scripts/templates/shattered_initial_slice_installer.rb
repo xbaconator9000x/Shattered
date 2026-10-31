@@ -814,7 +814,9 @@ module ShatteredInitialSlice
       validate_hns_import_result!(plan, configs["hns_import"], results.last)
       results << call_api("pbInstallShatteredWorldLinks",
         plan["config_paths"]["world_links"])
-      # Gate Story reads the native Array tileset directly; never replace\n      # Data/Tilesets.rxdata with a temporary Hash compatibility view.\n      results << call_api("pbInstallShatteredGateStory", plan["config_paths"]["gate_story"])
+      # Gate Story reads the native Array tileset directly; never replace
+      # Data/Tilesets.rxdata with a temporary Hash compatibility view.
+      results << call_api("pbInstallShatteredGateStory", plan["config_paths"]["gate_story"])
 
       route_config = configs["route22"].dup
       route_config["expected_map_sha256"] = file_sha(native_map_path(
