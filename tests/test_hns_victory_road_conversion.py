@@ -50,12 +50,12 @@ class VictoryRoadConversionTests(unittest.TestCase):
                           "tables": [table(15), table(15), table(0)]},
             },
             "warp_targets": {
-                f"{MAP_IDS[0]}:0": {"map_id": 401, "x": 1, "y": 1},
+                f"{MAP_IDS[0]}:0": {"map_id": 401, "x": 2, "y": 1},
                 f"{MAP_IDS[0]}:1": {"map_id": 500, "x": 1, "y": 1},
-                f"{MAP_IDS[1]}:0": {"map_id": 400, "x": 1, "y": 1},
-                f"{MAP_IDS[1]}:1": {"map_id": 402, "x": 2, "y": 2},
+                f"{MAP_IDS[1]}:0": {"map_id": 400, "x": 2, "y": 1},
+                f"{MAP_IDS[1]}:1": {"map_id": 402, "x": 3, "y": 2},
                 f"{MAP_IDS[2]}:0": {"map_id": 223, "x": 10, "y": 1},
-                f"{MAP_IDS[2]}:1": {"map_id": 401, "x": 2, "y": 2},
+                f"{MAP_IDS[2]}:1": {"map_id": 401, "x": 3, "y": 2},
             }
         }
         self.write_mapping()
@@ -141,7 +141,13 @@ class VictoryRoadConversionTests(unittest.TestCase):
     def test_wrong_in_bounds_internal_warp_landing_rejected(self):
         self.mapping["warp_targets"][f"{MAP_IDS[1]}:1"]["x"] = 10
         self.write_mapping()
-        with self.assertRaisesRegex(ValueError, "not at/adjacent to source destination warp"):
+        with self.assertRaisesRegex(ValueError, "must be cardinally adjacent to source destination warp"):
+            build_bundle(self.root, self.mapping_path, verify_source=False)
+
+    def test_same_tile_internal_warp_landing_rejected(self):
+        self.mapping["warp_targets"][f"{MAP_IDS[0]}:0"]["x"] = 1
+        self.write_mapping()
+        with self.assertRaisesRegex(ValueError, "must be cardinally adjacent"):
             build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_duplicate_native_map_id_rejected(self):
