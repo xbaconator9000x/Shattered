@@ -45,7 +45,7 @@ def fixture():
         road_floor["dimensions"]["tile_pixels"] = 32
     for road_floor in road["floors"][:2]:
         road_floor["warps"] = [{"x": i, "y": 0} for i in range(10)]
-    b2f["warps"].append({"x": 4, "y": 3})
+    b2f["warps"].append({"x": 4, "y": 3, "source_destination": "MAP_VICTORY_ROAD_KANTO_B1F_HNS"})
     return gate, road
 
 
