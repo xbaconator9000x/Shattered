@@ -9,8 +9,10 @@ explicitly for every metatile; the GBA collision bits remain authoritative.
 """
 import argparse
 import hashlib
+import io
 import json
 from pathlib import Path
+import re
 import struct
 from PIL import Image
 
@@ -84,6 +86,31 @@ def render_metatile(metatile_id, primary, secondary, palettes):
     return [layer.resize((32, 32), Image.Resampling.NEAREST) for layer in layers]
 
 
+def checked_output_targets(mapping, png_path):
+    """Bind a generated sheet to every consumer; never trust an unrelated PNG."""
+    targets = []
+    if "target" in mapping:
+        targets.append(mapping["target"])
+    if "floors" in mapping:
+        floors = mapping["floors"]
+        if not isinstance(floors, dict) or not floors:
+            raise ValueError("floors must be a nonempty mapping")
+        targets.extend(floors.values())
+    if not targets:
+        raise ValueError("mapping needs a gate target or Victory Road floor targets")
+    for target in targets:
+        if not isinstance(target, dict):
+            raise ValueError("invalid tileset target")
+        name = target.get("tileset_name")
+        if not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", name):
+            raise ValueError("invalid tileset name in output target")
+        if target.get("tileset_image") != name + ".png":
+            raise ValueError("target tileset image/name mismatch")
+        if target["tileset_image"] != Path(png_path).name:
+            raise ValueError("output PNG filename does not match mapped tileset image")
+    return targets
+
+
 def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png_path, mapping_path):
     root = Path(source_root)
     layouts = json.loads((root / "data/layouts/layouts.json").read_text(encoding="utf-8"))["layouts"]
@@ -107,6 +134,7 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
     mapping = json.loads(Path(base_mapping).read_text(encoding="utf-8"))
     if "entries" in mapping:
         raise ValueError("base mapping must not predefine generated entries")
+    targets = checked_output_targets(mapping, png_path)
     passage = mapping.pop("passage_by_metatile", {})
     keys = set()
     for record in selected:
@@ -148,17 +176,43 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
                        {"passage": upper_passage, "priority": upper_priority, "terrain": 0},
                        {"passage": 0, "priority": 0, "terrain": 0}]}
     png_path, mapping_path = Path(png_path), Path(mapping_path)
-    if png_path.exists() or mapping_path.exists():
+    if (png_path.resolve() == mapping_path.resolve() or png_path.is_symlink() or
+            mapping_path.is_symlink() or png_path.exists() or mapping_path.exists()):
         raise ValueError("refusing to overwrite private generated output")
+    image_buffer = io.BytesIO()
+    sheet.save(image_buffer, format="PNG")
+    png_bytes = image_buffer.getvalue()
+    image_sha = hashlib.sha256(png_bytes).hexdigest()
+    for target in targets:
+        pinned = target.get("tileset_sha256")
+        if pinned is not None and pinned != image_sha:
+            raise ValueError("reviewed target tileset SHA-256 conflicts with generated PNG")
+        target["tileset_sha256"] = image_sha
     mapping["entries"] = entries
     mapping["private_hns_art_manifest"] = {
         "layouts": list(layout_ids), "primary_tileset": expected_pair[0],
         "secondary_tileset": expected_pair[1], "primary_source": primary["sha256"],
         "secondary_source": secondary["sha256"], "source_pixel_scale": 2,
         "unique_mapping_keys": len(keys), "passage_reviewed": True,
+        "rendered_tileset_sha256": image_sha,
         "in_engine_visual_and_collision_verified": False}
-    sheet.save(png_path, format="PNG")
-    mapping_path.write_text(json.dumps(mapping, indent=2) + "\n", encoding="utf-8")
+    mapping_bytes = (json.dumps(mapping, indent=2) + "\n").encode("utf-8")
+    # Exclusive creation and rollback prevent a failed conversion leaving a
+    # plausible-looking PNG/mapping pair or replacing approved private assets.
+    created_png = created_mapping = False
+    try:
+        with png_path.open("xb") as stream:
+            created_png = True
+            stream.write(png_bytes)
+        with mapping_path.open("xb") as stream:
+            created_mapping = True
+            stream.write(mapping_bytes)
+    except BaseException:
+        if created_mapping:
+            mapping_path.unlink(missing_ok=True)
+        if created_png:
+            png_path.unlink(missing_ok=True)
+        raise
     return mapping
 
 
