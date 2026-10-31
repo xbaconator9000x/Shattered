@@ -82,7 +82,7 @@ module ShatteredPrivateRoute22
       rescue Zlib::Error
         raise "Unparseable original script entry #{index}"
       end
-      if source.match?(/\\$game_(?:switches|variables)\\s*\\[\\s*(?:991|992)\\s*\\]/)
+      if source.match?(/\$game_(?:switches|variables)\s*\[\s*(?:991|992)\s*\]/)
         conflicts << [index, entry[1].to_s]
       end
     end
