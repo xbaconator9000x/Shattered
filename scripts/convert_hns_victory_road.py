@@ -18,10 +18,22 @@ from convert_hns_reception_gate import _mapping_entry
 
 SOURCE_REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
 FORMAT = "shattered-hns-victory-road-rmxp-bundle"
+PINNED_LAYOUTS_BLOB = "a3c3be1b411b1dca5a81494c7e2d4ef100b1e75d"
+PINNED_FLOOR_BLOBS = (
+    ("b072627ee9e367690dd909881f9ea52a6e390ed1", "db84795062e12349416c2cdb4183e2dc36ee22bc"),
+    ("65ec4beafef41872863f34998219365c0792d7b7", "f4e9b9bbe18b619b18574e88f9737800c75358db"),
+    ("ce561685d1d3835b6625b4c22faa76ba9f1f2a2d", "11f1e34ee30291542e06a8eba45b3be14f792aa1"),
+)
 
 
 def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def git_blob_sha1(path):
+    data = Path(path).read_bytes()
+    header = b"blob " + str(len(data)).encode("ascii") + b"\x00"
+    return hashlib.sha1(header + data).hexdigest()
 
 
 def positive(value, label, minimum=1):
@@ -30,11 +42,13 @@ def positive(value, label, minimum=1):
     return value
 
 
-def build_bundle(source_root, mapping_path):
+def build_bundle(source_root, mapping_path, verify_source=True):
     source_root = Path(source_root)
     map_dir = source_root / "data" / "maps"
     layouts_dir = source_root / "data" / "layouts"
     layouts_path = layouts_dir / "layouts.json"
+    if verify_source and git_blob_sha1(layouts_path) != PINNED_LAYOUTS_BLOB:
+        raise ValueError("unrecognized source layouts.json Git blob")
     topology = audit(map_dir, layouts_path)
     if topology["anomalies"]:
         raise ValueError("source warp graph has unresolved anomalies")
@@ -65,9 +79,11 @@ def build_bundle(source_root, mapping_path):
 
     floor_data = []
     expected_warp_keys = set()
-    for floor_name, map_id, dimensions in zip(FLOORS, MAP_IDS, EXPECTED_DIMENSIONS):
+    for floor_name, map_id, dimensions, expected_blobs in zip(\n            FLOORS, MAP_IDS, EXPECTED_DIMENSIONS, PINNED_FLOOR_BLOBS):
         map_path = map_dir / floor_name / "map.json"
         bin_path = layouts_dir / floor_name / "map.bin"
+        if verify_source and (git_blob_sha1(map_path), git_blob_sha1(bin_path)) != expected_blobs:
+            raise ValueError(f"{floor_name}: source Git blob mismatch at pinned revision")
         source_map = json.loads(map_path.read_text(encoding="utf-8"))
         raw = bin_path.read_bytes()
         width, height = dimensions
