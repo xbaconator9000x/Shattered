@@ -207,6 +207,11 @@ module ShatteredRoute22
     commands << command(210) # Wait for Move Completion
     commands << command(121, [config["scatter_switch"], config["scatter_switch"], 0])
     script = "ShatteredRoute22.encounter(#{config['outcome_variable']}, #{config['cleared_switch']})"
+    # Native v0.4: failing/fleeing on x31 would otherwise permit a direct
+    # step onto the Viridian warp at x32,17 without a successful battle.
+    if config["expected_map_sha256"] == V04_ROUTE22_SHA256
+      script += " || ShatteredRoute22.return_to_entry(#{config['map_id']}, 30, 17)"
+    end
     commands << command(355, [script])
     commands << command(0)
     initial.list = commands
