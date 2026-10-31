@@ -5,6 +5,7 @@
 # Requires a private, staged Essentials v21.1 project with RGSS classes,
 # load_data/save_data and approved local PNGs. Never load at game startup.
 require "json"
+require "digest"
 require_relative "../essentials/Plugins/Shattered HnS Gate/001_Import"
 require_relative "install_hns_victory_road"
 
@@ -123,12 +124,22 @@ module ShatteredHNSWorldInstall
     road = JSON.parse(File.read(road_bundle_path))
     gate_id, road_ids = verify_link!(gate, road)
 
+    # A standalone installer may finish between our preflight and lock
+    # acquisition. Pin the native databases BEFORE reading either map bundle,
+    # then recheck them under all three exclusive locks before any writes.
+    native_hashes = ["Data/Tilesets.rxdata", "Data/MapInfos.rxdata"].to_h do |path|
+      [path, Digest::SHA256.file(regular!(path)).hexdigest]
+    end
     # Validate both halves against the same untouched native databases before
     # creating a single transaction. Neither standalone installer is invoked.
     gate_values = ShatteredHNSGateImport.preflight!(gate, {road_ids[2] => [40, 50]})
     road_values = ShatteredHNSVictoryRoadInstall.preflight!(road, {gate_id => [22, 21]})
     assert!(gate_values[0] == gate_id && road_values[1] == road_ids,
             "Native map allocation changed during preflight")
+    native_hashes.each do |path, expected|
+      assert!(Digest::SHA256.file(regular!(path)).hexdigest == expected,
+              "Native database changed during HnS world preflight")
+    end
     assert!(!present?(LOCK) &&
             !present?(ShatteredHNSGateImport::LOCK_PATH) &&
             !present?(ShatteredHNSVictoryRoadInstall::LOCK),
@@ -162,6 +173,13 @@ module ShatteredHNSWorldInstall
        ShatteredHNSVictoryRoadInstall::LOCK].each do |lock|
         File.open(lock, File::WRONLY | File::CREAT | File::EXCL) {}
         acquired_locks << lock
+      end
+      native_hashes.each do |path, expected|
+        assert!(Digest::SHA256.file(regular!(path)).hexdigest == expected,
+                "Native database changed before HnS world transaction")
+      end
+      entries.each do |path, _temp, _backup, existed|
+        assert!(!present?(path), "Native map appeared during HnS world lock acquisition") unless existed
       end
       gate_objects = ShatteredHNSGateImport.build_objects(gate_values)
       road_values[2] = gate_objects[2] # combined MapInfos, including the gate
