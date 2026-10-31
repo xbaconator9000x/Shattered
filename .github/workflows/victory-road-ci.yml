@@ -5,6 +5,8 @@ on:
     paths:
       - 'scripts/*hns_victory_road*'
       - 'scripts/render_hns_tiles.py'
+      - 'scripts/preview_hns_native_maps.py'
+      - 'tests/test_preview_hns_native_maps.py'
       - 'scripts/install_hns_gate_victory_road.rb'
       - 'scripts/convert_hns_reception_gate.py'
       - 'scripts/resolve_hns_gate_warps.py'
@@ -23,6 +25,8 @@ on:
     paths:
       - 'scripts/*hns_victory_road*'
       - 'scripts/render_hns_tiles.py'
+      - 'scripts/preview_hns_native_maps.py'
+      - 'tests/test_preview_hns_native_maps.py'
       - 'scripts/install_hns_gate_victory_road.rb'
       - 'scripts/convert_hns_reception_gate.py'
       - 'scripts/resolve_hns_gate_warps.py'
@@ -56,11 +60,13 @@ jobs:
         run: python3 -m pip install 'Pillow==12.0.0'
       - name: Compile all Victory Road Python modules
         run: |
-          python3 -m py_compile scripts/render_hns_tiles.py scripts/convert_hns_victory_road.py scripts/audit_hns_victory_road.py scripts/convert_hns_reception_gate.py scripts/resolve_hns_gate_warps.py
+          python3 -m py_compile scripts/render_hns_tiles.py scripts/preview_hns_native_maps.py scripts/convert_hns_victory_road.py scripts/audit_hns_victory_road.py scripts/convert_hns_reception_gate.py scripts/resolve_hns_gate_warps.py
       - name: Source warp and tile conversion tests (synthetic only)
         run: python3 -m unittest discover -s tests -p 'test_hns_victory_road*.py' -v
       - name: GBA 8px indexed tiles to RMXP 32px render tests (synthetic only)
         run: python3 -m unittest discover -s tests -p 'test_render_hns_tiles.py' -v
+      - name: Four-map private asset review preview tests (synthetic only)
+        run: python3 -m unittest discover -s tests -p 'test_preview_hns_native_maps.py' -v
       - name: Private PNG preflight tests (synthetic only)
         run: python3 -m unittest discover -s tests -p 'test_hns_private_tilesets.py' -v
       - name: Gate-to-B2F reciprocal collision and warp tests (synthetic only)
