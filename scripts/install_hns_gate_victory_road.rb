@@ -226,11 +226,28 @@ module ShatteredHNSWorldInstall
       end
       entries.each do |path, temp, backup, existed|
         if existed
-          File.rename(path, backup)
-          backed_up_paths << path
+          begin
+            File.rename(path, backup)
+            backed_up_paths << path
+          rescue StandardError
+            # A filesystem rename may have succeeded before a wrapper or
+            # instrumentation raised. A transaction-owned backup is then
+            # present while the original path is absent. Recover it rather
+            # than leaving the original native database missing.
+            backed_up_paths << path if !present?(path) && present?(backup)
+            raise
+          end
         end
-        File.rename(temp, path)
-        installed_paths << path
+        begin
+          File.rename(temp, path)
+          installed_paths << path
+        rescue StandardError
+          # Likewise, a completed temp->destination rename can raise after
+          # moving the file. Track it for rollback, including NEW map files,
+          # or the partial installation would survive a failed transaction.
+          installed_paths << path if !present?(temp) && present?(path)
+          raise
+        end
       end
     rescue StandardError => error
       unless acquired_locks.empty?
