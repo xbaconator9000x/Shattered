@@ -56,7 +56,7 @@
     "native_continue_menu_selected": true,
     "native_saved_human_reloaded": true,
     "normal_save_menu_verified": false,
-    "first_human_battle_verified": false,
+    "first_human_battle_verified": true,
     "hns_gate_parity_verified": false,
     "route22_encounter_verified": false,
     "viridian_rescue_verified": false,
@@ -80,10 +80,48 @@
   "diagnostic_scope": "Private one-time modifications to compiled script sections emitted logging and invoked Game.save at start_new; all original Scripts.rxdata and uninstrumented PluginScripts.rxdata were restored after probes. Save/reload proves native serialization and Continue, NOT normal save-menu UX, story quest persistence or battle acceptance.",
   "blockers": [
     "No rights-reviewed HnS gate metatile/collision mapping; current visible gate is v0.4 Crystal placeholder.",
-    "No actual HUMAN-vs-Rattata battle or stamina/defensive type validation.",
+    "Actual HUMAN-vs-Rattata battle and victory observed via private Scene_Map diagnostic, but NOT mandatory Route22 map event, stamina/type or capture validation.",
     "No native Aipom/Route22 event installation in this candidate.",
     "No Android JoiPlay/NaviaXP playthrough.",
     "Hotfixes remain v21.1 1.0.3; 1.0.9 and external plugin archive licenses/compatibility not verified."
   ],
-  "distribution": "Hashes and observations only. No user project ZIP, compiled RXData, screenshots, Pokémon art or binaries committed."
+  "distribution": "Hashes and observations only. No user project ZIP, compiled RXData, screenshots, Pokémon art or binaries committed.",
+  "pr50_native_battle": {
+    "date": "2026-10-31",
+    "kind": "actual_private_native_battle_diagnostic_not_route22_event_acceptance",
+    "engine": "same official mkxp-z Linux x86_64 SHA 9a100525f7d9c40cde09f38630129802808c8df8c1d8256a96f0af3ec6c50345",
+    "trigger": "Temporary private Scene_Map#main diagnostic invoked ShatteredRoute22.encounter(21,81) AFTER createSpritesets; no map event was installed.",
+    "human_species_compiled": true,
+    "human_level": 5,
+    "rattata_level": 5,
+    "battle_scene_rendered": true,
+    "human_battle_commands_rendered": true,
+    "human_hp_decreased_during_turns": true,
+    "rattata_hp_decreased_during_turns": true,
+    "numeric_outcome_variable": 1,
+    "route22_encounter_return": true,
+    "victory_verified": true,
+    "stamina_debit_verified": false,
+    "human_type_effectiveness_verified": false,
+    "capture_block_verified": false,
+    "route22_map_trigger_verified": false,
+    "save_after_battle_verified": false,
+    "android_verified": false,
+    "human_battle_back": {
+      "original_private_trainer_sheet": "Graphics/Trainers/POKEMONTRAINER_Red_back.png",
+      "source_sha256": "9f5e0fa8b6c02b059085b1d75af994cf8f875c9c4f25c33b57f322dd28e7499c",
+      "private_first_frame_png_sha256": "f415e6932e04c4b3b002a546b20e3f5c662653afee07003d437de32ae5d8adef",
+      "new_source_only_converter": "scripts/stage_human_battle_sprite.py",
+      "new_converter_output_sha256": "1cf99ece3c3dd3e456179984f2299cc19e78eb5ef74b84abf262312c95d88447",
+      "new_converter_pixel_identical_to_runtime_proven_crop": true,
+      "status": "Temporary private trainer-based visual fallback, not final Shattered Survivalist sprite. No art binaries committed."
+    },
+    "private_evidence_hashes": {
+      "battle_command_png_sha256": "679c603d59fc1710494f63685d0716b4ecae7baef447c03e2bdc8b1ea2b71ead",
+      "battle_hp_turns_png_sha256": "25ae2d508227d471d7c4401f3c4cd9fd4176bba48881f2f1cc03f0dd179e1859",
+      "human_sprite_battle_png_sha256": "2fddb8ae8bd4a3dd027396047fbb4f21684f6aa423600ce8ef141e01641bf5e5",
+      "battle_victory_log_sha256": "e808cef9ab160d12f87f9cdaf3a01a71387307e02c20be60cc58ebe0eab7c09b"
+    },
+    "diagnostic_restored_original_scripts_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05"
+  }
 }
