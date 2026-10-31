@@ -34,6 +34,9 @@ jobs:
           python-version: '3.12'
       - name: Install Pillow for indexed GBA source tile rendering
         run: python3 -m pip install 'Pillow==12.0.0'
+      - name: Compile all Victory Road Python modules
+        run: |
+          python3 -m py_compile scripts/render_hns_tiles.py scripts/convert_hns_victory_road.py scripts/audit_hns_victory_road.py scripts/convert_hns_reception_gate.py
       - name: Source warp and tile conversion tests (synthetic only)
         run: python3 -m unittest discover -s tests -p 'test_hns_victory_road*.py' -v
       - name: GBA 8px indexed tiles to RMXP 32px render tests (synthetic only)
