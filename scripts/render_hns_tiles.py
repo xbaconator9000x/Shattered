@@ -17,6 +17,47 @@ import struct
 from PIL import Image
 
 
+SOURCE_REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
+PIN_MANIFEST = Path(__file__).resolve().parents[1] / "development/hns_source_asset_pins.json"
+
+
+def git_blob_sha1(path):
+    data = Path(path).read_bytes()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\x00" + data).hexdigest()
+
+
+def verify_pinned_source(root, selected, primary_dir, secondary_dir):
+    """Reject substituted HnS maps, metatiles, palettes and tiles before rendering."""
+    pins = json.loads(PIN_MANIFEST.read_text(encoding="utf-8"))
+    if (pins.get("source_repository") != "PokemonHnS-Development/pokehns-expansion" or
+            pins.get("source_revision") != SOURCE_REVISION):
+        raise ValueError("unrecognized HnS source manifest")
+    pair = (str(Path(primary_dir)), str(Path(secondary_dir)))
+    for record in selected:
+        layout = pins["layouts"].get(record["id"])
+        if layout is None:
+            raise ValueError(f"unpinned HnS layout: {record['id']}")
+        if pair != (layout["primary_dir"], layout["secondary_dir"]):
+            raise ValueError(f"{record['id']}: source tileset directory pair mismatch")
+        if record["blockdata_filepath"] != layout["blockdata_path"]:
+            raise ValueError(f"{record['id']}: source blockdata path mismatch")
+    def verify(relative, expected):
+        path = root / relative
+        if path.is_symlink() or not path.is_file():
+            raise ValueError(f"missing or unsafe pinned HnS source asset: {relative}")
+        if git_blob_sha1(path) != expected:
+            raise ValueError(f"pinned HnS source blob mismatch: {relative}")
+    verify("data/layouts/layouts.json", pins["layouts_sha1"])
+    for record in selected:
+        layout = pins["layouts"][record["id"]]
+        verify(layout["map_json_path"], layout["map_json_sha1"])
+        verify(layout["blockdata_path"], layout["blockdata_sha1"])
+    for directory in pair:
+        for relative, blob in pins["tilesets"][directory].items():
+            verify(str(Path(directory) / relative), blob)
+
+
+
 def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -111,7 +152,7 @@ def checked_output_targets(mapping, png_path):
     return targets
 
 
-def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png_path, mapping_path):
+def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png_path, mapping_path, verify_source=True):
     root = Path(source_root)
     layouts = json.loads((root / "data/layouts/layouts.json").read_text(encoding="utf-8"))["layouts"]
     by_id = {record["id"]: record for record in layouts}
@@ -121,6 +162,8 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
     expected_pair = (selected[0]["primary_tileset"], selected[0]["secondary_tileset"])
     if any((r["primary_tileset"], r["secondary_tileset"]) != expected_pair for r in selected):
         raise ValueError("layouts with different source tilesets require separate XP images")
+    if verify_source:
+        verify_pinned_source(root, selected, primary_dir, secondary_dir)
     primary = tileset(root / primary_dir)
     secondary = tileset(root / secondary_dir)
     palettes = {}
