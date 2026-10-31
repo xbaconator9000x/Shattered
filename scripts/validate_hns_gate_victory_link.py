@@ -89,6 +89,13 @@ def check(gate, road):
     gate_warps = gate["warps"]
     north = [warp for warp in gate_warps if warp["direction"] == "north"]
     require(len(north) == 2, "Reception Gate must have two northern Victory Road exits")
+    # Two separate source doorways cannot silently converge on one landing.
+    # Otherwise static validation could report success while the native
+    # four-map installer correctly rejects the same converted bundles.
+    landings = {(warp["target"]["map_id"], warp["target"]["x"],
+                 warp["target"]["y"]) for warp in north}
+    require(len(landings) == 2,
+            "two Reception Gate north exits collapse onto one B2F landing")
     for warp in north:
         require(warp["source_destination"] == B2F and
                 warp["target"]["map_id"] == b2f_id,
