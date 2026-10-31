@@ -73,6 +73,21 @@ jobs:
         run: |
           ruby -c scripts/finalize_private_runtime.rb
           ruby tests/test_private_runtime_isolation.rb
+      - name: Native gate, HnS, Route22, rescue and raid Ruby regressions
+        run: |
+          # Run each suite in a fresh Ruby process: their RGSS fixture globals
+          # and mock Pokemon classes intentionally differ across files.
+          for suite in \
+            tests/test_gate_story.rb \
+            tests/test_hns_gate_import.rb \
+            tests/test_route22.rb \
+            tests/test_murkrow_rescue.rb \
+            tests/test_shattered_native_handoff.rb \
+            tests/test_shattered_raid.rb \
+            tests/test_raid_core_integration.rb; do
+            ruby -c "$suite"
+            ruby "$suite"
+          done
       - name: Smoke test staged project output
         run: |
           mkdir -p /tmp/base/PBS
