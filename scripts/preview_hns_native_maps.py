@@ -10,6 +10,7 @@ import json
 import os
 from pathlib import Path
 import re
+import struct
 import tempfile
 
 from PIL import Image, ImageDraw
@@ -63,6 +64,7 @@ def verify_raw_source_bytes(gate, road, source_root):
         if map_data is gate and (source.get("map_path") != pinned.get("map_json_path") or
                                  source.get("blockdata_path") != pinned.get("blockdata_path")):
             raise ValueError("Reception Gate source paths differ from pinned raw files")
+        raw_inputs = {}
         for path_key, blob_key, digest_key in (
                 ("map_json_path", "map_json_sha1", "map_sha256"),
                 ("blockdata_path", "blockdata_sha1", "blockdata_sha256")):
@@ -89,6 +91,36 @@ def verify_raw_source_bytes(gate, road, source_root):
                 raise ValueError(f"{layout_id}: raw source Git blob SHA-1 mismatch")
             if hashlib.sha256(payload).hexdigest() != expected:
                 raise ValueError(f"{layout_id}: converted bundle raw source SHA-256 mismatch")
+            raw_inputs[path_key] = payload
+
+        width = map_data["dimensions"]["width"]
+        height = map_data["dimensions"]["height"]
+        blockdata = raw_inputs["blockdata_path"]
+        if len(blockdata) != width * height * 2:
+            raise ValueError(f"{layout_id}: raw GBA blockdata size differs from map")
+        words = [word for (word,) in struct.iter_unpack("<H", blockdata)]
+        collision = [(word >> 10) & 3 for word in words]
+        elevation = [(word >> 12) & 15 for word in words]
+        if (map_data.get("source_collision") != collision or
+                map_data.get("source_elevation") != elevation):
+            raise ValueError(f"{layout_id}: converted collision/elevation differs from raw GBA blockdata")
+
+        try:
+            raw_map = json.loads(raw_inputs["map_json_path"])
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError(f"{layout_id}: unreadable pinned source map JSON") from exc
+        source_warps = raw_map.get("warp_events")
+        converted_warps = map_data.get("warps")
+        if (not isinstance(source_warps, list) or
+                not isinstance(converted_warps, list) or
+                len(source_warps) != len(converted_warps)):
+            raise ValueError(f"{layout_id}: source warp count differs from converted map")
+        for index, (original, converted) in enumerate(zip(source_warps, converted_warps)):
+            if (not isinstance(original, dict) or not isinstance(converted, dict) or
+                    converted.get("source_warp_index") != index or
+                    (converted.get("x"), converted.get("y"), converted.get("source_destination")) !=
+                    (original.get("x"), original.get("y"), original.get("dest_map"))):
+                raise ValueError(f"{layout_id}: converted source warp differs from raw map JSON")
     return True
 
 
@@ -284,6 +316,8 @@ def build_review(gate_path, road_path, tilesets_dir, output_dir, source_root=Non
             "imported_into_game": False, "native_gameplay_verified": False,
             "pinned_source_identity_checked": True,
             "raw_upstream_source_bytes_verified_by_preview": raw_verified,
+            "raw_collision_elevation_and_warps_verified": raw_verified,
+            "rmxp_tiles_recomputed_from_raw_source": False,
             "source_bundles_sha256": {"gate": digest(gate_path), "victory_road": digest(road_path)},
             "maps": {},
         }
