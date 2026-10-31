@@ -162,7 +162,8 @@
         "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
         "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified.",
         "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed.",
-        "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance."
+        "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance.",
+        "2026-10-31 user confirmed approval for PRIVATE Heart & Soul tileset use. PR #57 adds source-grounded indexed GBA metatile/palette rendering and native 32px XP tilesheet generation with reviewed passage requirement. Six local synthetic renderer tests passed; source PNG/real in-engine map still not installed or accepted. No assets committed."
       ]
     },
     {
@@ -494,6 +495,24 @@
         "2026-10-31 PR #57 follow-up: converter and importer now both reject same-tile and non-adjacent internal warp landings; importer checks target XP tile passability and independently verifies SHA-256 of each private rights-reviewed tileset PNG. New negative regression tests added; not yet run in CI or native engine."
       ],
       "blocker": "Original Heart & Soul source has no verified asset redistribution licence; reviewed private tileset PNG/metatile mapping and actual native import/playthrough are absent. This Victory Road expansion is NOT a prerequisite for first gate-to-Route22 demo."
+    },
+    {
+      "id": "SE-031",
+      "title": "Integrate approved HnS Victory Road three-floor art and native maps",
+      "status": "in_progress",
+      "depends_on": [
+        "SE-013"
+      ],
+      "validation": [
+        "Acquire pinned HnS source files privately and hash-check",
+        "Render correct 2x XP tilesheets with reviewed passage/layer type",
+        "Compile three real RPG::Map floors and source-indexed warps",
+        "Native mkxp-z walk/collision/warp/save-reload and Android playthrough"
+      ],
+      "evidence": [
+        "PR #57 head 6d55f76d9a4f8f6a66b1b18791ca9a4df38fd2fa: source warp graph, 3-floor conversion, transactional RMXP installer, PNG preflight and approved GBA metatile renderer; six synthetic renderer tests passed locally, dedicated CI fails before runner allocation."
+      ],
+      "blocker": "Source tiles and GBA blockdata must be obtained in the private runtime, per-metatile passage reviewed and generated tiles installed; native/Android gameplay remains unverified. User approval covers private use, not public asset redistribution."
     }
   ],
   "estimated_full_demo_completion_percent": 6,
