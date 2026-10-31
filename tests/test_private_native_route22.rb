@@ -30,6 +30,8 @@ class PrivateNativeRoute22Test < Minitest::Test
     assert_equal "A", page.condition.self_switch_ch
     assert_equal 0, page.list.first.code
     assert_equal 0, Marshal.load(Marshal.dump(event)).pages.first.list.first.code
+    assert_equal [:"@condition", :"@graphic", :"@move_type", :"@move_speed", :"@move_frequency", :"@walk_anime", :"@step_anime", :"@direction_fix", :"@through", :"@always_on_top", :"@trigger", :"@list", :"@move_route"], page.instance_variables
+    assert_equal [:"@switch1_valid", :"@switch2_valid", :"@variable_valid", :"@self_switch_valid", :"@switch1_id", :"@switch2_id", :"@variable_id", :"@variable_value", :"@self_switch_ch"], page.condition.instance_variables
   end
 
   def test_reserved_ids_are_not_legacy_kanto_parcel_switches
