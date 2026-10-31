@@ -62,6 +62,27 @@ def verify_review_identity(gate, road):
         warps = item.get("warps")
         if not isinstance(warps, list) or len(warps) != expected_warps:
             raise ValueError(f"{MAPS[index]}: wrong pinned source warp count")
+        if any(not isinstance(warp, dict) or
+               warp.get("source_warp_index") != position
+               for position, warp in enumerate(warps)):
+            raise ValueError(f"{MAPS[index]}: source warp indices changed or are missing")
+        positions = [(warp.get("x"), warp.get("y")) for warp in warps]
+        if len(set(positions)) != len(positions):
+            raise ValueError(f"{MAPS[index]}: duplicate source warp coordinates")
+        if index == 0:
+            destinations = {
+                "west": "MAP_ROUTE28_HNS",
+                "east": "MAP_ROUTE22_HNS",
+                "south": "MAP_ROUTE26NORTH_HNS",
+                "north": "MAP_VICTORY_ROAD_KANTO_B2F_HNS",
+            }
+            counts = {direction: sum(warp.get("direction") == direction for warp in warps)
+                      for direction in destinations}
+            if counts != {"west": 1, "east": 1, "south": 1, "north": 2} or any(
+                warp.get("source_destination") != destinations.get(warp.get("direction"))
+                for warp in warps
+            ):
+                raise ValueError("Reception Gate source exit directions/destinations differ from HnS")
         target = item.get("target")
         map_id = target.get("map_id") if isinstance(target, dict) else None
         if type(map_id) is not int or map_id < 1 or map_id in map_ids:
