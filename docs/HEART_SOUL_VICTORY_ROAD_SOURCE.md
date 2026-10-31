@@ -55,6 +55,36 @@ Reception Gate converter's `metatile:collision:elevation` format:
 `SOURCE_MAP_ID:zero_based_source_warp_index` to a reviewed
 `{map_id, x, y, direction, fade}` native landing.
 
+## Guarded private native import
+
+After converting with a rights-reviewed tile mapping, stage the canonical v0.4
+Essentials project in a **new** private folder and install each matching,
+rights-cleared 256px-wide XP tileset PNG into its
+`Graphics/Tilesets/` directory. Keep `SHATTERED_STAGING_REPORT.json`.
+Use the project's actual Essentials v21.1 **debug runtime**, where `RPG::Map`,
+`RPG::Event`, `Table`, `load_data` and `save_data` are defined:
+
+```ruby
+load "/local/source/scripts/install_hns_victory_road.rb"
+ShatteredHNSVictoryRoadInstall.install("/local/private/victory_road_xp_bundle.json")
+```
+
+The offline-only importer checks all three pinned source warp records (10+10+2),
+unique unoccupied map IDs, existing external destination maps, bounds,
+tileset PNG dimensions/capacity, layer/table completeness, source metadata,
+and a staging marker before modifying native files. It writes three
+`Data/MapNNN.rxdata` files and updates `Tilesets.rxdata` and
+`MapInfos.rxdata` in one rollback-protected transaction. It must **not**
+be installed as a runtime plugin. The converter additionally requires each
+internal landing to be on or adjacent to its source destination warp tile,
+to prevent plausible-looking but incorrect in-bounds teleports.
+
+Local synthetic RMXP/Marshal regression: `ruby tests/test_hns_victory_road_install.rb`
+— 11 tests / 198 assertions passed on 2026-10-31, including simulated
+rename failures both before and after mutation. This is **not** an Essentials
+launch, a real map import or collision/playability evidence. The user-supplied
+game and HnS assets were not committed.
+
 **Unresolved acceptance gates:** no licensed graphics/metatile-to-XP mapping
 has been approved, no native three-floor installer has executed, no
 Essentials in-engine tileset passability/warp/rock collapse tests have
