@@ -450,7 +450,11 @@ class ShatteredNativeHandoffTest < Minitest::Test
     end
   end
 
-  def test_native_installer_does_not_include_tileset_hash_rewrite_shim\n    refute_respond_to ShatteredInitialSlice, :with_tileset_hash_view\n  end\n\n  def test_interrupted_transaction_is_never_reported_as_success
+  def test_native_installer_does_not_include_tileset_hash_rewrite_shim
+    refute_respond_to ShatteredInitialSlice, :with_tileset_hash_view
+  end
+
+  def test_interrupted_transaction_is_never_reported_as_success
     Dir.mktmpdir("shattered-native-interrupted") do |directory|
       original_directory = Dir.pwd
       Dir.chdir(directory)
