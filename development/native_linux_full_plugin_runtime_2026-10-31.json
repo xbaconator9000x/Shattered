@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_mkxp_linux_observation_not_full_demo_acceptance",
+  "date": "2026-10-31",
+  "canonical_repo": "xbaconator9000x/Shattered",
+  "main_source_sha": "529a4568ae3f722f888dda037e6800773ef23238",
+  "pr": 49,
+  "pr_source_head_sha": "eb1784f5509268c9e7b5bf3834883d135abb016a",
+  "pr_source_handoff_run": 41152649980,
+  "pr_source_handoff_merge_sha": "a6d3cd049be33c11cbcc477f83a009d19ee2ac6d",
+  "original_private_v04_zip_sha256": "c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e",
+  "engine": {
+    "name": "official mkxp-z Linux",
+    "artifact_id": 11582675594,
+    "sha256": "9a100525f7d9c40cde09f38630129802808c8df8c1d8256a96f0af3ec6c50345",
+    "runner": "Linux Xvfb :98, Mesa llvmpipe OpenGL 4.5, OpenAL null"
+  },
+  "staging": {
+    "source": "preserved original v0.4 private copy; stage_essentials.py",
+    "runtime_plugin_folders": 8,
+    "offline_only_folders": 2,
+    "offline_files_moved": 9,
+    "plugin_archive_sha256": "fe704afb5a6c5b5c4322ea07237314af8d8a1b19de904a4f49d3f39293d2c769",
+    "original_scripts_rxdata_restored_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+    "linux_map_aliases": 222,
+    "alias_tool_private_test": "scripts/prepare_linux_map_aliases.py --project PRIVATE_STAGE",
+    "source_original_unmodified": true
+  },
+  "observations": {
+    "native_full_plugin_title_rendered": true,
+    "native_eight_plugin_eval_instrumented": true,
+    "native_eight_plugin_names": [
+      "Shattered Core",
+      "Shattered Dojo",
+      "Shattered Equipment",
+      "Shattered Gate Story",
+      "Shattered Murkrow Rescue",
+      "Shattered Raid",
+      "Shattered Route22",
+      "Shattered Viridian"
+    ],
+    "native_pbs_human_species_compiled": true,
+    "species_dat_sha256": "a339087a4981d03fa3a43d4943c001747204be27a2019f382f271914f910b897",
+    "native_new_game_loaded": true,
+    "native_new_game_party": [
+      "HUMAN"
+    ],
+    "native_human_predicate": true,
+    "original_v04_intro_dialogue_executed": true,
+    "native_save_written_via_private_diagnostic": true,
+    "native_save_serialized_party": [
+      "HUMAN"
+    ],
+    "native_save_sha256": "30da2bd81159d81a500feae80cd1dfb0541758039938816a245505a04b918632",
+    "native_process_restarted": true,
+    "native_continue_menu_selected": true,
+    "native_saved_human_reloaded": true,
+    "normal_save_menu_verified": false,
+    "first_human_battle_verified": false,
+    "hns_gate_parity_verified": false,
+    "route22_encounter_verified": false,
+    "viridian_rescue_verified": false,
+    "android_verified": false,
+    "full_demo_playable": false
+  },
+  "evidence_hashes": {
+    "native_full_plugin_title_png_sha256": "74277249cfb2ff1d2d17743d51bc2931ff92a1d0c1cdbefaf2ceb8d1aee76213",
+    "native_clean_new_game_png_sha256": "c7e6027a16200633e61455f76bf9c373b9ea427d8b36f3c378e42a9a7423397c",
+    "native_reload_diagnostic_log_sha256": "13365162f6a0e3f584227c82ad2c91684dcd1239ebf2ca77f81901da00484de6",
+    "native_save_diagnostic_log_sha256": "d3d604626306eaa4fcdb800f71086771d6afba4d18b5ec38f337038277421614",
+    "native_reload_continue_menu_png_sha256": "bb1f4f7ee14b024ba8cad2294ce423cbc0d7487f6a3ae9b691e04f3439822a0d",
+    "native_reloaded_game_png_sha256": "7d742cf91aed7d1a5c6fa9b626c479845082e2ba47ea45c47dde8efef05acac0"
+  },
+  "source_test_evidence": {
+    "ruby_isolation": "7 tests, 40 assertions, zero failures",
+    "python_linux_aliases": "6 tests, zero failures",
+    "github_ci_run": 41152649865,
+    "github_source_bundle_run": 41152649980
+  },
+  "diagnostic_scope": "Private one-time modifications to compiled script sections emitted logging and invoked Game.save at start_new; all original Scripts.rxdata and uninstrumented PluginScripts.rxdata were restored after probes. Save/reload proves native serialization and Continue, NOT normal save-menu UX, story quest persistence or battle acceptance.",
+  "blockers": [
+    "No rights-reviewed HnS gate metatile/collision mapping; current visible gate is v0.4 Crystal placeholder.",
+    "No actual HUMAN-vs-Rattata battle or stamina/defensive type validation.",
+    "No native Aipom/Route22 event installation in this candidate.",
+    "No Android JoiPlay/NaviaXP playthrough.",
+    "Hotfixes remain v21.1 1.0.3; 1.0.9 and external plugin archive licenses/compatibility not verified."
+  ],
+  "distribution": "Hashes and observations only. No user project ZIP, compiled RXData, screenshots, Pokémon art or binaries committed."
+}
