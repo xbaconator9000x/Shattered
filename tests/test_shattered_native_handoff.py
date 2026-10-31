@@ -33,7 +33,7 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
                       "event_sha256": handoff.V04_LEGACY_EVENT_SHA256},
                   "scatter_moves": [3, 4, 3],
                   "event_positions": {
-                      "triggers": [[27, 16], [27, 17], [27, 18]],
+                      "triggers": [[31, 17], [31, 18], [32, 18]],
                       "npcs": [[29, 17], [29, 18], [28, 18]]}}
         handoff._validate_route22(config, target, switches, variables)
         assert len(handoff._route22_reserved_positions(self.manifest, config)) == 6
@@ -42,7 +42,7 @@ class ShatteredNativeHandoffTests(unittest.TestCase):
         with self.assertRaises(integration.IntegrationError):
             handoff._validate_route22(bad, target, switches, variables)
         bad = copy.deepcopy(config)
-        bad["event_positions"]["npcs"][0] = [27, 16]
+        bad["event_positions"]["npcs"][0] = [31, 17]
         with self.assertRaises(integration.IntegrationError):
             handoff._route22_reserved_positions(self.manifest, bad)
         bad_target = dict(target, sha256="0" * 64)
