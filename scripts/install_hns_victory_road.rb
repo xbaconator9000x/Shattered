@@ -71,6 +71,14 @@ module ShatteredHNSVictoryRoadInstall
     raise "Internal landing must be adjacent to source warp, not on it" unless distance == 1
     width = DIMENSIONS[destination_index][0]
     tile_index = y * width + x
+    collision = floor["source_collision"]
+    raise "Missing pinned source collision grid" unless collision.is_a?(Array) &&
+      collision.length == width * DIMENSIONS[destination_index][1]
+    raise "Internal landing blocked by GBA source collision" unless collision[tile_index] == 0
+    raise "Internal landing overlaps another Player Touch warp" if
+      floor["warps"].any? { |warp| warp["x"] == x && warp["y"] == y }
+    raise "Internal landing has no ordinary XP ground tile" unless
+      floor["layers"][0][tile_index].is_a?(Integer) && floor["layers"][0][tile_index] >= 384
     found_floor = false
     2.downto(0) do |layer|
       tile_id = floor["layers"][layer][tile_index]
@@ -123,6 +131,10 @@ module ShatteredHNSVictoryRoadInstall
       layers = floor["layers"]
       raise "Wrong native tile layers" unless layers.is_a?(Array) && layers.size == 3 &&
         layers.all? { |layer| layer.is_a?(Array) && layer.size == width * height }
+      collision = floor["source_collision"]
+      raise "Missing complete source collision grid" unless collision.is_a?(Array) &&
+        collision.length == width * height &&
+        collision.all? { |value| value.instance_of?(Integer) && value.between?(0, 63) }
       max_id = 384 + 8 * (png_height / 32) - 1
       used = layers.flatten.uniq
       used.each do |tile_id|
