@@ -66,6 +66,12 @@ class ReceptionGateConversionTest(unittest.TestCase):
                 },
             },
         }
+        # The two source north exits require separate reviewed B2F landings.
+        b2f_id = self.mapping["destinations"]["MAP_VICTORY_ROAD_KANTO_B2F_HNS"]["map_id"]
+        self.mapping["warp_targets"] = {
+            "MAP_RECEPTION_GATE_HNS:1": {"map_id": b2f_id, "x": 30, "y": 46},
+            "MAP_RECEPTION_GATE_HNS:2": {"map_id": b2f_id, "x": 31, "y": 47},
+        }
         self.mapping_json.write_text(json.dumps(self.mapping))
 
     def test_reads_actual_geometry_and_named_exit_coordinates(self):
@@ -89,6 +95,11 @@ class ReceptionGateConversionTest(unittest.TestCase):
         self.assertEqual([0] * 462, output["source_elevation"])
         self.assertEqual([15, 0, 0], output["tileset_tables"]["384"])
         self.assertEqual(5, len(output["warps"]))
+        self.assertEqual([0, 1, 2, 3, 4],
+                         [warp["source_warp_index"] for warp in output["warps"]])
+        self.assertEqual([(30, 46), (31, 47)],
+                         [(warp["target"]["x"], warp["target"]["y"])
+                          for warp in output["warps"] if warp["direction"] == "north"])
         self.assertEqual("a" * 64, output["target"]["tileset_sha256"])
 
     def test_missing_generated_tileset_hash_is_rejected(self):
@@ -121,6 +132,21 @@ class ReceptionGateConversionTest(unittest.TestCase):
         self.map_bin.write_bytes(b"\x00\x00")
         with self.assertRaisesRegex(ValueError, "one little-endian word per map cell"):
             inspect_source(self.map_json, self.layouts_json, self.map_bin)
+
+
+    def test_missing_source_indexed_north_landing_is_rejected(self):
+        self.mapping["warp_targets"].pop("MAP_RECEPTION_GATE_HNS:2")
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "requires explicit per-warp landing"):
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+
+    def test_two_north_warps_cannot_land_on_same_tile(self):
+        self.mapping["warp_targets"]["MAP_RECEPTION_GATE_HNS:2"]["x"] = 30
+        self.mapping["warp_targets"]["MAP_RECEPTION_GATE_HNS:2"]["y"] = 46
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "collapse onto one landing"):
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+
 
 
 if __name__ == "__main__":
