@@ -8,6 +8,8 @@ on:
       - 'tests/test_hns_victory_road*'
       - 'tests/test_render_hns_tiles.py'
       - 'tests/test_hns_private_tilesets.py'
+      - 'scripts/validate_hns_gate_victory_link.py'
+      - 'tests/test_hns_gate_victory_link.py'
       - '.github/workflows/victory-road-ci.yml'
   pull_request:
     paths:
@@ -16,6 +18,8 @@ on:
       - 'tests/test_hns_victory_road*'
       - 'tests/test_render_hns_tiles.py'
       - 'tests/test_hns_private_tilesets.py'
+      - 'scripts/validate_hns_gate_victory_link.py'
+      - 'tests/test_hns_gate_victory_link.py'
       - '.github/workflows/victory-road-ci.yml'
   workflow_dispatch:
 concurrency:
@@ -43,6 +47,12 @@ jobs:
         run: python3 -m unittest discover -s tests -p 'test_render_hns_tiles.py' -v
       - name: Private PNG preflight tests (synthetic only)
         run: python3 -m unittest discover -s tests -p 'test_hns_private_tilesets.py' -v
+      - name: Gate-to-B2F reciprocal collision and warp tests (synthetic only)
+        run: python3 -m unittest discover -s tests -p 'test_hns_gate_victory_link.py' -v
+      - name: Reception Gate conversion and native importer regression tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_hns_gate_conversion.py' -v
+          ruby tests/test_hns_gate_import.rb
       - name: Guarded native RMXP importer tests (synthetic Marshal fixtures only)
         run: |
           ruby -c scripts/install_hns_victory_road.rb
