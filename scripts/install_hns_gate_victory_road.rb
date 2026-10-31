@@ -76,6 +76,9 @@ module ShatteredHNSWorldInstall
     assert!(back.fetch("target")["map_id"] == gate_id, "B2F return targets wrong gate map")
     north = gate.fetch("warps").select { |warp| warp["direction"] == "north" }
     assert!(north.size == 2, "Gate must have two northern Victory Road exits")
+    landings = north.map { |warp| warp.fetch("target").values_at("x", "y") }
+    assert!(landings.uniq.size == north.size,
+            "Gate north exits collapse onto same B2F landing")
     north.each do |warp|
       assert!(warp["source_destination"] == B2F_SOURCE &&
               warp.fetch("target")["map_id"] == b2f_id,
