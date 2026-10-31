@@ -209,6 +209,8 @@ module ShatteredHNSWorldInstall
         decoded = load_data(entry[1])
         assert!(decoded.class == object.class,
                 "Staged HnS world RXData has the wrong native object type")
+        assert!(Marshal.dump(decoded) == Marshal.dump(object),
+                "Staged HnS world RXData differs from intended native object")
       end
       # A non-cooperating editor could change databases or add a map while
       # temporary data is being serialized. Abort BEFORE the first rename.
