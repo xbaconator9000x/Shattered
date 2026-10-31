@@ -82,7 +82,8 @@ def build_bundle(source_root, mapping_path, verify_source=True):
 
     floor_data = []
     expected_warp_keys = set()
-    for floor_name, map_id, dimensions, expected_blobs in zip(\n            FLOORS, MAP_IDS, EXPECTED_DIMENSIONS, PINNED_FLOOR_BLOBS):
+    for floor_name, map_id, dimensions, expected_blobs in zip(
+            FLOORS, MAP_IDS, EXPECTED_DIMENSIONS, PINNED_FLOOR_BLOBS):
         map_path = map_dir / floor_name / "map.json"
         bin_path = layouts_dir / floor_name / "map.bin"
         if verify_source and (git_blob_sha1(map_path), git_blob_sha1(bin_path)) != expected_blobs:
