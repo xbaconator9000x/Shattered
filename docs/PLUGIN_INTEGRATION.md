@@ -89,6 +89,19 @@ python3 scripts/convert_hns_overworld.py \\
 
 The converter refuses mismatched hashes and writes atomically. The native installer separately checks the resulting 128×128 RGBA PNG structure and CRCs. These checks do **not** verify appearance, animation, event timing, or native Essentials/JoiPlay execution.
 
+## Private HUMAN battle-back visual fallback
+
+The original v0.4 project contains `Graphics/Trainers/POKEMONTRAINER_Red_back.png` (800×160 RGBA, five frames), but no `Graphics/Pokemon/Back/HUMAN.png`. Without a HUMAN battle-back sprite, an **actual native HUMAN-vs-Rattata battle** renders a question-mark placeholder. Use the rights-safe source-only converter below on a **private staged copy** to extract the first 160×160 frame, while final Shattered Survivalist battle art is being developed:
+
+```sh
+python3 scripts/stage_human_battle_sprite.py --project /private/Shattered-staged \
+  --expected-source-sha256 9f5e0fa8b6c02b059085b1d75af994cf8f875c9c4f25c33b57f322dd28e7499c
+```
+
+The conversion output has SHA-256 `1cf99ece3c3dd3e456179984f2299cc19e78eb5ef74b84abf262312c95d88447` and is pixel-identical to the privately cropped frame that rendered successfully in mkxp-z. No trainer graphics or generated Pokémon sprites are committed to GitHub. This is **temporary fallback art**, not the planned modular outfit or final HUMAN battle presentation.
+
+The actual private native diagnostic also reached HUMAN Lv5 vs Rattata Lv5, accepted battle commands, exchanged HP damage and returned numeric victory outcome 1. The battle was invoked after map spriteset initialization; it **does not** verify the mandatory Route 22 map event, stamina/type/capture behavior or Android.
+
 ## GitHub automation
 
 A CI workflow validates every push/PR with Python and Ruby, including a miniature staged-project test. A separate 15-minute GitHub Actions watchdog reads the durable queue, identifies up to 3 dependency-ready tasks and creates deduplicated GitHub issues. **It coordinates work but does not autonomously write implementation code.** When source packages are provided, staging and consistency checks can run unattended in CI; gameplay still needs a valid engine/Android runner.
