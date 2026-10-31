@@ -70,9 +70,12 @@ module ShatteredHNSGateImport
       layers.is_a?(Array) && layers.length == 3 &&
       layers.all? { |layer| layer.is_a?(Array) && layer.length == WIDTH * HEIGHT }
     used_tile_ids = layers.flatten.uniq
+    image_height = File.open(image_path, "rb") { |stream| stream.read(24)[16, 8].unpack("NN")[1] }
+    highest_png_tile = 384 + (image_height / 32) * 8 - 1
     used_tile_ids.each do |tile_id|
       integer!(tile_id, "XP tile ID", 0, 8191)
       raise "Unsupported XP autotile ID #{tile_id}" if tile_id > 0 && tile_id < 384
+      raise "XP tile ID exceeds approved Reception Gate PNG capacity" if tile_id > highest_png_tile
     end
     tables = config["tileset_tables"]
     raise "Reception gate tileset tables are invalid" unless tables.is_a?(Hash)
