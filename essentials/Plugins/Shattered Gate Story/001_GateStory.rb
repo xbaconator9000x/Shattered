@@ -4,19 +4,33 @@
 module ShatteredGateStory
   KEY_ITEM = :SHATTEREDGATEKEY
   MAX_IMPACTS = 6
+  class InvalidState < StandardError; end
 
   class << self
     def state(store = (defined?($PokemonGlobal) ? $PokemonGlobal : nil))
       raise "Shattered gate requires initialized saved PokemonGlobal" unless store
       raw = store.instance_variable_get(:@shattered_gate_story)
-      unless raw.is_a?(Hash) && raw[:version] == 1 &&
-             raw[:impacts].is_a?(Integer) && (0..MAX_IMPACTS).include?(raw[:impacts])
-        raw = { :version => 1, :impacts => 0, :aipom_clue => false, :key => false }
+      if raw.nil?
+        raw = { :version => 1, :impacts => 0, :aipom_clue => false, :key => false,
+                :johto_blocked_message => false, :final_roar => false }
         store.instance_variable_set(:@shattered_gate_story, raw)
       end
-      [:aipom_clue, :key, :johto_blocked_message, :final_roar].each do |flag|
-        raw[flag] = false unless [true, false].include?(raw[flag])
+      valid = raw.is_a?(Hash) && raw[:version] == 1 &&
+        raw[:impacts].instance_of?(Integer) && (0..MAX_IMPACTS).include?(raw[:impacts]) &&
+        [:aipom_clue, :key].all? { |flag| [true, false].include?(raw[flag]) }
+      raise InvalidState, "Unknown gate save data; refusing to replay collapse or key award" unless valid
+
+      # Older v1 saves may lack these two optional presentation flags. Preserve
+      # their impact/key progress, but never overwrite a malformed existing flag.
+      [:johto_blocked_message, :final_roar].each do |flag|
+        raw[flag] = false unless raw.key?(flag)
+        raise InvalidState, "Invalid gate save flag: #{flag}" unless [true, false].include?(raw[flag])
       end
+      consistent = (!raw[:aipom_clue] || raw[:impacts] == MAX_IMPACTS) &&
+        (!raw[:key] || raw[:aipom_clue]) &&
+        (!raw[:final_roar] || raw[:impacts] == MAX_IMPACTS) &&
+        (!raw[:johto_blocked_message] || raw[:impacts] >= 3)
+      raise InvalidState, "Inconsistent gate save progress; refusing to reset story" unless consistent
       raw
     end
 

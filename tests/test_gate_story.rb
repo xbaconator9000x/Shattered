@@ -127,6 +127,70 @@ class GateStoryTest < Minitest::Test
     end
   end
 
+  def test_unknown_version_and_malformed_gate_save_fail_closed
+    value = ShatteredGateStory.state
+    value[:version] = 2
+    original = $PokemonGlobal.instance_variable_get(:@shattered_gate_story)
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+    assert_same original, $PokemonGlobal.instance_variable_get(:@shattered_gate_story)
+    assert_equal 2, original[:version]
+
+    value[:version] = 1
+    value[:impacts] = true
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.impact! }
+    assert_equal true, value[:impacts]
+    value[:impacts] = 0
+    value[:key] = "yes"
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.award_key! }
+    assert_equal 0, $bag.added
+  end
+
+  def test_impossible_gate_progress_does_not_replay_or_reaward
+    6.times { ShatteredGateStory.impact! }
+    ShatteredGateStory.clue!
+    assert ShatteredGateStory.award_key!
+    assert_equal 1, $bag.added
+    saved = Marshal.load(Marshal.dump($PokemonGlobal))
+    $PokemonGlobal = saved
+    value = saved.instance_variable_get(:@shattered_gate_story)
+    value[:impacts] = 2
+    assert_raises(ShatteredGateStory::InvalidState) do
+      ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6], "roar")
+    end
+    assert_equal 1, $bag.added
+    assert_empty $sounds
+    assert_equal 2, value[:impacts]
+  end
+
+  def test_optional_legacy_gate_flags_migrate_without_losing_progress
+    legacy = { :version => 1, :impacts => 3, :aipom_clue => false, :key => false }
+    $PokemonGlobal.instance_variable_set(:@shattered_gate_story, legacy)
+    assert_same legacy, ShatteredGateStory.state
+    assert_equal 3, legacy[:impacts]
+    assert_equal false, legacy[:johto_blocked_message]
+    assert_equal false, legacy[:final_roar]
+    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6], "roar")
+    assert_equal %w[rum4 rum5 rum6 roar], $sounds
+    assert_equal 6, legacy[:impacts]
+  end
+
+  def test_invalid_optional_flags_and_early_key_or_clue_are_rejected
+    raw = ShatteredGateStory.state
+    raw[:final_roar] = "done"
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+    raw[:final_roar] = false
+    raw[:johto_blocked_message] = true
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+    raw[:johto_blocked_message] = false
+    raw[:aipom_clue] = true
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+    raw[:aipom_clue] = false
+    raw[:key] = true
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+    raw[:key] = false
+    assert_equal 0, ShatteredGateStory.state[:impacts]
+  end
+
   def test_reconcile_bag_item_if_save_interrupted
     6.times { ShatteredGateStory.impact! }
     ShatteredGateStory.clue!
