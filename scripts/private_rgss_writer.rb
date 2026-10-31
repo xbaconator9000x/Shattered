@@ -33,6 +33,14 @@ class Color
   def _dump(_depth = 0) = @native_bytes
 end
 
+class RPG::Map
+  attr_accessor :width, :height, :tileset_id, :events, :data
+end
+
+class RPG::Tileset
+  attr_accessor :passages
+end
+
 class RPG::Event
   attr_accessor :id, :name, :x, :y, :pages
   def initialize(x, y)
