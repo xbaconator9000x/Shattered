@@ -282,6 +282,27 @@ class HNSWorldInstallTest < Minitest::Test
     assert_unchanged
   end
 
+  # Simulate a filesystem rename which succeeds but whose wrapper raises
+  # before returning. Both database backups and newly installed maps must
+  # be tracked as transaction-owned, or rollback can silently lose originals
+  # or leave partially installed maps behind.
+  def test_every_post_rename_exception_restores_all_original_native_files
+    1.upto(8) do |failure_number|
+      original_rename = File.method(:rename)
+      calls = 0
+      File.stub(:rename, lambda { |from, to|
+        calls += 1
+        result = original_rename.call(from, to)
+        raise IOError, "injected post-rename failure #{failure_number}" if calls == failure_number
+        result
+      }) do
+        error = assert_raises(IOError) { install_world }
+        assert_match(/injected post-rename failure/, error.message)
+      end
+      assert_unchanged
+    end
+  end
+
   def test_stale_world_backup_is_never_overwritten
     path = File.join(@root, "Data/Map303.rxdata.shattered-hns-world.bak")
     File.write(path, "do not overwrite")
