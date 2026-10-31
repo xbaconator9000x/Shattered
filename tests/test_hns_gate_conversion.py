@@ -46,6 +46,7 @@ class ReceptionGateConversionTest(unittest.TestCase):
                 "tileset_template_id": 1,
                 "tileset_name": "SE013_ReceptionGate",
                 "tileset_image": "SE013_ReceptionGate.png",
+                "tileset_sha256": "a" * 64,
             },
             "destinations": {
                 name: {"map_id": index + 1, "x": 4, "y": 5, "direction": 2}
@@ -88,6 +89,13 @@ class ReceptionGateConversionTest(unittest.TestCase):
         self.assertEqual([0] * 462, output["source_elevation"])
         self.assertEqual([15, 0, 0], output["tileset_tables"]["384"])
         self.assertEqual(5, len(output["warps"]))
+        self.assertEqual("a" * 64, output["target"]["tileset_sha256"])
+
+    def test_missing_generated_tileset_hash_is_rejected(self):
+        self.mapping["target"].pop("tileset_sha256")
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "requires a SHA-256"):
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
 
     def test_missing_metatile_mapping_is_rejected(self):
         self.map_bin.write_bytes(struct.pack("<462H", *([0x0409] * 462)))
