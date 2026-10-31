@@ -69,10 +69,11 @@ module ShatteredRuntimeIsolation
       check(!File.exist?(File.join(root, src)), "Offline file returned to Plugins: #{src}")
       check(sha(File.join(root, dst)) == expected, "Offline file changed: #{dst}")
     end
-    check(!Dir.glob(File.join(root, "Plugins", "Shattered *", "**", "*.rb")).any? do |file|
+    unreviewed = Dir.glob(File.join(root, "Plugins", "Shattered *", "**", "*.rb")).any? do |file|
       name = File.basename(File.dirname(file))
       !COMPILER::RUNTIME_FILES.fetch(name, []).include?(File.basename(file))
-    end, "Unreviewed or offline Ruby file remains in runtime Plugins")
+    end
+    check(!unreviewed, "Unreviewed or offline Ruby file remains in runtime Plugins")
     receipt
   end
 
