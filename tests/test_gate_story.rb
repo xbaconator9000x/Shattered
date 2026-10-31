@@ -248,6 +248,14 @@ class GateInstallerTest < Minitest::Test
     assert_instance_of Array, load_data("Data/Tilesets.rxdata")
   end
 
+  def test_rejects_non_native_hash_tilesets_without_map_mutation
+    original_map = File.binread("Data/Map010.rxdata")
+    save_data({1 => RPG::Tileset.new}, "Data/Tilesets.rxdata")
+    error = assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_match(/Gate tilesets missing/, error.message)
+    assert_equal original_map, File.binread("Data/Map010.rxdata")
+  end
+
   def test_installs_real_native_script_events
     result = ShatteredGateStory.install(@config)
     assert_equal 3, result["installed"].length
