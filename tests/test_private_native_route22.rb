@@ -80,7 +80,8 @@ class PrivateNativeRoute22Test < Minitest::Test
     width = 54
     height = 34
     depth = 3
-    cells = Array.new(width * height * depth, 384) # blocked terrain
+    cells = Array.new(width * height * depth, 0) # empty upper layers
+    (0...(width * height)).each { |index| cells[index] = 384 } # blocked ground
     [17, 18].each do |y|
       (24..32).each { |x| cells[x + width * y] = 385 } # corridor
     end
