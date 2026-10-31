@@ -186,7 +186,7 @@ class PinnedSourceHashTests(unittest.TestCase):
         from render_hns_tiles import git_blob_sha1
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "fixture.txt"
-            path.write_bytes(b"hello\\n")
+            path.write_bytes(b"hello\n")
             self.assertEqual(
                 "ce013625030ba8dba906f756967f9e9ca394464a",
                 git_blob_sha1(path),
