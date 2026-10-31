@@ -70,8 +70,12 @@ class VictoryRoadConversionTests(unittest.TestCase):
     def write_mapping(self):
         self.mapping_path.write_text(json.dumps(self.mapping))
 
+    def test_default_rejects_non_pinned_synthetic_source(self):
+        with self.assertRaisesRegex(ValueError, "unrecognized source layouts.json Git blob"):
+            build_bundle(self.root, self.mapping_path)
+
     def test_three_floors_preserve_layers_collision_and_source_warps(self):
-        result = build_bundle(self.root, self.mapping_path)
+        result = build_bundle(self.root, self.mapping_path, verify_source=False)
         self.assertEqual(FORMAT, result["format"])
         self.assertEqual(3, len(result["floors"]))
         self.assertEqual(6, sum(len(f["warps"]) for f in result["floors"]))
@@ -90,43 +94,43 @@ class VictoryRoadConversionTests(unittest.TestCase):
         del self.mapping["entries"]["2:1:2"]
         self.write_mapping()
         with self.assertRaisesRegex(ValueError, "missing tile mapping entry"):
-            build_bundle(self.root, self.mapping_path)
+            build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_truncated_source_blockdata_rejected(self):
         path = self.layouts / FLOORS[1] / "map.bin"
         path.write_bytes(path.read_bytes()[:-2])
         with self.assertRaisesRegex(ValueError, "wrong GBA blockdata length"):
-            build_bundle(self.root, self.mapping_path)
+            build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_missing_external_landing_rejected(self):
         del self.mapping["warp_targets"][f"{MAP_IDS[2]}:0"]
         self.write_mapping()
         with self.assertRaisesRegex(ValueError, "missing explicit XP warp landing"):
-            build_bundle(self.root, self.mapping_path)
+            build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_wrong_internal_floor_target_rejected(self):
         self.mapping["warp_targets"][f"{MAP_IDS[1]}:1"]["map_id"] = 999
         self.write_mapping()
         with self.assertRaisesRegex(ValueError, "disagrees with linked"):
-            build_bundle(self.root, self.mapping_path)
+            build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_outside_internal_floor_landing_rejected(self):
         self.mapping["warp_targets"][f"{MAP_IDS[0]}:0"]["x"] = 60
         self.write_mapping()
         with self.assertRaisesRegex(ValueError, "outside linked Victory Road floor"):
-            build_bundle(self.root, self.mapping_path)
+            build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_duplicate_native_map_id_rejected(self):
         self.mapping["floors"][MAP_IDS[2]]["map_id"] = 400
         self.write_mapping()
         with self.assertRaisesRegex(ValueError, "must be unique"):
-            build_bundle(self.root, self.mapping_path)
+            build_bundle(self.root, self.mapping_path, verify_source=False)
 
     def test_source_warp_graph_breakage_rejected(self):
         self.write_map(1, [self.warp(MAP_IDS[2], "0", 1, 1),
                            self.warp(MAP_IDS[2], "1", 2, 2)])
         with self.assertRaisesRegex(ValueError, "unresolved anomalies"):
-            build_bundle(self.root, self.mapping_path)
+            build_bundle(self.root, self.mapping_path, verify_source=False)
 
 
 if __name__ == "__main__":
