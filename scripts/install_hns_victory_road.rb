@@ -3,6 +3,7 @@
 # Run in a staged Essentials v21.1 project after sourcing authorised tilesets.
 # Do not place this file in Plugins/; it must never run during game startup.
 require "json"
+require "digest"
 
 module ShatteredHNSVictoryRoadInstall
   FORMAT = "shattered-hns-victory-road-rmxp-bundle"
@@ -43,10 +44,13 @@ module ShatteredHNSVictoryRoadInstall
     value
   end
 
-  def png_height!(filename)
+  def png_height!(filename, expected_sha)
     raise "Unsafe tileset image name" unless filename.is_a?(String) && /\A[A-Za-z0-9_-]+\.png\z/.match?(filename)
     path = File.join("Graphics", "Tilesets", filename)
     regular!(path)
+    raise "Missing reviewed tileset SHA-256" unless expected_sha.is_a?(String) &&
+      /\\A[0-9a-f]{64}\\z/.match?(expected_sha)
+    raise "Tileset PNG differs from reviewed SHA-256" unless Digest::SHA256.file(path).hexdigest == expected_sha
     header = File.open(path, "rb") { |f| f.read(24) }
     raise "Invalid RMXP tileset PNG #{path}" unless header && header.bytesize == 24 &&
       header[0, 8] == "\x89PNG\r\n\x1a\n".b && header[12, 4] == "IHDR"
@@ -111,7 +115,7 @@ module ShatteredHNSVictoryRoadInstall
       stem = target["tileset_name"]
       raise "Unsafe tileset name" unless stem.is_a?(String) && /\A[A-Za-z0-9_-]+\z/.match?(stem)
       raise "Tileset name/image mismatch" unless target["tileset_image"] == "#{stem}.png"
-      png_height = png_height!(target["tileset_image"])
+      png_height = png_height!(target["tileset_image"], target["tileset_sha256"])
       layers = floor["layers"]
       raise "Wrong native tile layers" unless layers.is_a?(Array) && layers.size == 3 &&
         layers.all? { |layer| layer.is_a?(Array) && layer.size == width * height }
