@@ -6,6 +6,13 @@ on:
       - '.github/workflows/private-runtime-source-bundle.yml'
       - 'scripts/compile_private_plugins.rb'
       - 'tests/test_private_plugin_compiler.rb'
+      - 'scripts/finalize_private_runtime.rb'
+      - 'tests/test_private_runtime_isolation.rb'
+  pull_request:
+    paths:
+      - 'scripts/finalize_private_runtime.rb'
+      - 'tests/test_private_runtime_isolation.rb'
+      - '.github/workflows/private-runtime-source-bundle.yml'
   workflow_dispatch:
 
 permissions:
