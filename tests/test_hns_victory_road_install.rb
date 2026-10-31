@@ -55,6 +55,7 @@ class VictoryRoadInstallTest < Minitest::Test
     [1, 2].each do |id|
       File.binwrite(File.join(@root, format("Data/Map%03d.rxdata", id)), Marshal.dump(RPG::Map.new(20, 20)))
     end
+    @reviewed_tileset_sha = Digest::SHA256.file(File.join(@root, "Graphics/Tilesets/ReviewedCave.png")).hexdigest
     @original = %w[Data/MapInfos.rxdata Data/Tilesets.rxdata].to_h do |name|
       [name, File.binread(File.join(@root, name))]
     end
@@ -68,7 +69,8 @@ class VictoryRoadInstallTest < Minitest::Test
         "source_map_id" => IDS[i],
         "dimensions" => {"width" => w, "height" => h, "tile_pixels" => 32},
         "target" => {"map_id" => 300 + i, "tileset_template_id" => 1,
-                     "tileset_name" => "ReviewedCave", "tileset_image" => "ReviewedCave.png"},
+                     "tileset_name" => "ReviewedCave", "tileset_image" => "ReviewedCave.png",
+                     "tileset_sha256" => @reviewed_tileset_sha},
         "layers" => [Array.new(w * h, 384), Array.new(w * h, 0), Array.new(w * h, 0)],
         "tileset_tables" => {"0" => [0, 0, 0], "384" => [0, 0, 0]},
         "warps" => []
@@ -158,6 +160,21 @@ class VictoryRoadInstallTest < Minitest::Test
     @bundle["floors"][0]["target"]["map_id"] = 1
     write_bundle
     assert_raises(RuntimeError) { install }
+    assert_unchanged
+  end
+
+  def test_missing_reviewed_tileset_hash_is_rejected
+    @bundle["floors"][1]["target"].delete("tileset_sha256")
+    write_bundle
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/Missing reviewed tileset SHA-256/, error.message)
+    assert_unchanged
+  end
+
+  def test_private_tileset_image_tampering_is_rejected
+    File.open(File.join(@root, "Graphics/Tilesets/ReviewedCave.png"), "ab") { |f| f.write("tampered") }
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/Tileset PNG differs from reviewed SHA-256/, error.message)
     assert_unchanged
   end
 
