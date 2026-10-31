@@ -21,7 +21,7 @@ def fixture():
     gate["warps"] = [
         {"direction": "south", "x": 11, "y": 19, "source_destination": "MAP_ROUTE26NORTH_HNS", "target": {"map_id": 10, "x": 0, "y": 0}},
         {"direction": "north", "x": 11, "y": 1, "source_destination": "MAP_VICTORY_ROAD_KANTO_B2F_HNS", "target": {"map_id": 303, "x": 30, "y": 46}},
-        {"direction": "north", "x": 10, "y": 1, "source_destination": "MAP_VICTORY_ROAD_KANTO_B2F_HNS", "target": {"map_id": 303, "x": 30, "y": 46}},
+        {"direction": "north", "x": 10, "y": 1, "source_destination": "MAP_VICTORY_ROAD_KANTO_B2F_HNS", "target": {"map_id": 303, "x": 31, "y": 47}},
         {"direction": "west", "x": 1, "y": 9, "source_destination": "MAP_ROUTE28_HNS", "target": {"map_id": 11, "x": 0, "y": 0}},
         {"direction": "east", "x": 20, "y": 9, "source_destination": "MAP_ROUTE22_HNS", "target": {"map_id": 12, "x": 0, "y": 0}},
     ]
@@ -44,6 +44,11 @@ class GateRoadLinkTests(unittest.TestCase):
         result = check(self.gate, self.road)
         self.assertEqual(2, result["gate_north_exits_checked"])
         self.assertFalse(result["native_gameplay_verified"])
+
+    def test_distinct_north_exits_cannot_share_b2f_landing(self):
+        self.gate["warps"][2]["target"].update(x=30, y=46)
+        with self.assertRaisesRegex(ValueError, "collapse onto one B2F landing"):
+            check(self.gate, self.road)
 
     def test_wrong_native_b2f_target(self):
         self.gate["warps"][1]["target"]["map_id"] = 999
