@@ -20,13 +20,17 @@
   "screen_hashes": {
     "title": "82969dee4b8db7c00c597479a61bfd363c0162889fc645aec2144c5f96e32e3d",
     "new_game": "61356a443969215efc8444bae2f008ba59ed366dab94bd9f9c9c3ae9e6610f39",
-    "collapse": "590d75181ee41f30b83cabbb8fb56d43c23268deaf6b113bb6efc473423e55cc"
+    "collapse": "590d75181ee41f30b83cabbb8fb56d43c23268deaf6b113bb6efc473423e55cc",
+    "aipom_interaction": "ad324973bf6c9584d5783f01b27872d794ff3eb60fc9b722df5dd19c951ac6c7",
+    "prototype_key_obtained": "fb3f2a9105ab830d29a6edaa7751a79e4146225a53e27b0cf91150b3c1dcc950"
   },
   "limitations": [
     "Original Crystal v0.4 reception gate, NOT faithful HnS 2.0 gate",
-    "Native first New Game and intro dialogue only; post-intro blank scene did not respond to Escape",
+    "Player movement and original prototype Aipom interaction verified after intro; east gate/Route22 and normal save-menu not yet exercised",
     "No new HnS map, Aipom or Route22 event installation",
     "No save/close/reload or Android acceptance in this run"
   ],
-  "assets_committed": false
+  "assets_committed": false,
+  "original_v04_aipom_key_dialogue_observed": true,
+  "original_v04_player_movement_observed": true
 }
