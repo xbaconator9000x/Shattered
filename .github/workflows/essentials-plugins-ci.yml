@@ -47,6 +47,11 @@ jobs:
         run: |
           ruby -c scripts/audit_native_project.rb
           ruby tests/test_native_project_audit.rb
+      - name: Private native Route22 installation and reserved-ID collision regressions
+        run: |
+          ruby -c scripts/private_rgss_writer.rb
+          ruby -c scripts/install_private_route22_native.rb
+          ruby tests/test_private_native_route22.rb
       - name: Compiled native RXData script syntax audit regression (synthetic fixtures only)
         run: |
           ruby -c scripts/audit_native_script_syntax.rb
