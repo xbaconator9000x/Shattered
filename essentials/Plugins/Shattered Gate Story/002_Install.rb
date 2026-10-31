@@ -112,7 +112,10 @@ module ShatteredGateStory
     raise "Not the verified 22x21 gate" unless map.width == 22 && map.height == 21
     validate_map_events!(map.events)
     tilesets = load_data("Data/Tilesets.rxdata")
-    # Native Essentials/RPG Maker XP stores Tilesets.rxdata as an Array.\n    # Do not convert it to a Hash on disk: the engine and HnS importer both\n    # require the original Array format.\n    raise "Gate tilesets missing" unless tilesets.is_a?(Array)
+    # Native Essentials/RPG Maker XP stores Tilesets.rxdata as an Array.
+    # Do not convert it to a Hash on disk: the engine and HnS importer both
+    # require the original Array format.
+    raise "Gate tilesets missing" unless tilesets.is_a?(Array)
     raise "Gate key PBS entry missing" unless File.file?("PBS/items.txt") &&
       File.read("PBS/items.txt").match?(/^\[SHATTEREDGATEKEY\]\s*$/)
     (config["collapse_sounds"] + [config["aipom_cry"], config["final_roar_sound"]]).each do |sound|
