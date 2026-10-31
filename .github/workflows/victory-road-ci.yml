@@ -21,6 +21,7 @@ on:
     paths:
       - 'scripts/*hns_victory_road*'
       - 'scripts/render_hns_tiles.py'
+      - 'scripts/install_hns_gate_victory_road.rb'
       - 'scripts/convert_hns_reception_gate.py'
       - 'essentials/Plugins/Shattered HnS Gate/001_Import.rb'
       - 'tests/test_hns_gate_conversion.py'
@@ -28,6 +29,7 @@ on:
       - 'tests/test_hns_victory_road*'
       - 'tests/test_render_hns_tiles.py'
       - 'tests/test_hns_private_tilesets.py'
+      - 'tests/test_hns_world_install.rb'
       - 'scripts/validate_hns_gate_victory_link.py'
       - 'tests/test_hns_gate_victory_link.py'
       - '.github/workflows/victory-road-ci.yml'
