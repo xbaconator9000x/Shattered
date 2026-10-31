@@ -88,7 +88,7 @@ module ShatteredHNSVictoryRoadInstall
     true
   end
 
-  def preflight!(bundle)
+  def preflight!(bundle, pending_external = {})
     marker = "SHATTERED_STAGING_REPORT.json"
     regular!(marker)
     raise "Not a staged Essentials v21.1 project" unless JSON.parse(File.read(marker))["engine"] == "Essentials 21.1"
@@ -180,10 +180,18 @@ module ShatteredHNSVictoryRoadInstall
         else
           raise "Unreviewed external Victory Road destination" unless %w[MAP_RECEPTION_GATE_HNS MAP_ROUTE23_HNS].include?(destination_source)
           raise "External warp incorrectly targets a new Victory Road floor" if native_ids.include?(id)
-          raise "External destination map missing" unless map_infos.key?(id)
-          path = format("Data/Map%03d.rxdata", id)
-          map = load_data(regular!(path))
-          dw, dh = map.width, map.height
+          if map_infos.key?(id)
+            path = format("Data/Map%03d.rxdata", id)
+            map = load_data(regular!(path))
+            dw, dh = map.width, map.height
+          else
+            # A missing Reception Gate is permitted ONLY during a combined,
+            # atomic import. Standalone imports still fail closed.
+            raise "External destination map missing" unless
+              destination_source == "MAP_RECEPTION_GATE_HNS" &&
+              pending_external[id] == [22, 21]
+            dw, dh = 22, 21
+          end
         end
         raise "Warp landing outside target map" unless x < dw && y < dh
       end
