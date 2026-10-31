@@ -144,6 +144,27 @@ class ReceptionGateConversionTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "requires a SHA-256"):
             convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json, verify_source=False)
 
+    def test_boolean_target_map_id_is_not_a_valid_native_map(self):
+        self.mapping["target"]["map_id"] = True
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "map_id must be a positive integer"):
+            convert(self.map_json, self.layouts_json, self.map_bin,
+                    self.mapping_json, verify_source=False)
+
+    def test_boolean_xp_tile_is_not_a_valid_tile_id(self):
+        self.mapping["entries"]["8:1:0"]["layers"][0] = True
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "invalid XP tile ID"):
+            convert(self.map_json, self.layouts_json, self.map_bin,
+                    self.mapping_json, verify_source=False)
+
+    def test_boolean_xp_passage_is_not_a_valid_passage_mask(self):
+        self.mapping["entries"]["8:1:0"]["tables"][0]["passage"] = False
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "passage must be an XP passage"):
+            convert(self.map_json, self.layouts_json, self.map_bin,
+                    self.mapping_json, verify_source=False)
+
     def test_missing_metatile_mapping_is_rejected(self):
         self.map_bin.write_bytes(struct.pack("<462H", *([0x0409] * 462)))
         with self.assertRaisesRegex(ValueError, "missing tile mapping entry 9:1:0"):
