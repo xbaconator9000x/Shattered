@@ -49,7 +49,7 @@ class RenderHnsTests(unittest.TestCase):
 
     def convert(self):
         return build(self.root, ["LAYOUT_TEST"], "primary", "secondary",
-                     self.base, self.png, self.mapping)
+                     self.base, self.png, self.mapping, verify_source=False)
 
     def test_generates_scaled_png_and_mapping(self):
         result = self.convert()
@@ -124,7 +124,7 @@ class RenderHnsTests(unittest.TestCase):
     def test_rejects_identical_png_and_mapping_paths(self):
         with self.assertRaisesRegex(ValueError, "refusing to overwrite"):
             build(self.root, ["LAYOUT_TEST"], "primary", "secondary",
-                  self.base, self.png, self.png)
+                  self.base, self.png, self.png, verify_source=False)
         self.assertFalse(self.png.exists())
 
     def test_rejects_unreviewed_second_floor_tileset(self):
@@ -135,6 +135,24 @@ class RenderHnsTests(unittest.TestCase):
             "passage_by_metatile": {"0": 0}}))
         with self.assertRaisesRegex(ValueError, "output PNG filename"):
             self.convert()
+        self.assertFalse(self.png.exists())
+
+    def test_production_refuses_unpinned_source_layout(self):
+        with self.assertRaisesRegex(ValueError, "unpinned HnS layout"):
+            build(self.root, ["LAYOUT_TEST"], "primary", "secondary",
+                  self.base, self.png, self.mapping)
+        self.assertFalse(self.png.exists())
+
+    def test_production_refuses_wrong_canonical_tileset_pair(self):
+        layouts = self.root / "data/layouts/layouts.json"
+        record = json.loads(layouts.read_text())["layouts"][0]
+        record.update({"id": "LAYOUT_RECEPTION_GATE_HNS",
+                       "primary_tileset": "gTileset_Johto_Building_Hns",
+                       "secondary_tileset": "gTileset_PokemonCenter_White_Hns"})
+        layouts.write_text(json.dumps({"layouts": [record]}))
+        with self.assertRaisesRegex(ValueError, "directory pair mismatch"):
+            build(self.root, ["LAYOUT_RECEPTION_GATE_HNS"], "primary", "secondary",
+                  self.base, self.png, self.mapping)
         self.assertFalse(self.png.exists())
 
     def test_no_overwrite(self):
