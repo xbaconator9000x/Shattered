@@ -90,6 +90,12 @@ class VictoryRoadConversionTests(unittest.TestCase):
         self.assertFalse(result["native_compiled"])
         self.assertFalse(result["runtime_verified"])
 
+    def test_invisible_blocking_tile_rejected(self):
+        self.mapping["entries"]["2:1:2"]["tables"][2]["passage"] = 15
+        self.write_mapping()
+        with self.assertRaisesRegex(ValueError, "transparent XP tile"):
+            build_bundle(self.root, self.mapping_path, verify_source=False)
+
     def test_missing_tile_mapping_rejected(self):
         del self.mapping["entries"]["2:1:2"]
         self.write_mapping()
