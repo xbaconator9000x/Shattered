@@ -245,8 +245,19 @@ class ReviewTest(unittest.TestCase):
                        else f"data/maps/{layout}/map.json")
             bin_rel = (data["source"]["blockdata_path"] if data is self.gate
                        else f"data/layouts/{layout}/map.bin")
-            map_bytes = (layout + ":map-json").encode("ascii")
-            bin_bytes = (layout + ":blockdata").encode("ascii")
+            cells = data["dimensions"]["width"] * data["dimensions"]["height"]
+            data["source_elevation"] = [0] * cells
+            for warp in data["warps"]:
+                warp.setdefault("source_destination", "MAP_TEST_DESTINATION")
+            source_warps = [
+                {"x": warp["x"], "y": warp["y"], "dest_map": warp["source_destination"]}
+                for warp in data["warps"]
+            ]
+            map_bytes = json.dumps({"warp_events": source_warps}, sort_keys=True).encode("utf-8")
+            bin_bytes = b"".join(
+                ((collision << 10) | (elevation << 12)).to_bytes(2, "little")
+                for collision, elevation in zip(data["source_collision"], data["source_elevation"])
+            )
             paths = ((map_rel, map_bytes), (bin_rel, bin_bytes))
             for rel, payload in paths:
                 path = root / rel
@@ -273,6 +284,8 @@ class ReviewTest(unittest.TestCase):
             manifest = preview.build_review(
                 self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
         self.assertTrue(manifest["raw_upstream_source_bytes_verified_by_preview"])
+        self.assertTrue(manifest["raw_collision_elevation_and_warps_verified"])
+        self.assertFalse(manifest["rmxp_tiles_recomputed_from_raw_source"])
         self.assertFalse(manifest["native_gameplay_verified"])
 
     def test_rejects_modified_private_source_blob(self):
@@ -312,6 +325,36 @@ class ReviewTest(unittest.TestCase):
         self.write()
         with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
             with self.assertRaisesRegex(ValueError, "source identity"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_forged_converted_collision(self):
+        root, pin_path, _first = self.private_source_fixture()
+        self.road["floors"][1]["source_collision"][2] = 1
+        self.write()
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "collision/elevation differs"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_forged_converted_elevation(self):
+        root, pin_path, _first = self.private_source_fixture()
+        self.gate["source_elevation"][2] = 5
+        self.write()
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "collision/elevation differs"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_forged_source_warp_coordinate(self):
+        root, pin_path, _first = self.private_source_fixture()
+        self.road["floors"][2]["warps"][0]["x"] += 1
+        self.write()
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "converted source warp differs"):
                 preview.build_review(
                     self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
         self.assertFalse(self.out.exists())
