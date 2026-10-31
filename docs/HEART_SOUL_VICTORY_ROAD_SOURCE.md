@@ -34,9 +34,11 @@ python3 scripts/preview_hns_native_maps.py \
 
 This produces clean and collision/warp views plus a review manifest.
 `raw_upstream_source_bytes_verified_by_preview: true` means only that
-the eight pinned source files match the receipts; it **does not** mean the
-commercial art is licensed for redistribution, the rendered RMXP tiles are
-visually approved, or the game has been installed, compiled or played. The
+the eight pinned source files match the receipts. The preview also checks
+that GBA collision, elevation and source warp positions/destinations match
+the raw binary and map JSON. It **does not** rederive the rendered RMXP tile
+layers from the private metatile mapping, establish commercial-art rights,
+constitute visual approval, or prove the game was installed, compiled or played. The
 test API can still generate synthetic fixtures without a source root, but
 marks those outputs explicitly unverified. Do not commit raw source, game
 assets, generated previews or native game files to GitHub.
