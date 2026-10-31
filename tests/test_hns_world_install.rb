@@ -253,6 +253,15 @@ class HNSWorldInstallTest < Minitest::Test
     assert_unchanged
   end
 
+  def test_twin_gate_north_exits_must_have_distinct_b2f_landings
+    @gate["warps"][3]["target"]["x"] = @gate["warps"][2]["target"]["x"]
+    @gate["warps"][3]["target"]["y"] = @gate["warps"][2]["target"]["y"]
+    write_gate
+    error = assert_raises(RuntimeError) { install_world }
+    assert_match(/collapse onto same B2F landing/, error.message)
+    assert_unchanged
+  end
+
   def test_reciprocal_warp_mismatch_is_rejected
     @gate["warps"][2]["target"]["map_id"] = 301
     write_gate
