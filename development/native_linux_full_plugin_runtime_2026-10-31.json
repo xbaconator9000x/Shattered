@@ -66,7 +66,10 @@
   "evidence_hashes": {
     "native_full_plugin_title_png_sha256": "74277249cfb2ff1d2d17743d51bc2931ff92a1d0c1cdbefaf2ceb8d1aee76213",
     "native_clean_new_game_png_sha256": "c7e6027a16200633e61455f76bf9c373b9ea427d8b36f3c378e42a9a7423397c",
-    "native_reload_diagnostic_log_sha256": null
+    "native_reload_diagnostic_log_sha256": "13365162f6a0e3f584227c82ad2c91684dcd1239ebf2ca77f81901da00484de6",
+    "native_save_diagnostic_log_sha256": "d3d604626306eaa4fcdb800f71086771d6afba4d18b5ec38f337038277421614",
+    "native_reload_continue_menu_png_sha256": "bb1f4f7ee14b024ba8cad2294ce423cbc0d7487f6a3ae9b691e04f3439822a0d",
+    "native_reloaded_game_png_sha256": "7d742cf91aed7d1a5c6fa9b626c479845082e2ba47ea45c47dde8efef05acac0"
   },
   "source_test_evidence": {
     "ruby_isolation": "7 tests, 40 assertions, zero failures",
