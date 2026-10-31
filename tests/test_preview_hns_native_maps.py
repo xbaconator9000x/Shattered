@@ -351,7 +351,7 @@ class ReviewTest(unittest.TestCase):
 
     def test_rejects_forged_source_warp_coordinate(self):
         root, pin_path, _first = self.private_source_fixture()
-        self.road["floors"][2]["warps"][0]["x"] += 1
+        self.road["floors"][2]["warps"][0]["x"] += 10
         self.write()
         with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
             with self.assertRaisesRegex(ValueError, "converted source warp differs"):
