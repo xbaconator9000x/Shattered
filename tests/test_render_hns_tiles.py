@@ -161,5 +161,28 @@ class RenderHnsTests(unittest.TestCase):
             self.convert()
 
 
+@unittest.skipIf(Image is None, "Pillow is required to import the renderer")
+class PinnedSourceHashTests(unittest.TestCase):
+    def test_git_blob_sha1_uses_binary_nul_separator(self):
+        # git hash-object of b"hello\\n" is ce013625...; a literal
+        # backslash-x-zero-zero separator silently rejects every real pin.
+        from render_hns_tiles import git_blob_sha1
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "fixture.txt"
+            path.write_bytes(b"hello\\n")
+            self.assertEqual(
+                "ce013625030ba8dba906f756967f9e9ca394464a",
+                git_blob_sha1(path),
+            )
+
+    def test_converter_source_compiles(self):
+        # Regression: a literal backslash-n after zip( prevented the
+        # Victory Road converter from importing at all.
+        import ast
+        source = (Path(__file__).resolve().parents[1] /
+                  "scripts/convert_hns_victory_road.py").read_text(encoding="utf-8")
+        ast.parse(source, filename="scripts/convert_hns_victory_road.py")
+
+
 if __name__ == "__main__":
     unittest.main()
