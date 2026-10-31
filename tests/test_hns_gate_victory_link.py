@@ -18,6 +18,13 @@ def fixture():
     gate = floor("MAP_RECEPTION_GATE_HNS", 300, 22, 21)
     gate["format"] = "shattered-hns-rmxp-map"
     gate["format_version"] = 1
+    gate["dimensions"]["tile_pixels"] = 32
+    gate["source"] = {
+        "repository": "https://github.com/PokemonHnS-Development/pokehns-expansion",
+        "revision": "167aa6d537b109bb229c231ddce4616974c4da71",
+        "map_path": "data/maps/ReceptionGate_hns/map.json",
+        "layout_id": "LAYOUT_RECEPTION_GATE_HNS",
+    }
     gate["warps"] = [
         {"direction": "south", "x": 11, "y": 19, "source_destination": "MAP_ROUTE26NORTH_HNS", "target": {"map_id": 10, "x": 0, "y": 0}},
         {"direction": "north", "x": 11, "y": 1, "source_destination": "MAP_VICTORY_ROAD_KANTO_B2F_HNS", "target": {"map_id": 303, "x": 30, "y": 46}},
@@ -31,8 +38,14 @@ def fixture():
                      "target": {"map_id": 300, "x": 10, "y": 2}}]
     road = {"format": "shattered-hns-victory-road-rmxp-bundle", "format_version": 1,
             "source_revision": "167aa6d537b109bb229c231ddce4616974c4da71",
+            "source_repository": "PokemonHnS-Development/pokehns-expansion",
             "floors": [floor("MAP_VICTORY_ROAD_KANTO_1F_HNS", 301, 50, 30),
                        floor("MAP_VICTORY_ROAD_KANTO_B1F_HNS", 302, 60, 30), b2f]}
+    for road_floor in road["floors"]:
+        road_floor["dimensions"]["tile_pixels"] = 32
+    for road_floor in road["floors"][:2]:
+        road_floor["warps"] = [{"x": i, "y": 0} for i in range(10)]
+    b2f["warps"].append({"x": 4, "y": 3})
     return gate, road
 
 
@@ -75,7 +88,7 @@ class GateRoadLinkTests(unittest.TestCase):
             check(self.gate, self.road)
 
     def test_return_landing_wrong_source_warp(self):
-        self.road["floors"][2]["warps"][0]["source_destination_warp_id"] = 0
+        self.road["floors"][2]["warps"][0]["source_destination_warp_id"] = "0"
         with self.assertRaisesRegex(ValueError, "not refer to a north gate warp"):
             check(self.gate, self.road)
 
@@ -90,6 +103,47 @@ class GateRoadLinkTests(unittest.TestCase):
     def test_reject_missing_image_hash(self):
         del self.gate["target"]["tileset_sha256"]
         with self.assertRaisesRegex(ValueError, "missing rendered tileset SHA"):
+            check(self.gate, self.road)
+
+    def test_reordered_source_floors_rejected_before_native_install(self):
+        self.road["floors"][0], self.road["floors"][1] = (
+            self.road["floors"][1], self.road["floors"][0])
+        with self.assertRaisesRegex(ValueError, "out of order"):
+            check(self.gate, self.road)
+
+    def test_wrong_source_floor_dimensions_rejected(self):
+        self.road["floors"][0]["dimensions"]["width"] = 51
+        with self.assertRaisesRegex(ValueError, "floor dimensions"):
+            check(self.gate, self.road)
+
+    def test_wrong_gate_dimensions_rejected(self):
+        self.gate["dimensions"]["width"] = 23
+        with self.assertRaisesRegex(ValueError, "Gate source dimensions"):
+            check(self.gate, self.road)
+
+    def test_substituted_gate_source_rejected(self):
+        self.gate["source"]["revision"] = "another-revision"
+        with self.assertRaisesRegex(ValueError, "pinned Reception Gate source"):
+            check(self.gate, self.road)
+
+    def test_substituted_road_repository_rejected(self):
+        self.road["source_repository"] = "unreviewed/fork"
+        with self.assertRaisesRegex(ValueError, "pinned Victory Road source"):
+            check(self.gate, self.road)
+
+    def test_missing_source_warp_rejected(self):
+        self.road["floors"][1]["warps"].pop()
+        with self.assertRaisesRegex(ValueError, "source warp count"):
+            check(self.gate, self.road)
+
+    def test_boolean_source_collision_cannot_masquerade_as_clear(self):
+        self.road["floors"][2]["source_collision"][46 * 40 + 30] = False
+        with self.assertRaisesRegex(ValueError, "source collision grid"):
+            check(self.gate, self.road)
+
+    def test_boolean_native_tile_cannot_masquerade_as_integer(self):
+        self.road["floors"][2]["layers"][0][46 * 40 + 30] = True
+        with self.assertRaisesRegex(ValueError, "ordinary ground tile"):
             check(self.gate, self.road)
 
     def test_overlapping_native_ids(self):
