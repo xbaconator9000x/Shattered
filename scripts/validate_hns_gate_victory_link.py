@@ -14,6 +14,12 @@ GATE_FORMAT = "shattered-hns-rmxp-map"
 ROAD_FORMAT = "shattered-hns-victory-road-rmxp-bundle"
 B2F = "MAP_VICTORY_ROAD_KANTO_B2F_HNS"
 GATE = "MAP_RECEPTION_GATE_HNS"
+REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
+REPOSITORY = "PokemonHnS-Development/pokehns-expansion"
+FLOOR_IDS = ("MAP_VICTORY_ROAD_KANTO_1F_HNS",
+             "MAP_VICTORY_ROAD_KANTO_B1F_HNS", B2F)
+FLOOR_DIMENSIONS = ((50, 30), (60, 30), (40, 50))
+FLOOR_WARP_COUNTS = (10, 10, 2)
 
 
 def require(condition, message):
@@ -35,17 +41,22 @@ def walkable(map_data, x, y):
     require(x < width and y < height, "landing outside destination map")
     index = y * width + x
     layers = map_data["layers"]
-    require(len(layers) == 3 and all(len(layer) == width * height for layer in layers),
+    require(isinstance(layers, list) and len(layers) == 3 and
+            all(isinstance(layer, list) and len(layer) == width * height for layer in layers),
             "destination tile layers have invalid geometry")
     collision = map_data.get("source_collision")
     require(isinstance(collision, list) and len(collision) == width * height,
             "missing source collision grid")
-    require(collision[index] == 0, "landing is blocked in source collision grid")
+    require(type(collision[index]) is int and collision[index] == 0,
+            "landing is blocked in source collision grid")
     require(all((warp["x"], warp["y"]) != (x, y) for warp in map_data["warps"]),
             "landing overlaps a Player Touch warp event")
-    require(layers[0][index] >= 384, "landing has no ordinary ground tile")
+    require(type(layers[0][index]) is int and layers[0][index] >= 384,
+            "landing has no ordinary ground tile")
     for layer in layers:
         tile_id = layer[index]
+        require(type(tile_id) is int and 0 <= tile_id <= 8191,
+                "landing contains invalid native XP tile ID")
         if tile_id == 0:
             continue
         table = map_data["tileset_tables"].get(str(tile_id))
@@ -64,13 +75,32 @@ def check(gate, road):
             "wrong converter bundle formats")
     require(gate.get("format_version") == 1 and road.get("format_version") == 1,
             "unsupported converter bundle versions")
-    require(road.get("source_revision") == "167aa6d537b109bb229c231ddce4616974c4da71",
-            "unrecognized HnS source revision")
+    require(road.get("source_revision") == REVISION and
+            road.get("source_repository") == REPOSITORY,
+            "unrecognized pinned Victory Road source")
+    gate_source = gate.get("source")
+    require(isinstance(gate_source, dict) and
+            gate_source.get("repository") == "https://github.com/" + REPOSITORY and
+            gate_source.get("revision") == REVISION and
+            gate_source.get("map_path") == "data/maps/ReceptionGate_hns/map.json" and
+            gate_source.get("layout_id") == "LAYOUT_RECEPTION_GATE_HNS",
+            "unrecognized pinned Reception Gate source")
+    require(gate.get("dimensions") == {"width": 22, "height": 21, "tile_pixels": 32},
+            "wrong Reception Gate source dimensions")
     floors = road.get("floors")
     require(isinstance(floors, list) and len(floors) == 3,
             "Victory Road must have three converted floors")
-    by_name = {floor["source_map_id"]: floor for floor in floors}
-    require(len(by_name) == 3 and B2F in by_name, "missing unique B2F source floor")
+    require([floor.get("source_map_id") for floor in floors] == list(FLOOR_IDS),
+            "Victory Road source floors are missing or out of order")
+    for index, floor in enumerate(floors):
+        width, height = FLOOR_DIMENSIONS[index]
+        require(floor.get("dimensions") ==
+                {"width": width, "height": height, "tile_pixels": 32},
+                "wrong pinned Victory Road floor dimensions")
+        require(isinstance(floor.get("warps"), list) and
+                len(floor["warps"]) == FLOOR_WARP_COUNTS[index],
+                "wrong pinned Victory Road source warp count")
+    by_name = dict(zip(FLOOR_IDS, floors))
     gate_id = integer(gate["target"]["map_id"], "gate map ID", 1)
     floor_ids = [integer(floor["target"]["map_id"], "road map ID", 1) for floor in floors]
     require(gate_id not in floor_ids and len(set(floor_ids)) == 3,
@@ -87,6 +117,8 @@ def check(gate, road):
     require(exit_warp["target"]["map_id"] == gate_id,
             "B2F return points to the wrong native map")
     gate_warps = gate["warps"]
+    require(isinstance(gate_warps, list) and len(gate_warps) == 5,
+            "Reception Gate must have five pinned source warps")
     north = [warp for warp in gate_warps if warp["direction"] == "north"]
     require(len(north) == 2, "Reception Gate must have two northern Victory Road exits")
     # Two separate source doorways cannot silently converge on one landing.
