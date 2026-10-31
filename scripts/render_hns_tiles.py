@@ -212,7 +212,10 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
         if type(base_passage) is not int or not 0 <= base_passage <= 31:
             raise ValueError(f"invalid reviewed passage for metatile {metatile}")
         upper_priority = 0 if layer_type == 1 else 1
-        upper_passage = base_passage if layer_type == 1 else 0
+        # Both layers cover the same GBA metatile. A permissive upper tile
+        # can short-circuit RMXP's top-down passage lookup and allow walking
+        # through a blocked base. Carry the reviewed passage on both layers.
+        upper_passage = base_passage
         entries[f"{metatile}:{collision}:{elevation}"] = {
             "layers": [base_id, base_id + 1, 0],
             "tables": [{"passage": base_passage, "priority": 0, "terrain": 0},
