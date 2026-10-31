@@ -102,6 +102,8 @@ def build_bundle(source_root, mapping_path, verify_source=True):
             for z, tile_id in enumerate(tile_layers):
                 layers[z][index] = tile_id
                 table = [tile_tables[z][field] for field in ("passage", "priority", "terrain")]
+                if tile_id == 0 and any(table):
+                    raise ValueError(f"{floor_name}: transparent XP tile cannot carry passage/priority/terrain")
                 key = str(tile_id)
                 if key in tables and tables[key] != table:
                     raise ValueError(f"{floor_name}: conflicting XP table values for tile {tile_id}")
@@ -143,7 +145,7 @@ def build_bundle(source_root, mapping_path, verify_source=True):
             })
         floor_data.append({
             "source_map_id": map_id, "source_layout_id": source_map["layout"],
-            "dimensions": {"width": width, "height": height},
+            "dimensions": {"width": width, "height": height, "tile_pixels": 32},
             "target": floor_targets[map_id],
             "source": {"map_sha256": sha256(map_path), "blockdata_sha256": sha256(bin_path)},
             "layers": layers, "source_collision": collision,
