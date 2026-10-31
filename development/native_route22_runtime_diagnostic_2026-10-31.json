@@ -17,7 +17,7 @@
     "cleared_switch": 992,
     "outcome_variable": 991
   },
-  "production_id_source_audit": "No static Map001..Map223 condition, event command or literal game switch/variable references to 991/992/991 in the original v0.4 source; runtime production IDs not yet tested at this checkpoint.",
+  "production_id_source_audit": "Independently audited authorised original v0.4 on 2026-10-31: 222 MapNNN.rxdata files, 3,058 native map events, 34,548 event commands, and 402 decompressed core script sections; no static references to reserved switch IDs 991/992 or variable ID 991 in map page conditions, direct switch/variable commands, map event Ruby scripts, or core Ruby script literals. This is a static audit, not native gameplay verification.",
   "native_route22_map_loaded": true,
   "three_rattata_sprites_visible": true,
   "mandatory_rattata_dialogue_triggered_by_player_movement": true,
@@ -41,5 +41,16 @@
     "reloaded_map": "ac70406d67e2231dc668a1f9846f3badf11ecfa2c94d6f681f4038c810eb4f17",
     "no_retrigger": "ab0627c01363f78c09658600520a09c83dd3e9815850cf9fb417c2c7022ab646"
   },
-  "private_files_committed": false
+  "private_files_committed": false,
+  "production_id_audit_evidence": {
+    "original_zip_sha256": "c6fa8d1fca79718419cf6fcfaba523e055305cc3f03b2a0c2937e2cf1fc8870e",
+    "map016_sha256": "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b",
+    "original_scripts_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+    "map_count": 222,
+    "event_count": 3058,
+    "event_command_count": 34548,
+    "core_script_count": 402,
+    "reserved_id_static_conflicts": 0,
+    "production_ids_native_runtime_verified": false
+  }
 }
