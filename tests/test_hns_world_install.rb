@@ -154,6 +154,28 @@ class HNSWorldInstallTest < Minitest::Test
     assert_unchanged
   end
 
+  def test_native_database_changed_between_preflight_and_lock_is_not_overwritten
+    externally_changed = @original.fetch("Data/MapInfos.rxdata") + "external-change"
+    original_open = File.method(:open)
+    File.stub(:open, lambda { |path, *args, &block|
+      if path == ShatteredHNSWorldInstall::LOCK &&
+         args.first == (File::WRONLY | File::CREAT | File::EXCL)
+        File.binwrite("Data/MapInfos.rxdata", externally_changed)
+      end
+      original_open.call(path, *args, &block)
+    }) do
+      error = assert_raises(RuntimeError) { install_world }
+      assert_match(/Native database changed before HnS world transaction/, error.message)
+    end
+    assert_equal externally_changed, File.binread(File.join(@root, "Data/MapInfos.rxdata"))
+    assert_equal @original.fetch("Data/Tilesets.rxdata"),
+                 File.binread(File.join(@root, "Data/Tilesets.rxdata"))
+    (300..303).each do |id|
+      refute File.exist?(File.join(@root, format("Data/Map%03d.rxdata", id)))
+    end
+    assert_empty artifacts
+  end
+
   def test_source_collision_blocks_gate_to_b2f
     @road["floors"][2]["source_collision"][46 * 40 + 30] = 1
     write_road
