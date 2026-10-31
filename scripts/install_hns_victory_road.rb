@@ -187,7 +187,7 @@ module ShatteredHNSVictoryRoadInstall
           dw, dh = DIMENSIONS[index]
           source_index = warp["source_destination_warp_id"]
           raise "Invalid internal source warp index" unless
-            source_index.is_a?(String) && /\\A(?:0|[1-9]\\d*)\\z/.match?(source_index)
+            source_index.is_a?(String) && /\A(?:0|[1-9]\d*)\z/.match?(source_index)
           safe_internal_landing!(floors[index], x, y, index, source_index.to_i)
         else
           raise "Unreviewed external Victory Road destination" unless %w[MAP_RECEPTION_GATE_HNS MAP_ROUTE23_HNS].include?(destination_source)
