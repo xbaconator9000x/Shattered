@@ -241,8 +241,10 @@ class ReviewTest(unittest.TestCase):
         first_source_file = None
         for data, (_map_id, layout, _dimensions, _warp_count) in zip(
                 [self.gate, *self.road["floors"]], preview.SOURCE_MAPS):
-            map_rel = f"data/maps/{layout}/map.json"
-            bin_rel = f"data/layouts/{layout}/map.bin"
+            map_rel = (data["source"]["map_path"] if data is self.gate
+                       else f"data/maps/{layout}/map.json")
+            bin_rel = (data["source"]["blockdata_path"] if data is self.gate
+                       else f"data/layouts/{layout}/map.bin")
             map_bytes = (layout + ":map-json").encode("ascii")
             bin_bytes = (layout + ":blockdata").encode("ascii")
             paths = ((map_rel, map_bytes), (bin_rel, bin_bytes))
@@ -300,6 +302,16 @@ class ReviewTest(unittest.TestCase):
         first.symlink_to(external)
         with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
             with self.assertRaisesRegex(ValueError, "symlinked private HnS source"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_gate_path_disagreement_with_pins(self):
+        root, pin_path, _first = self.private_source_fixture()
+        self.gate["source"]["map_path"] = "data/maps/FakeGate/map.json"
+        self.write()
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "source identity"):
                 preview.build_review(
                     self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
         self.assertFalse(self.out.exists())
