@@ -64,6 +64,13 @@ class RenderHnsTests(unittest.TestCase):
         result = self.convert()
         self.assertEqual(15, result["entries"]["0:1:0"]["tables"][0]["passage"])
 
+    def test_covered_layer_inherits_blocking_passage(self):
+        (self.root / "primary/metatile_attributes.bin").write_bytes(struct.pack("<H", 0x1000))
+        (self.root / "data/layouts/Test/map.bin").write_bytes(struct.pack("<H", 1 << 10))
+        result = self.convert()
+        self.assertEqual({"passage": 15, "priority": 0, "terrain": 0},
+                         result["entries"]["0:1:0"]["tables"][1])
+
     def test_missing_reviewed_collision_fails(self):
         self.base.write_text(json.dumps({"target": {}, "passage_by_metatile": {}}))
         with self.assertRaisesRegex(ValueError, "explicit reviewed entries"):
