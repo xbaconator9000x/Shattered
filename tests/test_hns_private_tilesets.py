@@ -28,14 +28,21 @@ class PrivateTilesetTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.path = self.root / "approved.png"
         self.path.write_bytes(png())
-        self.bundle = {"floors": [{"target": {"tileset_image": "approved.png"},
-                                    "layers": [[384, 399], [0, 0], [0, 0]]}]}
+        self.bundle = {"floors": [{"target": {
+            "tileset_image": "approved.png",
+            "tileset_sha256": hashlib.sha256(self.path.read_bytes()).hexdigest()},
+            "layers": [[384, 399], [0, 0], [0, 0]]}]}
 
     def test_verified_capacity_and_hash(self):
         result = verify_private_tilesets(self.bundle, self.root)
         self.assertEqual([256, 64], result["approved.png"]["dimensions"])
         self.assertEqual(hashlib.sha256(self.path.read_bytes()).hexdigest(),
                          result["approved.png"]["sha256"])
+
+    def test_rejects_substituted_png_even_when_dimensions_match(self):
+        self.bundle["floors"][0]["target"]["tileset_sha256"] = "0" * 64
+        with self.assertRaisesRegex(ValueError, "differs from generated mapping"):
+            verify_private_tilesets(self.bundle, self.root)
 
     def test_out_of_range_tile_rejected(self):
         self.bundle["floors"][0]["layers"][0][1] = 400
