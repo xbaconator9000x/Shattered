@@ -160,6 +160,17 @@ class ShatteredHNSGateImportTest < Minitest::Test
       Dir.glob(File.join(@root, "Data", ".shattered-hns-gate-import.lock"))
   end
 
+  def test_rejects_tile_id_outside_private_png_capacity
+    config = bundle
+    config["layers"][0][0] = 392 # 256x32 PNG holds exactly IDs 384..391
+    config["tileset_tables"]["392"] = [0, 0, 0]
+    File.write(File.join(@plugin_dir, "reception_gate.json"), JSON.generate(config))
+    error = assert_raises(RuntimeError) { import }
+    assert_match(/PNG capacity/, error.message)
+    assert_original_project_unchanged
+    assert_empty transaction_artifacts
+  end
+
   def test_rejects_modified_gate_art_before_writing
     File.binwrite(File.join(@root, "Graphics", "Tilesets", "Gate.png"), "modified image")
     assert_raises(RuntimeError) { import }
