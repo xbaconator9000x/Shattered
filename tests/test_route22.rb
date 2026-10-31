@@ -67,12 +67,14 @@ class Route22BattleTest < Minitest::Test
     $game_variables=Hash.new(0)
     $game_switches=Hash.new(false)
     $player=OpenStruct.new(:party=>[:HUMAN])
+    $game_map=OpenStruct.new(:need_refresh=>false)
     $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false
   end
   def test_win_sets_both_persistent_state_and_switch
     assert ShatteredRoute22.encounter(91,92)
     assert ShatteredRoute22.cleared?
     assert $game_switches[92]
+    assert_equal true, $game_map.need_refresh
     assert_equal [[:RATTATA,5]], $battle_calls
     assert_equal [["disablePokeBalls",nil],["outcome",91]], $rules
     assert ShatteredRoute22.encounter(91,92)
@@ -82,6 +84,15 @@ class Route22BattleTest < Minitest::Test
     assert ShatteredRoute22.reconcile(92)
     assert $game_switches[92]
   end
+  def test_completed_save_reconciliation_refreshes_native_event_pages
+    ShatteredRoute22.state[:cleared] = true
+    $game_switches[92] = true
+    $game_map.need_refresh = false
+    assert ShatteredRoute22.reconcile(92)
+    assert_equal true, $game_map.need_refresh
+    assert_empty $battle_calls
+  end
+
   def test_nonvictory_remains_mandatory
     [0,2,3,5].each do |result|
       $battle_outcome=result
