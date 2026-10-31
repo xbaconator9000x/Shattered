@@ -329,6 +329,44 @@ class GateInstallerTest < Minitest::Test
     assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
     assert_equal original, File.binread("Data/Map010.rxdata")
   end
+  def test_rejects_blocked_ground_under_passable_upper_tile
+    map = load_data("Data/Map010.rxdata")
+    map.data[9, 11, 0] = 2
+    map.data[9, 11, 1] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[2] = 0x0F
+    tilesets[1].passages[3] = 0
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+
+  def test_rejects_blocked_ground_under_star_overlay
+    map = load_data("Data/Map010.rxdata")
+    map.data[11, 18, 0] = 2
+    map.data[11, 18, 2] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[2] = 0x0F
+    tilesets[1].passages[3] = 0x10
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+
+  def test_accepts_passable_upper_tile_over_walkable_ground
+    map = load_data("Data/Map010.rxdata")
+    map.data[9, 11, 1] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[3] = 0
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    assert_equal 3, ShatteredGateStory.install(@config)["installed"].length
+  end
+
   def test_allows_impassable_south_exit_if_northern_approach_is_walkable
     map = load_data("Data/Map010.rxdata")
     map.data[11, 19, 0] = 2
