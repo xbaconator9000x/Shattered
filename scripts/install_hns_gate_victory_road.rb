@@ -152,11 +152,17 @@ module ShatteredHNSWorldInstall
       assert!(File.writable?(File.dirname(path)), "Native map directory is not writable")
     end
 
-    acquired = false
+    acquired_locks = []
     keep_lock = false
-    committed = false
     begin
-      File.open(LOCK, File::WRONLY | File::CREAT | File::EXCL) { acquired = true }
+      # The standalone installers only inspect their own lock paths. Hold
+      # both locks for the entire combined transaction so neither can race
+      # with this installer after preflight but before the final rename.
+      [LOCK, ShatteredHNSGateImport::LOCK_PATH,
+       ShatteredHNSVictoryRoadInstall::LOCK].each do |lock|
+        File.open(lock, File::WRONLY | File::CREAT | File::EXCL) {}
+        acquired_locks << lock
+      end
       gate_objects = ShatteredHNSGateImport.build_objects(gate_values)
       road_values[2] = gate_objects[2] # combined MapInfos, including the gate
       road_values[3] = gate_objects[0] # combined Tilesets, including the gate
@@ -172,9 +178,8 @@ module ShatteredHNSWorldInstall
         File.rename(path, backup) if existed
         File.rename(temp, path)
       end
-      committed = true
     rescue StandardError => error
-      if acquired
+      unless acquired_locks.empty?
         failures = rollback!(entries)
         unless failures.empty?
           keep_lock = true
@@ -184,7 +189,7 @@ module ShatteredHNSWorldInstall
       raise
     ensure
       entries.each { |_path, temp, _backup, _existed| File.delete(temp) if present?(temp) } unless keep_lock
-      File.delete(LOCK) if acquired && !keep_lock && present?(LOCK)
+      acquired_locks.reverse_each { |lock| File.delete(lock) if present?(lock) } unless keep_lock
     end
     entries.each { |_path, _temp, backup, _existed| File.delete(backup) if present?(backup) }
     [gate_id, *road_ids]
