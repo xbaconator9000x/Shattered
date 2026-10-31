@@ -48,7 +48,10 @@ python3 scripts/convert_hns_victory_road.py \
 
 Mapping schema: `floors` maps each source `MAP_VICTORY_ROAD_KANTO_*_HNS`
 ID to a unique native `map_id`, `tileset_template_id`, simple
-`tileset_name` and matching `tileset_image`. `entries` follows the
+`tileset_name`, matching `tileset_image`, and the 64-character lowercase
+SHA-256 `tileset_sha256` of the independently reviewed local PNG. The
+converter requires the pin; the native installer hashes the actual private
+PNG and refuses substitutions. `entries` follows the
 Reception Gate converter's `metatile:collision:elevation` format:
 `layers` is exactly three XP tile IDs, and `tables` has exactly three
 `{passage, priority, terrain}` records. `warp_targets` maps every
@@ -76,8 +79,11 @@ and a staging marker before modifying native files. It writes three
 `Data/MapNNN.rxdata` files and updates `Tilesets.rxdata` and
 `MapInfos.rxdata` in one rollback-protected transaction. It must **not**
 be installed as a runtime plugin. The converter additionally requires each
-internal landing to be on or adjacent to its source destination warp tile,
-to prevent plausible-looking but incorrect in-bounds teleports.
+internal landing to be exactly one cardinal tile adjacent to its source
+destination warp (not on the transfer event itself), to prevent wrong-floor
+teleports and immediate bounce-back. The importer independently rechecks
+adjacency and native XP passage flags even if the JSON bundle is edited after
+conversion. These are static guards, not a substitute for in-engine playtesting.
 
 Local synthetic RMXP/Marshal regression: `ruby tests/test_hns_victory_road_install.rb`
 — 11 tests / 198 assertions passed on 2026-10-31, including simulated
@@ -93,7 +99,8 @@ The generated JSON is **not** an executable map. The original source repo
 is public but lacks a clear redistribution licence; no source assets,
 GBA binaries, map files or Pokémon graphics belong in GitHub.
 
-The next source task is a guarded native RMXP three-map installer, then
-collision and north/south/west/east gate playthrough. Do not substitute a
+The next task is to source/verify the rights-cleared XP tileset mapping,
+execute this installer against a privately staged native project, and verify
+actual warp collision and the north/south/west/east gate playthrough. Do not substitute a
 generic cave, invent missing tiles or mark gameplay complete from the
 converter's tests.
