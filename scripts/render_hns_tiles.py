@@ -23,7 +23,7 @@ PIN_MANIFEST = Path(__file__).resolve().parents[1] / "development/hns_source_ass
 
 def git_blob_sha1(path):
     data = Path(path).read_bytes()
-    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\x00" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\x00" + data).hexdigest()
 
 
 def verify_pinned_source(root, selected, primary_dir, secondary_dir):
