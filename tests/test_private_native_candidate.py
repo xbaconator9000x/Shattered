@@ -37,10 +37,16 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         )
         subprocess.run(["ruby", "-e", code, str(archive)], check=True)
         self.original_digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+        try:
+            source_pin()
+            self.requested_sha = None
+        except ValueError:
+            # Source-only GitHub handoff artifacts deliberately contain no .git.
+            self.requested_sha = 'a' * 40
 
     def test_full_candidate_compiles_isolates_and_preserves_original(self):
         dest = self.root / "candidate"
-        receipt = build(self.base, dest, linux_aliases=True)
+        receipt = build(self.base, dest, requested_sha=self.requested_sha, linux_aliases=True)
         self.assertEqual(8, len(receipt["runtime_plugins"]))
         self.assertGreaterEqual(receipt["offline_installers_isolated"], 7)
         self.assertEqual(1, receipt["linux_map_alias_count"])
@@ -64,13 +70,13 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         dest.mkdir()
         (dest / "keep.txt").write_text("unchanged")
         with self.assertRaisesRegex(ValueError, "already exists"):
-            build(self.base, dest)
+            build(self.base, dest, requested_sha=self.requested_sha)
         self.assertEqual("unchanged", (dest / "keep.txt").read_text())
 
     def test_rejects_missing_native_plugin_archive(self):
         (self.base / "Data/PluginScripts.rxdata").unlink()
         with self.assertRaisesRegex(ValueError, "PluginScripts.rxdata"):
-            build(self.base, self.root / "candidate")
+            build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
         self.assertFalse((self.root / "candidate").exists())
 
     def test_failed_plugin_collision_leaves_no_partial_candidate(self):
@@ -78,7 +84,7 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         collision.mkdir()
         (collision / "meta.txt").write_text("existing")
         with self.assertRaisesRegex(ValueError, "destination collision"):
-            build(self.base, self.root / "candidate")
+            build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
         self.assertFalse((self.root / "candidate").exists())
         self.assertEqual("existing", (collision / "meta.txt").read_text())
 
