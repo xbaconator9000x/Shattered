@@ -1,0 +1,45 @@
+{
+  "kind": "actual_private_native_route22_diagnostic_playthrough_not_full_demo_acceptance",
+  "date": "2026-10-31",
+  "source_sha": "3667a9775371bd4efa2890b4eca6f176be7c13a7",
+  "original_map016_sha256": "0ec2a363a411c9b0086a4a3868fdca0d8b0339c26ab1ddf5a5c33b84174f9b6b",
+  "diagnostic_installed_map_sha256": "a425213da331861090d5facbe539223e1690f412581486c29b1293725ddc0d01",
+  "engine_sha256": "9a100525f7d9c40cde09f38630129802808c8df8c1d8256a96f0af3ec6c50345",
+  "diagnostic_ids": {
+    "scatter_switch": 80,
+    "cleared_switch": 81,
+    "outcome_variable": 21
+  },
+  "diagnostic_ids_safe_for_full_game": false,
+  "collision_found": "Original Map006, Map008, Map010 and Map012 already use switch IDs 80/81 for Parcel Delivery and other story events; these diagnostic IDs MUST NOT be shipped.",
+  "production_candidate_ids": {
+    "scatter_switch": 991,
+    "cleared_switch": 992,
+    "outcome_variable": 991
+  },
+  "production_id_source_audit": "No static Map001..Map223 condition, event command or literal game switch/variable references to 991/992/991 in the original v0.4 source; runtime production IDs not yet tested at this checkpoint.",
+  "native_route22_map_loaded": true,
+  "three_rattata_sprites_visible": true,
+  "mandatory_rattata_dialogue_triggered_by_player_movement": true,
+  "actual_level5_rattata_battle_started": true,
+  "genuine_human_level5_and_damage_move_displayed": true,
+  "battle_returned_to_overworld": true,
+  "save_menu_used": true,
+  "save_file_sha256": "74e4d9c9992bf5c69fb0429c8f9382956323ab445271f7fbf8be4d49bae62e06",
+  "game_closed_and_relaunched": true,
+  "continue_loaded_route22": true,
+  "rattata_npcs_remained_absent_after_reload": true,
+  "trigger_crossing_did_not_retrigger_battle": true,
+  "gate_to_route22_contiguous_playthrough_verified": false,
+  "hns_gate_installed": false,
+  "android_verified": false,
+  "artwork_redistribution_authorized": false,
+  "screen_hashes": {
+    "trigger": "1950e30e23c0c7763feb9d2ba0101c2d8bc036ec139577df675b701a40ac85c6",
+    "human_battle": "e14fd9befd4dad5c92c06a8ef4787c400565279f58e8c6fcf835ca9c04937fb1",
+    "continue_menu": "54c3713a56b1f08fba5a0a505c47ed3f797caddef0ce906c54ca276af2c5e17e",
+    "reloaded_map": "ac70406d67e2231dc668a1f9846f3badf11ecfa2c94d6f681f4038c810eb4f17",
+    "no_retrigger": "ab0627c01363f78c09658600520a09c83dd3e9815850cf9fb417c2c7022ab646"
+  },
+  "private_files_committed": false
+}
