@@ -47,6 +47,32 @@ class StagingTest(unittest.TestCase):
         self.assertNotIn('[HUMAN]', (self.project / 'PBS/pokemon.txt').read_text())
         self.assertTrue((out / 'SHATTERED_STAGING_REPORT.json').exists())
 
+    def test_full_runtime_set_stages_all_reviewed_modules_without_modifying_source(self):
+        out = self.root / 'staged'
+        report = stage(self.project, out, include_runtime_set=True)
+        self.assertEqual(9, len(report['runtime_set']['staged']))
+        self.assertFalse(report['runtime_set']['native_compiled'])
+        self.assertFalse(report['runtime_set']['gameplay_verified'])
+        for name in report['runtime_set']['staged']:
+            self.assertTrue((out / 'Plugins' / name / 'meta.txt').is_file(), name)
+            self.assertFalse((self.project / 'Plugins' / name).exists(), name)
+        self.assertTrue((out / 'Plugins/Shattered Gate Story/002_Install.rb').is_file())
+
+    def test_full_runtime_set_refuses_existing_plugin_collision(self):
+        collision = self.project / 'Plugins/Shattered Raid'
+        collision.mkdir()
+        (collision / 'meta.txt').write_text('existing content')
+        with self.assertRaisesRegex(ValueError, 'destination collision'):
+            stage(self.project, self.root / 'staged', include_runtime_set=True)
+        self.assertFalse((self.root / 'staged').exists())
+        self.assertEqual('existing content', (collision / 'meta.txt').read_text())
+
+    def test_full_runtime_set_cannot_double_install_equipment(self):
+        with self.assertRaisesRegex(ValueError, 'OR --include-equipment'):
+            stage(self.project, self.root / 'staged', include_runtime_set=True,
+                  include_equipment=True)
+        self.assertFalse((self.root / 'staged').exists())
+
     def test_preexisting_human_not_duplicated(self):
         (self.project / 'PBS/pokemon.txt').write_text('[HUMAN]\nName = Human\n')
         report = stage(self.project, self.root / 'staged')
