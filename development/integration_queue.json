@@ -479,7 +479,7 @@
     },
     {
       "id": "SE-031",
-      "title": "Integrate Heart & Soul 2.0 three-floor Kanto Victory Road with native RMXP gate links",
+      "title": "Integrate approved HnS Reception Gate/Victory Road art and native three-floor map links",
       "status": "in_progress",
       "depends_on": [
         "SE-003",
@@ -488,31 +488,20 @@
       "validation": [
         "Convert pinned 1F/B1F/B2F blockdata using a rights-reviewed native tileset and SHA-pinned mapping",
         "Import 3 native maps and 22 source warps into one preserved private Essentials project with safe adjacent landings",
-        "Test actual collision, map transfers, story events and save/reload in mkxp-z; separately test Android"
-      ],
-      "evidence": [
-        "PR #57 contains SHA-pinned upstream source audit, 3-floor blockdata conversion and rollback-protected offline RPG Maker XP installer. Synthetic tests exist but GitHub Actions jobs are failing before runner allocation (0 steps, runner_id 0), so no current CI pass claim.",
-        "2026-10-31 PR #57 follow-up: converter and importer now both reject same-tile and non-adjacent internal warp landings; importer checks target XP tile passability and independently verifies SHA-256 of each private rights-reviewed tileset PNG. New negative regression tests added; not yet run in CI or native engine."
-      ],
-      "blocker": "Original Heart & Soul source has no verified asset redistribution licence; reviewed private tileset PNG/metatile mapping and actual native import/playthrough are absent. This Victory Road expansion is NOT a prerequisite for first gate-to-Route22 demo."
-    },
-    {
-      "id": "SE-031",
-      "title": "Integrate approved HnS Victory Road three-floor art and native maps",
-      "status": "in_progress",
-      "depends_on": [
-        "SE-013"
-      ],
-      "validation": [
+        "Test actual collision, map transfers, story events and save/reload in mkxp-z; separately test Android",
         "Acquire pinned HnS source files privately and hash-check",
         "Render correct 2x XP tilesheets with reviewed passage/layer type",
         "Compile three real RPG::Map floors and source-indexed warps",
         "Native mkxp-z walk/collision/warp/save-reload and Android playthrough"
       ],
       "evidence": [
-        "PR #57 head 6d55f76d9a4f8f6a66b1b18791ca9a4df38fd2fa: source warp graph, 3-floor conversion, transactional RMXP installer, PNG preflight and approved GBA metatile renderer; six synthetic renderer tests passed locally, dedicated CI fails before runner allocation."
+        "PR #57 contains SHA-pinned upstream source audit, 3-floor blockdata conversion and rollback-protected offline RPG Maker XP installer. Synthetic tests exist but GitHub Actions jobs are failing before runner allocation (0 steps, runner_id 0), so no current CI pass claim.",
+        "2026-10-31 PR #57 follow-up: converter and importer now both reject same-tile and non-adjacent internal warp landings; importer checks target XP tile passability and independently verifies SHA-256 of each private rights-reviewed tileset PNG. New negative regression tests added; not yet run in CI or native engine.",
+        "PR #57 head 6d55f76d9a4f8f6a66b1b18791ca9a4df38fd2fa: source warp graph, 3-floor conversion, transactional RMXP installer, PNG preflight and approved GBA metatile renderer; six synthetic renderer tests passed locally, dedicated CI fails before runner allocation.",
+        "2026-10-31 PR #57 source integration: pinned upstream HnS revision 167aa6d, exact Reception Gate + 3 Victory Road map/blob identities, 70 source tile/metatile/palette blob pins, correct separate gate and cave tileset pairs; renderer binds generated PNG SHA-256 into all target mappings and rejects substituted files; Victory Road preflight compares PNG bytes to target SHA.",
+        "2026-10-31 local regression execution on extracted committed source: 13 synthetic renderer tests passed and 6 private PNG preflight tests passed (Python 3.11/Pillow 12.3). No licensed game asset bytes or native map were executed in this run. PR commits 3636a3bf, c386da80, 09e53df3, 4138837d, 6afcb5f5, aa47c6c6, 3a8c4dc4."
       ],
-      "blocker": "Source tiles and GBA blockdata must be obtained in the private runtime, per-metatile passage reviewed and generated tiles installed; native/Android gameplay remains unverified. User approval covers private use, not public asset redistribution."
+      "blocker": "Actual HnS binary assets and original v0.4 ZIP could not be transferred into this execution container (Library raw-byte materialization denied); source asset pins and code tests are not a native conversion or playthrough. User approves private use only, not public redistribution. Need private Work source checkout + reviewed passage_by_metatile mapping, native installer, mkxp-z gate/warp/save and Android verification. CI jobs still fail before runner allocation."
     }
   ],
   "estimated_full_demo_completion_percent": 6,
@@ -521,5 +510,6 @@
   "last_verified_source_ci": [
     41152946632,
     41152946655
-  ]
+  ],
+  "last_observed_source_main_sha": "22286be3df9d72462ccee68d9699d82a938aaff9"
 }
