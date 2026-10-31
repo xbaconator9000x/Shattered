@@ -36,6 +36,7 @@ class PrivateNativeRoute22Test < Minitest::Test
 
   def test_reserved_ids_are_not_legacy_kanto_parcel_switches
     cfg = ShatteredPrivateRoute22.config("Rattata")
+    assert_equal [[31, 17], [31, 18], [32, 18]], cfg["event_positions"]["triggers"]
     assert_equal [991, 992], [cfg["scatter_switch"], cfg["cleared_switch"]]
     assert_equal 991, cfg["outcome_variable"]
     assert_equal ShatteredPrivateRoute22::SOURCE_MAP_SHA, cfg["expected_map_sha256"]
