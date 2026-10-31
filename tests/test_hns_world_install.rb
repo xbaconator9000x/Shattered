@@ -313,4 +313,21 @@ class HNSWorldInstallTest < Minitest::Test
     assert injected, "Wrong-type map was not injected"
     assert_unchanged
   end
+
+  def test_valid_but_altered_staged_mapinfos_is_rejected_before_commit
+    original_size = File.method(:size)
+    injected = false
+    File.stub(:size, lambda { |path|
+      if !injected && path.to_s.include?("MapInfos.rxdata.shattered-hns-world.tmp")
+        File.binwrite(path, Marshal.dump({}))
+        injected = true
+      end
+      original_size.call(path)
+    }) do
+      error = assert_raises(RuntimeError) { install_world }
+      assert_match(/differs from intended native object/, error.message)
+    end
+    assert injected, "Valid but altered MapInfos was not injected"
+    assert_unchanged
+  end
 end
