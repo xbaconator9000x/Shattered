@@ -59,6 +59,22 @@ class PrivateNativeRoute22Test < Minitest::Test
     refute_empty ShatteredPrivateRoute22.event_id_conflicts(map)
   end
 
+  def test_original_script_archive_pin_and_reserved_id_scan
+    assert_equal "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+      ShatteredPrivateRoute22::SOURCE_SCRIPTS_SHA
+    scripts = Array.new(ShatteredPrivateRoute22::SOURCE_SCRIPT_COUNT) do |index|
+      [index, "core_#{index}", Zlib::Deflate.deflate("$game_switches[80] = true")]
+    end
+    assert_empty ShatteredPrivateRoute22.original_script_id_conflicts(scripts)
+    scripts[24] = [24, "conflict", Zlib::Deflate.deflate("$game_variables [ 991 ] = 1")]
+    assert_equal [[24, "conflict"]], ShatteredPrivateRoute22.original_script_id_conflicts(scripts)
+    scripts[24] = [24, "conflict", Zlib::Deflate.deflate("$game_switches[992] = true")]
+    assert_equal [[24, "conflict"]], ShatteredPrivateRoute22.original_script_id_conflicts(scripts)
+    scripts[24] = [24, "corrupt", "not a compressed script"]
+    assert_raises(RuntimeError) { ShatteredPrivateRoute22.original_script_id_conflicts(scripts) }
+    assert_raises(RuntimeError) { ShatteredPrivateRoute22.original_script_id_conflicts(scripts.take(401)) }
+  end
+
   def test_unmarked_or_modified_private_project_is_rejected
     Dir.mktmpdir do |dir|
       assert_raises(RuntimeError) do
