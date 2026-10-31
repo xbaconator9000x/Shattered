@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from PIL import Image
 
@@ -229,6 +230,89 @@ class ReviewTest(unittest.TestCase):
         self.write()
         with self.assertRaisesRegex(ValueError, "source warp indices"):
             self.build()
+        self.assertFalse(self.out.exists())
+
+
+    def private_source_fixture(self):
+        """Synthetic byte pins, deliberately injected ONLY into the tests."""
+        root = self.root / "source"
+        pins = {"source_repository": preview.SOURCE_REPOSITORY,
+                "source_revision": preview.SOURCE_REVISION, "layouts": {}}
+        first_source_file = None
+        for data, (_map_id, layout, _dimensions, _warp_count) in zip(
+                [self.gate, *self.road["floors"]], preview.SOURCE_MAPS):
+            map_rel = f"data/maps/{layout}/map.json"
+            bin_rel = f"data/layouts/{layout}/map.bin"
+            map_bytes = (layout + ":map-json").encode("ascii")
+            bin_bytes = (layout + ":blockdata").encode("ascii")
+            paths = ((map_rel, map_bytes), (bin_rel, bin_bytes))
+            for rel, payload in paths:
+                path = root / rel
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(payload)
+                if first_source_file is None:
+                    first_source_file = path
+            data["source"]["map_sha256"] = hashlib.sha256(map_bytes).hexdigest()
+            data["source"]["blockdata_sha256"] = hashlib.sha256(bin_bytes).hexdigest()
+            pins["layouts"][layout] = {
+                "map_json_path": map_rel,
+                "map_json_sha1": preview.git_blob_sha1(map_bytes),
+                "blockdata_path": bin_rel,
+                "blockdata_sha1": preview.git_blob_sha1(bin_bytes),
+            }
+        pin_path = self.root / "source_pins.json"
+        pin_path.write_text(json.dumps(pins))
+        self.write()
+        return root, pin_path, first_source_file
+
+    def test_accepts_verified_private_source_bytes(self):
+        root, pin_path, _first = self.private_source_fixture()
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            manifest = preview.build_review(
+                self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertTrue(manifest["raw_upstream_source_bytes_verified_by_preview"])
+        self.assertFalse(manifest["native_gameplay_verified"])
+
+    def test_rejects_modified_private_source_blob(self):
+        root, pin_path, first = self.private_source_fixture()
+        first.write_bytes(first.read_bytes() + b"modified")
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "Git blob SHA-1 mismatch"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_bundle_source_hash_disagreement(self):
+        root, pin_path, _first = self.private_source_fixture()
+        self.gate["source"]["map_sha256"] = "0" * 64
+        self.write()
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "raw source SHA-256 mismatch"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_symlinked_private_source_file(self):
+        root, pin_path, first = self.private_source_fixture()
+        external = self.root / "external-source.bin"
+        external.write_bytes(first.read_bytes())
+        first.unlink()
+        first.symlink_to(external)
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "symlinked private HnS source"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
+        self.assertFalse(self.out.exists())
+
+    def test_rejects_wrong_pinned_source_revision(self):
+        root, pin_path, _first = self.private_source_fixture()
+        pins = json.loads(pin_path.read_text())
+        pins["source_revision"] = "0" * 40
+        pin_path.write_text(json.dumps(pins))
+        with patch.object(preview, "SOURCE_PINS_PATH", pin_path):
+            with self.assertRaisesRegex(ValueError, "source pins differ"):
+                preview.build_review(
+                    self.gate_path, self.road_path, self.tiles, self.out, source_root=root)
         self.assertFalse(self.out.exists())
 
 if __name__ == "__main__":
