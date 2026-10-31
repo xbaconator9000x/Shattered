@@ -439,7 +439,8 @@
         "PR #24 merged as af9454f52bd169c0279c8629eb5060a63b265273; source-only quest, transactional installer and synthetic tests integrated, not a native installed rescue.",
         "2026-10-31 direct authorised v0.4 Data/Scripts.rxdata audit (Overworld_BattleStarting): legacy pbWildBattle/pbTrainerBattle functions do not exist; v21.1 uses WildBattle.start_core and TrainerBattle.start_core, returning numeric outcomes. WildBattle.start returns true even for escape/capture, so a boolean cannot certify victory.",
         "2026-10-31 source repair PR (new) replaces obsolete hooks, accepts only decision 1, enforces wild Murkrow species and tests retry on 0/2/3/4/5. GitHub CI/native runtime evidence pending.",
-        "PR #43 merged at e25f202bbb73e32fffef1e2dfc8615d43701e7c3; v21.1 numeric start_core battle decisions and private Murkrow sprite SHA/PNG integrity checks. GitHub validate/murkrow/main handoff passed. Actual rescue remains not installed or played."
+        "PR #43 merged at e25f202bbb73e32fffef1e2dfc8615d43701e7c3; v21.1 numeric start_core battle decisions and private Murkrow sprite SHA/PNG integrity checks. GitHub validate/murkrow/main handoff passed. Actual rescue remains not installed or played.",
+        "2026-10-31 PR #52 source repair: Murkrow state now rejects false (previously reset quest) and impossible saved battle/recruit/reward flag combinations before interrupted-save recovery. Two new Marshal/corruption Ruby regressions; native Murkrow event, reward UI, save-menu and Android still unverified."
       ],
       "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
     },
