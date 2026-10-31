@@ -7,11 +7,15 @@ on:
       - 'scripts/render_hns_tiles.py'
       - 'tests/test_hns_victory_road*'
       - 'tests/test_render_hns_tiles.py'
+      - 'tests/test_hns_private_tilesets.py'
       - '.github/workflows/victory-road-ci.yml'
   pull_request:
     paths:
       - 'scripts/*hns_victory_road*'
+      - 'scripts/render_hns_tiles.py'
       - 'tests/test_hns_victory_road*'
+      - 'tests/test_render_hns_tiles.py'
+      - 'tests/test_hns_private_tilesets.py'
       - '.github/workflows/victory-road-ci.yml'
   workflow_dispatch:
 concurrency:
