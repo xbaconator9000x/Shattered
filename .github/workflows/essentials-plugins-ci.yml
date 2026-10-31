@@ -73,6 +73,10 @@ jobs:
         run: |
           ruby -c scripts/finalize_private_runtime.rb
           ruby tests/test_private_runtime_isolation.rb
+      - name: Native Essentials PBS compiler runner and rollback regressions
+        run: |
+          ruby -c scripts/compile_private_pbs_native.rb
+          ruby tests/test_private_native_pbs_compile.rb
       - name: Native gate, HnS, Route22, rescue and raid Ruby regressions
         run: |
           # Run each suite in a fresh Ruby process: their RGSS fixture globals
