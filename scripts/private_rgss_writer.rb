@@ -46,7 +46,8 @@ class RPG::Event
   def initialize(x, y)
     @id = 0
     @name = ""
-    @x, @y = x, y
+    @x = x
+    @y = y
     @pages = [RPG::Event::Page.new]
   end
 end
@@ -58,9 +59,15 @@ class RPG::Event::Page
   def initialize
     @condition = RPG::Event::Page::Condition.new
     @graphic = RPG::Event::Page::Graphic.new
-    @move_type, @move_speed, @move_frequency = 0, 3, 3
-    @walk_anime, @step_anime, @direction_fix = true, false, false
-    @through, @always_on_top, @trigger = false, false, 0
+    @move_type = 0
+    @move_speed = 3
+    @move_frequency = 3
+    @walk_anime = true
+    @step_anime = false
+    @direction_fix = false
+    @through = false
+    @always_on_top = false
+    @trigger = 0
     @list = [RPG::EventCommand.new]
     @move_route = RPG::MoveRoute.new
   end
@@ -70,8 +77,15 @@ class RPG::Event::Page::Condition
   attr_accessor :switch1_valid, :switch2_valid, :variable_valid, :self_switch_valid,
     :switch1_id, :switch2_id, :variable_id, :variable_value, :self_switch_ch
   def initialize
-    @switch1_valid = @switch2_valid = @variable_valid = @self_switch_valid = false
-    @switch1_id, @switch2_id, @variable_id, @variable_value, @self_switch_ch = 1, 1, 1, 0, "A"
+    @switch1_valid = false
+    @switch2_valid = false
+    @variable_valid = false
+    @self_switch_valid = false
+    @switch1_id = 1
+    @switch2_id = 1
+    @variable_id = 1
+    @variable_value = 0
+    @self_switch_ch = "A"
   end
 end
 
@@ -79,29 +93,39 @@ class RPG::Event::Page::Graphic
   attr_accessor :tile_id, :character_name, :character_hue, :direction, :pattern,
     :opacity, :blend_type
   def initialize
-    @tile_id, @character_name, @character_hue = 0, "", 0
-    @direction, @pattern, @opacity, @blend_type = 2, 0, 255, 0
+    @tile_id = 0
+    @character_name = ""
+    @character_hue = 0
+    @direction = 2
+    @pattern = 0
+    @opacity = 255
+    @blend_type = 0
   end
 end
 
 class RPG::EventCommand
   attr_accessor :code, :indent, :parameters
   def initialize(code = 0, indent = 0, parameters = [])
-    @code, @indent, @parameters = code, indent, parameters
+    @code = code
+    @indent = indent
+    @parameters = parameters
   end
 end
 
 class RPG::MoveRoute
   attr_accessor :repeat, :skippable, :list
   def initialize
-    @repeat, @skippable, @list = true, false, [RPG::MoveCommand.new]
+    @repeat = true
+    @skippable = false
+    @list = [RPG::MoveCommand.new]
   end
 end
 
 class RPG::MoveCommand
   attr_accessor :code, :parameters
   def initialize(code = 0, parameters = [])
-    @code, @parameters = code, parameters
+    @code = code
+    @parameters = parameters
   end
 end
 
