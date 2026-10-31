@@ -27,7 +27,7 @@ module ShatteredPrivateRoute22
       "outcome_variable" => VARIABLE, "rattata_character" => sprite,
       "native_dimensions" => [54, 34], "reviewed_native_geometry" => true,
       "event_positions" => {
-        "triggers" => [[27, 16], [27, 17], [27, 18]],
+        "triggers" => [[31, 17], [31, 18], [32, 18]],
         "npcs" => [[29, 17], [29, 18], [28, 18]]
       },
       "scatter_moves" => [3, 4, 3],
