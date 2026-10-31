@@ -140,6 +140,20 @@ class HNSWorldInstallTest < Minitest::Test
     assert_empty artifacts
   end
 
+  def test_partial_lock_acquisition_failure_cleans_up_without_writing
+    original_open = File.method(:open)
+    File.stub(:open, lambda { |path, *args, &block|
+      if path == ShatteredHNSVictoryRoadInstall::LOCK &&
+         args.first == (File::WRONLY | File::CREAT | File::EXCL)
+        raise Errno::EACCES, "injected standalone road lock denial"
+      end
+      original_open.call(path, *args, &block)
+    }) do
+      assert_raises(Errno::EACCES) { install_world }
+    end
+    assert_unchanged
+  end
+
   def test_source_collision_blocks_gate_to_b2f
     @road["floors"][2]["source_collision"][46 * 40 + 30] = 1
     write_road
