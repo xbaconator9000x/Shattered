@@ -1,0 +1,119 @@
+{
+  "source_repository": "PokemonHnS-Development/pokehns-expansion",
+  "source_revision": "167aa6d537b109bb229c231ddce4616974c4da71",
+  "layouts_sha1": "a3c3be1b411b1dca5a81494c7e2d4ef100b1e75d",
+  "layouts": {
+    "LAYOUT_RECEPTION_GATE_HNS": {
+      "primary_dir": "data/tilesets/primary/johto_building_hns",
+      "secondary_dir": "data/tilesets/secondary/pokemon_center_white_hns",
+      "map_json_path": "data/maps/ReceptionGate_hns/map.json",
+      "map_json_sha1": "8651cb350a508181bfd7b69fc216696cb67c6829",
+      "blockdata_path": "data/layouts/ReceptionGate_hns/map.bin",
+      "blockdata_sha1": "bb1affeda8bedc75358a7c72813a7e7c6db0c660"
+    },
+    "LAYOUT_VICTORY_ROAD_KANTO_1F_HNS": {
+      "primary_dir": "data/tilesets/primary/johto_general_hns",
+      "secondary_dir": "data/tilesets/secondary/cave_default_hns",
+      "map_json_path": "data/maps/VictoryRoadKanto_1F_hns/map.json",
+      "map_json_sha1": "b072627ee9e367690dd909881f9ea52a6e390ed1",
+      "blockdata_path": "data/layouts/VictoryRoadKanto_1F_hns/map.bin",
+      "blockdata_sha1": "db84795062e12349416c2cdb4183e2dc36ee22bc"
+    },
+    "LAYOUT_VICTORY_ROAD_KANTO_B1F_HNS": {
+      "primary_dir": "data/tilesets/primary/johto_general_hns",
+      "secondary_dir": "data/tilesets/secondary/cave_default_hns",
+      "map_json_path": "data/maps/VictoryRoadKanto_B1F_hns/map.json",
+      "map_json_sha1": "65ec4beafef41872863f34998219365c0792d7b7",
+      "blockdata_path": "data/layouts/VictoryRoadKanto_B1F_hns/map.bin",
+      "blockdata_sha1": "f4e9b9bbe18b619b18574e88f9737800c75358db"
+    },
+    "LAYOUT_VICTORY_ROAD_KANTO_B2F_HNS": {
+      "primary_dir": "data/tilesets/primary/johto_general_hns",
+      "secondary_dir": "data/tilesets/secondary/cave_default_hns",
+      "map_json_path": "data/maps/VictoryRoadKanto_B2F_hns/map.json",
+      "map_json_sha1": "ce561685d1d3835b6625b4c22faa76ba9f1f2a2d",
+      "blockdata_path": "data/layouts/VictoryRoadKanto_B2F_hns/map.bin",
+      "blockdata_sha1": "11f1e34ee30291542e06a8eba45b3be14f792aa1"
+    }
+  },
+  "tilesets": {
+    "data/tilesets/primary/johto_building_hns": {
+      "metatile_attributes.bin": "4eaec6d9e5d087b95c4b8b6ca873c8e94825ed39",
+      "metatiles.bin": "0eeb33833964928381ed700cfeab06a68b83b927",
+      "tiles.png": "d3d272162cfc2b297ef04dcae8f930457a0819db",
+      "palettes/00.pal": "56e86d065a0de77609e904274cd8e31c04461d42",
+      "palettes/01.pal": "4dc5c05e05498788a152327516aeb0f668bb2a26",
+      "palettes/02.pal": "fb769a83fd674f07d3becffb2d4d431c83ecf359",
+      "palettes/03.pal": "1336ac81e29b9c620803fc87dc047f61646d0f63",
+      "palettes/04.pal": "ca6344e6246aa16e35819b302df279e1a8ccb5e0",
+      "palettes/05.pal": "c931e5fd2b3cba95a592d3dcc033cdcdaf6cce2e",
+      "palettes/06.pal": "1fdc05d472b0f714e1bd09b96dfad207b3a3d953",
+      "palettes/07.pal": "ff6ea0cc07e1f3724606a6ce71d91ea923c67e39",
+      "palettes/08.pal": "098954f12ac8decda0257008118f651ee1c4448f",
+      "palettes/09.pal": "7266e7734471d79a575f4bc1a4b0090148252776",
+      "palettes/10.pal": "ffd799f4e01bf204ac922ddccf24ee0eab43ad8b",
+      "palettes/11.pal": "a131887d827fedf7a525b93d6d4984084afffc42",
+      "palettes/12.pal": "316153cd121b60bb10b0f6915900c70704a00d18",
+      "palettes/13.pal": "73fec5261aaf9876dbab31604d426bfc650a3be7",
+      "palettes/14.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/15.pal": "e7717d74eabffda41647b2d2a2ca7169ca4ad4c3"
+    },
+    "data/tilesets/secondary/pokemon_center_white_hns": {
+      "metatile_attributes.bin": "3014f98d2a7d73adf40551bda1637f4a5b056fd5",
+      "metatiles.bin": "402af18d3a2ac531bd35e3afa231bc6ff1bc049e",
+      "tiles.png": "a8067b3d475820458243967c115f61eebca28078",
+      "palettes/00.pal": "77cfdcc2e2b09d3b67ffc5ce565fba4f7c0a01a8",
+      "palettes/01.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/02.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/03.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/04.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/05.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/06.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/07.pal": "500e5da13238b078d48317985d38ef31e9b0f302",
+      "palettes/08.pal": "9f95b1fd9d652e7459ff6479e9e390de63cb87e4",
+      "palettes/09.pal": "a0c59094b42c759df1b036e3950789ed26e32a2b",
+      "palettes/10.pal": "a8f455c4d419ad20f5fa63d98ffc55aa832e93d7",
+      "palettes/11.pal": "aca37cd1d1930161e9874edb90144c7670388761",
+      "palettes/12.pal": "d1c5f8919caf2eaea0c88cdab6eb5a36051df4a2"
+    },
+    "data/tilesets/primary/johto_general_hns": {
+      "metatile_attributes.bin": "a13a64371340282bedcf1082ef199e82e6db3a20",
+      "metatiles.bin": "db1b26a10fdac0a0e8f5eecdea93b0f934605a60",
+      "tiles.png": "e7dc59a0084f12c2ea30f6f1ea1f3c591c228906",
+      "palettes/00.pal": "23c87d1f6ddf32abefb8ffba2edd992e164fb921",
+      "palettes/01.pal": "09828f4f1f27fd489057d5efb68941ca3947f9fe",
+      "palettes/02.pal": "cb11ec72d2f62a241e94f7f1c0ccb12f38902e21",
+      "palettes/03.pal": "e793586723c385a7c6568e948718051c724044cf",
+      "palettes/04.pal": "9b094a6aaa24bec00b20dfd68bed519959054d97",
+      "palettes/05.pal": "9727c33c80bb829394b14aca69543b7366080651",
+      "palettes/06.pal": "cdf41b2983e5466152336b36c7ac4a3da4c7b4d4",
+      "palettes/07.pal": "ff6ea0cc07e1f3724606a6ce71d91ea923c67e39",
+      "palettes/08.pal": "098954f12ac8decda0257008118f651ee1c4448f",
+      "palettes/09.pal": "7266e7734471d79a575f4bc1a4b0090148252776",
+      "palettes/10.pal": "ffd799f4e01bf204ac922ddccf24ee0eab43ad8b",
+      "palettes/11.pal": "a131887d827fedf7a525b93d6d4984084afffc42",
+      "palettes/12.pal": "316153cd121b60bb10b0f6915900c70704a00d18",
+      "palettes/13.pal": "73fec5261aaf9876dbab31604d426bfc650a3be7",
+      "palettes/14.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/15.pal": "e7717d74eabffda41647b2d2a2ca7169ca4ad4c3"
+    },
+    "data/tilesets/secondary/cave_default_hns": {
+      "metatile_attributes.bin": "7d5e6cdc3492cc22fe5bd9730cd307f17388d3d5",
+      "metatiles.bin": "b9da06f5319bb55f9c5ba2a495d211ecb3ee80b2",
+      "tiles.png": "9f5843a89128745c86c877bc323873c141c54bbf",
+      "palettes/00.pal": "77cfdcc2e2b09d3b67ffc5ce565fba4f7c0a01a8",
+      "palettes/01.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/02.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/03.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/04.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/05.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/06.pal": "4b0812f094038215e9d7d7ea63170299929a834b",
+      "palettes/07.pal": "743ad05a726d9e47b23129065498ebcf9ec8d8e4",
+      "palettes/08.pal": "e655d2640c94fee46072b0b4388d2c5e606a206b",
+      "palettes/09.pal": "08dee73de259d40f750a61210963cb0c9c585450",
+      "palettes/10.pal": "d8c1618c044b165f6d3a964eea5c42017694e2ab",
+      "palettes/11.pal": "52980510114126ed8ccc033312f659d122b0476c",
+      "palettes/12.pal": "56e86d065a0de77609e904274cd8e31c04461d42"
+    }
+  }
+}
