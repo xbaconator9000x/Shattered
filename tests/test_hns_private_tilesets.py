@@ -17,8 +17,8 @@ def png(width=256, height=64):
         data = kind + payload
         return struct.pack(">I", len(payload)) + data + struct.pack(">I", binascii.crc32(data) & 0xffffffff)
     header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
-    pixels = zlib.compress((b"\\x00" + b"\\x00" * width * 4) * height)
-    return b"\\x89PNG\\r\\n\\x1a\\n" + chunk(b"IHDR", header) + chunk(b"IDAT", pixels) + chunk(b"IEND", b"")
+    pixels = zlib.compress((b"\x00" + b"\x00" * width * 4) * height)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", pixels) + chunk(b"IEND", b"")
 
 
 class PrivateTilesetTests(unittest.TestCase):
