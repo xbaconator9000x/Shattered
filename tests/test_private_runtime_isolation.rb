@@ -49,7 +49,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
       receipt = ISOLATION.finalize(root)
       assert_equal before, Digest::SHA256.file(archive).hexdigest
       assert_equal ["Shattered Gate Story"], receipt.fetch("runtime_plugin_names")
-      assert_equal 3, receipt.fetch("moved").length # two installers + JSON
+      assert_equal 4, receipt.fetch("moved").length # two installers + metadata + JSON
       assert File.file?(File.join(root, "Plugins/Shattered Gate Story/001_GateStory.rb"))
       refute File.exist?(File.join(root, "Plugins/Shattered Gate Story/002_Install.rb"))
       refute File.exist?(File.join(root, "Plugins/Shattered World Links"))
