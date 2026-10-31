@@ -69,6 +69,10 @@ jobs:
         run: |
           ruby -c scripts/compile_private_plugins.rb
           ruby tests/test_private_plugin_compiler.rb
+      - name: Private native runtime-only plugin isolation regression
+        run: |
+          ruby -c scripts/finalize_private_runtime.rb
+          ruby tests/test_private_runtime_isolation.rb
       - name: Smoke test staged project output
         run: |
           mkdir -p /tmp/base/PBS
