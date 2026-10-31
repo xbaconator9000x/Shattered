@@ -285,6 +285,24 @@ class VictoryRoadInstallTest < Minitest::Test
     assert_unchanged
   end
 
+
+  def test_internal_landing_blocked_by_original_gba_collision
+    # First floor warp 1 targets B1F source warp 1 at (5,2), landing (6,2).
+    @bundle["floors"][1]["source_collision"][2 * 60 + 6] = 1
+    write_bundle
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/GBA source collision/, error.message)
+    assert_unchanged
+  end
+
+  def test_missing_source_collision_grid_rejected
+    @bundle["floors"][1].delete("source_collision")
+    write_bundle
+    error = assert_raises(RuntimeError) { install }
+    assert_match(/source collision grid/, error.message)
+    assert_unchanged
+  end
+
   def test_stale_transaction_backup_refused_without_overwrite
     backup = File.join(@root, "Data/Tilesets.rxdata.shattered-vr-install.bak")
     File.write(backup, "preserve me")
