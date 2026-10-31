@@ -160,7 +160,8 @@
       "evidence": [
         "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
         "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified.",
-        "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed."
+        "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed.",
+        "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance."
       ]
     },
     {
@@ -213,7 +214,8 @@
         "Source-only merge candidate PR #14 reviewed after PRs #10, #11, #12 and #13; actual native compilation and full animation remain unverified.",
         "PR #14 merged on main at b35245b8; gate collapse/Aipom source and isolated tests integrated. Existing authorised v0.4 base stores AIPOM cry at Audio/SE/Cries/AIPOM.ogg; source-only fix under review, native scene remains unverified.",
         "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license.",
-        "2026-10-31 PR #51 source repair: gate story v1 saved state now initializes only absent data, rejects unknown versions/malformed or impossible progress without resetting impacts/Aipom key, and preserves legacy optional presentation flags. Four new Ruby regressions; CI now invokes previously omitted gate, HnS, Route22, Murkrow, raid and native handoff suites. Actual gate map-event/save-menu/Android acceptance remains OPEN."
+        "2026-10-31 PR #51 source repair: gate story v1 saved state now initializes only absent data, rejects unknown versions/malformed or impossible progress without resetting impacts/Aipom key, and preserves legacy optional presentation flags. Four new Ruby regressions; CI now invokes previously omitted gate, HnS, Route22, Murkrow, raid and native handoff suites. Actual gate map-event/save-menu/Android acceptance remains OPEN.",
+        "2026-10-31 PR #55 source fix: Gate Story installer now accepts native Essentials Array tilesets, regression asserts exact original Tilesets.rxdata bytes preserved; initial-slice installer no longer rewrites tileset DB to a temporary Hash. Real HnS tileset/map, scene execution and save/reload remain unverified."
       ],
       "blocker": "Aipom RMXP sprite now staged privately, but HnS asset redistribution rights, correct HnS gate tileset/metatile mapping, native Essentials compilation and scene/save/reload still required."
     },
