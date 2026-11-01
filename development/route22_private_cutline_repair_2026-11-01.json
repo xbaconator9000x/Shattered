@@ -5,8 +5,8 @@
   "original_private_candidate_sha256": "0d95363f0897c12a5944242c3a957ea751ce2e97216eb356297020af982ee395",
   "original_map016_sha256": "e480646fa53bf5ad138686abcbb1e763b5c10f378b92b3b2b080b533cfb6b629",
   "repaired_map016_sha256": "064d66435b37c263369380d6c4077d53191f6d2f65db71569977717f312e6339",
-  "repaired_private_candidate_sha256": "de1562fa4d016e2ede387716344ae6178ccaf7d1afbc1b3a365c8a81fbaf8d49",
-  "repaired_private_candidate_bytes": 160845577,
+  "repaired_private_candidate_sha256": "479a3ced72855535c4daf3946ddbcd37e7f5ca4b031c0a65e802b22a12d459f9",
+  "repaired_private_candidate_bytes": 160845969,
   "original_legacy_event_id": 3,
   "original_viridian_transfer_event_id": 4,
   "original_transfer": [
@@ -32,12 +32,13 @@
   "evidence": {
     "native_source_map_repair": "performed on exact private candidate Map016.rxdata",
     "zip_integrity": "7723 entries, testzip no errors",
-    "ruby_regressions": "4 tests, 21 assertions passed in local synthetic harness",
+    "ruby_regressions": "4 isolated native cutline tests, 21 assertions passed; additional compiler replacement tests committed, GitHub CI pending.",
     "battle_logic": "defeat/retry/victory/persistent-state source stub passed",
     "native_runtime": "not run",
     "native_pbs_compilation": "not run",
-    "plugin_scripts_rxdata_compilation": "not run",
-    "android": "not run"
+    "plugin_scripts_rxdata_compilation": "Route22 compiled source updated; actual mkxp-z engine not launched.",
+    "android": "not run",
+    "native_format_plugin_archive": "Updated Route22 compressed source inside actual private PluginScripts.rxdata, preserved eight other compiled plugin entries byte-for-byte, and verified Marshal roundtrip; not a gameplay test."
   },
   "release_gates_open": [
     "native Essentials compiled plugin archive",
@@ -47,5 +48,7 @@
     "HnS Rattata overworld group/scatter artwork",
     "Android JoiPlay/NaviaXP"
   ],
-  "asset_policy": "Private candidate contains copyrighted user-provided game assets; never commit or redistribute via GitHub. This record contains hashes and test results only."
+  "asset_policy": "Private candidate contains copyrighted user-provided game assets; never commit or redistribute via GitHub. This record contains hashes and test results only.",
+  "compiled_plugin_archive_sha256": "1fd3b17ee80c7d9f28ec1a114c8c739ad2fb59729dee05a3935062a7f83cc938",
+  "previous_plugin_archive_sha256": "31bfa8e81f9e26fbcc4f3fae8a2abce769620f200ed3638d6605efcbbe3f5d5c"
 }
