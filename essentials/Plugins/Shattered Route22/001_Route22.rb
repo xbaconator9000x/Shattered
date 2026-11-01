@@ -78,6 +78,13 @@ module ShatteredRoute22
     player = defined?($player) ? $player : nil
     raise "HUMAN party member missing" unless player && player.respond_to?(:party) &&
       player.party.any? { |member| Shattered.human?(member) }
+    # Essentials v21.1 treats a wild battle with zero able party members as
+    # a *skipped victory* (decision 1). Never let that skip clear a mandatory
+    # encounter. This is a native engine contract, not a synthetic battle rule.
+    return false unless player.respond_to?(:able_pokemon_count) &&
+      player.able_pokemon_count > 0
+    return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
+      defined?(Input::CTRL) && Input.press?(Input::CTRL)
     return false if @running
     @running = true
     @last_capture_violation = false
