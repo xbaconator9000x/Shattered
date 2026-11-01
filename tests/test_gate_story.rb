@@ -16,6 +16,12 @@ class BagStub
   def has?(id); !!@items[id]; end
   def add(id, qty); return false unless @can_add; @items[id] = true; @added += qty; true; end
 end
+class GateScreenStub
+  attr_reader :shakes
+  def initialize; @shakes = []; end
+  def start_shake(*args); @shakes << args; end
+end
+
 module RPG
   class Event
     attr_accessor :id, :name, :x, :y, :pages
@@ -73,6 +79,7 @@ class GateStoryTest < Minitest::Test
     $bag = BagStub.new
     $messages, $sounds, $waits = [], [], []
     $exclaims = []
+    $game_screen = GateScreenStub.new
   end
   def test_six_impacts_resume_and_collapse_persist_in_save
     assert_equal false, ShatteredGateStory.collapsed?
@@ -130,7 +137,9 @@ class GateStoryTest < Minitest::Test
     assert ShatteredGateStory.run_aipom("Cries/AIPOM", event)
     assert_equal [:north], turns
     assert_equal [event], $exclaims
-    assert_equal ["Cries/AIPOM"], $sounds
+    assert_equal ["Cries/AIPOM", "Mining collapse"], $sounds
+    assert_equal [ShatteredGateStory::KEY_AFTERSHOCK], $game_screen.shakes
+    assert ShatteredGateStory.state[:post_key_impact]
     assert_equal 1, $bag.added
     assert ShatteredGateStory.run_aipom("Cries/AIPOM", event)
     assert_equal [:north], turns
@@ -225,6 +234,67 @@ class GateStoryTest < Minitest::Test
     assert ShatteredGateStory.award_key!
     assert_equal 1, $bag.added
   end
+
+  def test_native_screen_shake_beats_resume_without_repeating_completed_impacts
+    2.times { ShatteredGateStory.impact! }
+    $PokemonGlobal = Marshal.load(Marshal.dump($PokemonGlobal))
+    ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    assert_equal ShatteredGateStory::IMPACT_SHAKES.drop(2), $game_screen.shakes
+    assert_equal %w[c d e f roar], $sounds
+    assert_equal 6, ShatteredGateStory.state[:impacts]
+    ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    assert_equal 4, $game_screen.shakes.length
+  end
+
+  def test_native_screen_missing_does_not_clear_unplayed_impact
+    $game_screen = nil
+    assert_raises(RuntimeError) do
+      ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    end
+    assert_equal 0, ShatteredGateStory.state[:impacts]
+    assert_empty $sounds
+  end
+
+  def test_key_aftershock_once_and_legacy_save_does_not_replay_it
+    6.times { ShatteredGateStory.impact! }
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal ["Cries/AIPOM", "Mining collapse"], $sounds
+    assert_equal [ShatteredGateStory::KEY_AFTERSHOCK], $game_screen.shakes
+    assert ShatteredGateStory.state[:post_key_impact]
+    $PokemonGlobal, $bag = Marshal.load(Marshal.dump([$PokemonGlobal, $bag]))
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal 1, $game_screen.shakes.length
+    assert_equal 1, $bag.added
+
+    ShatteredGateStory.state.delete(:post_key_impact)
+    assert ShatteredGateStory.state[:post_key_impact]
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal 1, $game_screen.shakes.length
+  end
+
+  def test_failed_key_aftershock_keeps_key_and_retries_without_duplicate_award
+    6.times { ShatteredGateStory.impact! }
+    broken_screen = Object.new
+    def broken_screen.start_shake(*_args); raise "injected screen failure"; end
+    $game_screen = broken_screen
+    assert_raises(RuntimeError) { ShatteredGateStory.run_aipom("Cries/AIPOM") }
+    assert ShatteredGateStory.key_obtained?
+    refute ShatteredGateStory.state[:post_key_impact]
+    assert_equal 1, $bag.added
+    $game_screen = GateScreenStub.new
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.state[:post_key_impact]
+    assert_equal [ShatteredGateStory::KEY_AFTERSHOCK], $game_screen.shakes
+    assert_equal 1, $bag.added
+  end
+
+  def test_invalid_aftershock_save_state_fails_closed
+    value = ShatteredGateStory.state
+    value[:post_key_impact] = true
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+    value[:post_key_impact] = "done"
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+  end
 end
 
 
@@ -233,6 +303,7 @@ class GateKeyBagPersistenceTest < Minitest::Test
     $PokemonGlobal = Object.new
     $bag = BagStub.new
     $messages, $sounds, $waits = [], [], []
+    $game_screen = GateScreenStub.new
     6.times { ShatteredGateStory.impact! }
     ShatteredGateStory.clue!
   end
