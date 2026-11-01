@@ -312,6 +312,24 @@ class MurkrowRescueTest < Minitest::Test
     end
   end
 
+  def test_no_able_party_cannot_skip_murkrow_battle_as_victory
+    # Essentials' real skip_battle helper returns 1 for a skipped wild
+    # battle. An exhausted party cannot use that outcome to earn Murkrow.
+    @player.forced_able_count = 0
+    $confirm_results = [true]
+    $battle_results = [1]
+    refute ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:battle_won]
+    assert_equal [1], $battle_results
+    assert_empty $battle_rules
+    assert_equal 0, $reward_count
+    @player.forced_able_count = 1
+    $confirm_results = [true, true]
+    assert ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal :complete, ShatteredMurkrowRescue.state(@store)[:stage]
+  end
+
   def test_wild_rescue_battle_enforces_no_pokeballs
     $confirm_results = [true, true]
     $battle_results = [1]
