@@ -91,6 +91,7 @@ jobs:
           for suite in \
             tests/test_gate_story.rb \
             tests/test_upgrade_approved_hns_opening.rb \
+            tests/test_private_hns_east_door.rb \
             tests/test_hns_gate_import.rb \
             tests/test_route22.rb \
             tests/test_murkrow_rescue.rb \
