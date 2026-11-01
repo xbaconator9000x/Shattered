@@ -280,6 +280,13 @@ module ShatteredMurkrowRescue
     receiver = battle_receiver(battle)
     raise "Essentials v21.1 battle entry unavailable: #{battle['hook']}" unless receiver
     arguments = battle["arguments"].map { |argument| decode_battle_argument(argument) }
+    # WildBattle.start_core returns decision 1 when Essentials skips a battle
+    # because the player has no able Pokemon (or Debug Ctrl is held). That
+    # result must never count as rescuing Murkrow or grant a companion/reward.
+    return false unless defined?($player) && $player &&
+      $player.respond_to?(:able_pokemon_count) && $player.able_pokemon_count > 0
+    return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
+      defined?(Input::CTRL) && Input.press?(Input::CTRL)
     if battle["hook"] == "WildBattle.start_core"
       rules = Object.new
       raise "Essentials no-capture battle rule unavailable" unless
