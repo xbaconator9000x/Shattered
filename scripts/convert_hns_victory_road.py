@@ -227,6 +227,20 @@ def verify_private_tilesets(bundle, tilesets_dir):
             offset = end
         if not saw_idat or not saw_end or width != 256 or not height or height % 32:
             raise ValueError(f"{name}: RMXP tilesheet must be complete, 256px wide and 32px-row aligned")
+        # A valid chunk CRC/IEND does not mean the compressed image is readable.
+        # The native game must actually be able to decode the reviewed sheet:
+        # reject CRC-correct PNGs with broken IDAT streams before installation.
+        # Bound dimensions before Pillow allocates any decoded pixels.
+        if height > 32768:
+            raise ValueError(f"{name}: private tileset exceeds RMXP tile ID capacity")
+        from PIL import Image, UnidentifiedImageError
+        try:
+            with Image.open(path) as decoded:
+                if decoded.format != "PNG" or decoded.size != (width, height):
+                    raise ValueError(f"{name}: PNG decoder disagrees with checked header")
+                decoded.load()
+        except (OSError, UnidentifiedImageError, SyntaxError) as exc:
+            raise ValueError(f"{name}: cannot decode private tileset pixels") from exc
         available_tiles = (height // 32) * 8
         ids = {tile for layer in floor["layers"] for tile in layer if tile >= 384}
         if ids and max(ids) >= 384 + available_tiles:
