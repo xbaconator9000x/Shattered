@@ -25,6 +25,13 @@ module RPG
   end
 end
 
+# Simulate a broken Table._load implementation that silently drops tile bytes.
+class LossyNativeTable
+  def initialize(raw); @raw = raw; end
+  def self._load(_raw); new(""); end
+  def _dump(_level); @raw; end
+end
+
 require_relative "../scripts/upgrade_approved_hns_opening"
 
 class ApprovedHNSOpeningUpgradeTest < Minitest::Test
@@ -97,6 +104,18 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_equal [12, "ShatteredGateStory.key_obtained?"],
                  map.events[7].pages.first.list.first.parameters
     assert_equal "unchanged", U.upgrade!(@dir, expected_sha256: @pin)
+  end
+
+  def test_rejects_lossy_native_table_codec_before_touching_map
+    map = Marshal.load(@before)
+    map.data = LossyNativeTable.new("actual tile layers")
+    File.binwrite(@map_path, Marshal.dump(map))
+    altered = File.binread(@map_path)
+    error = assert_raises(RuntimeError) do
+      U.upgrade!(@dir, expected_sha256: Digest::SHA256.hexdigest(altered))
+    end
+    assert_match(/cannot preserve original map layers/, error.message)
+    assert_equal altered, File.binread(@map_path)
   end
 
   def test_missing_key_fails_without_writing
