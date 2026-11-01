@@ -11,6 +11,7 @@ module GameData
 end
 module Shattered
   def self.human?(pokemon); pokemon == :HUMAN; end
+  def self.restore_stamina(pokemon); ($stamina_restores ||= []) << pokemon; end
 end
 module WildBattle
   def self.start(species, level)
@@ -78,7 +79,7 @@ class Route22BattleTest < Minitest::Test
     $game_switches=Hash.new(false)
     $player=OpenStruct.new(:party=>[:HUMAN])
     $game_map=OpenStruct.new(:need_refresh=>false)
-    $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false
+    $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false; $stamina_restores=[]
   end
   def test_win_sets_both_persistent_state_and_switch
     assert ShatteredRoute22.encounter(91,92)
@@ -122,6 +123,29 @@ class Route22BattleTest < Minitest::Test
     $battle_outcome = 1
     assert ShatteredRoute22.encounter(91, 92)
     assert_equal 2, $battle_calls.length
+  end
+
+  def test_defeat_and_draw_restore_human_stamina_for_retry
+    # Actual Essentials v21.1 BattleCreationHelperMethods.after_battle heals
+    # the party after canLose decisions 2/5; Shattered stamina is separate.
+    [2, 5].each do |result|
+      $battle_outcome = result
+      refute ShatteredRoute22.encounter(91, 92)
+      refute ShatteredRoute22.cleared?
+    end
+    assert_equal [:HUMAN, :HUMAN], $stamina_restores
+    refute $game_switches[92]
+  end
+
+  def test_escape_abort_capture_and_victory_do_not_refill_stamina
+    [0, 3, 4].each do |result|
+      $battle_outcome = result
+      refute ShatteredRoute22.encounter(91, 92)
+    end
+    assert_empty $stamina_restores
+    $battle_outcome = 1
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_empty $stamina_restores
   end
 
   def test_capture_is_detected_and_never_clears
