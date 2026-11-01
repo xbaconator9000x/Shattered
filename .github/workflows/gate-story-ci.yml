@@ -13,6 +13,9 @@ on:
       - "tests/test_private_plugin_coherence.rb"
       - "tests/test_upgrade_approved_hns_opening.rb"
       - "scripts/upgrade_approved_hns_opening.rb"
+      - "scripts/install_private_hns_debris.rb"
+      - "tests/test_hns_south_debris.rb"
+      - "tests/test_hns_debris_state.rb"
       - "scripts/verify_private_hns_east_door.rb"
       - "tests/test_private_hns_east_door.rb"
       - "tests/test_gate_key_pbs.py"
@@ -36,6 +39,9 @@ jobs:
           ruby tests/test_private_plugin_coherence.rb
           ruby -c scripts/upgrade_approved_hns_opening.rb
           ruby tests/test_upgrade_approved_hns_opening.rb
+          ruby -c scripts/install_private_hns_debris.rb
+          ruby tests/test_hns_south_debris.rb
+          ruby tests/test_hns_debris_state.rb
           ruby -c scripts/verify_private_hns_east_door.rb
           ruby tests/test_private_hns_east_door.rb
           ruby -c scripts/compile_private_gate_key.rb
