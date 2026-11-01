@@ -121,6 +121,29 @@ module ShatteredRoute22
     false
   end
 
+  # Three real Route22 overworld events. A failed attempt resets their positions
+  # before scattering again; the saved victory switch hides their second pages.
+  SCATTER_EVENTS = {5 => [31, 17, :move_right],
+                    6 => [31, 18, :move_left],
+                    7 => [32, 18, :move_right]}.freeze
+
+  def self.scatter!
+    return false if cleared?
+    map = defined?($game_map) ? $game_map : nil
+    raise 'Route22 Rattata group requires native Map016' unless map &&
+      map.respond_to?(:map_id) && map.map_id == 16 && map.respond_to?(:events)
+    actors = SCATTER_EVENTS.map do |id, (x, y, direction)|
+      actor = map.events[id]
+      raise "Missing native Rattata scatter event #{id}" unless actor &&
+        actor.respond_to?(:moveto) && actor.respond_to?(direction)
+      [actor, x, y, direction]
+    end
+    actors.each { |actor, x, y, _direction| actor.moveto(x, y) }
+    actors.each { |actor, _x, _y, direction| actor.public_send(direction) }
+    pbWait(12) if defined?(pbWait)
+    true
+  end
+
   def self.capture_violation?
     !!@last_capture_violation
   end
