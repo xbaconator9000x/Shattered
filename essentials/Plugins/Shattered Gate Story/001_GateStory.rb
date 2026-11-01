@@ -228,8 +228,8 @@ module ShatteredGateStory
   end
 end
 
-// Native map setup covers new transfers; spriteset recreation covers Continue
-// from a saved MapFactory without calling Game_Map#setup again.
+# Native map setup covers new transfers; spriteset recreation covers Continue
+# from a saved MapFactory without calling Game_Map#setup again.
 if defined?(EventHandlers)
   EventHandlers.add(:on_game_map_setup, :shattered_hns_debris_map_setup,
     proc { |*args| ShatteredGateStory.reconcile_debris })
