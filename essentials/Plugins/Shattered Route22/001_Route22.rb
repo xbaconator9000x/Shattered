@@ -72,6 +72,9 @@ module ShatteredRoute22
     begin
       $game_variables[outcome_variable] = 0
       setBattleRule("disablePokeBalls")
+      # A lost mandatory encounter must return to the map for a retry, not
+      # trigger game over before the persistent quest flag can be checked.
+      setBattleRule("canLose")
       setBattleRule("outcome", outcome_variable)
       WildBattle.start(SPECIES, LEVEL)
       decision = $game_variables[outcome_variable]
