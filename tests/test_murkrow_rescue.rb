@@ -584,22 +584,6 @@ class MurkrowRescueTest < Minitest::Test
     end
   end
 
-  private
-
-  def ready_to_befriend
-    ShatteredMurkrowRescue.discover!(@store)
-    ShatteredMurkrowRescue.begin_battle!(@store)
-    ShatteredMurkrowRescue.finish_battle!(true, @store)
-  end
-
-  def runtime_plan
-    JSON.generate(
-      "battle" => { "hook" => "WildBattle.start_core",
-                    "arguments" => [{ "symbol" => "MURKROW" }, 5] },
-      "reward" => { "item" => "POTION", "quantity" => 1 }
-    )
-  end
-
   def test_native_murkrow_event_hides_only_after_saved_quest_completion
     with_staged_project do |_root, plan|
       event = ShatteredMurkrowRescue.build_event(plan)
@@ -658,6 +642,40 @@ class MurkrowRescueTest < Minitest::Test
     assert_raises(RuntimeError) do
       ShatteredMurkrowRescue.sync_event_self_switch!(16, 5)
     end
+  end
+
+  def test_native_murkrow_reinstall_ignores_encoding_tags_but_rejects_event_drift
+    with_staged_project do |root, plan|
+      path = File.join(root, "Data/Map001.rxdata")
+      assert_equal 1, Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }["installed"]
+      map = load_data(path)
+      event = map.events[plan["event_id"]]
+      event.pages.first.condition.self_switch_ch = "A".dup.force_encoding(Encoding::BINARY)
+      event.pages.last.graphic.character_name = "".dup.force_encoding(Encoding::BINARY)
+      save_data(map, path)
+      assert_equal 1, Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }["unchanged"]
+      event.pages.first.graphic.character_name = "WrongSprite"
+      save_data(map, path)
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
+    end
+  end
+
+  private
+
+  def ready_to_befriend
+    ShatteredMurkrowRescue.discover!(@store)
+    ShatteredMurkrowRescue.begin_battle!(@store)
+    ShatteredMurkrowRescue.finish_battle!(true, @store)
+  end
+
+  def runtime_plan
+    JSON.generate(
+      "battle" => { "hook" => "WildBattle.start_core",
+                    "arguments" => [{ "symbol" => "MURKROW" }, 5] },
+      "reward" => { "item" => "POTION", "quantity" => 1 }
+    )
   end
 
   def with_staged_project
