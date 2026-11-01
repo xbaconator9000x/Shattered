@@ -77,9 +77,19 @@ module ShatteredPrivatePluginCompiler
     check(meta[:name] == folder, "Plugin folder/name mismatch")
     scripts = Dir.children(directory).select { |name| name.end_with?(".rb") }.sort
     expected = (RUNTIME_FILES.fetch(folder, []) + INSTALLER_FILES.fetch(folder, [])).sort
-    check(!expected.empty? && scripts == expected,
-      "Unreviewed plugin source inventory for #{folder}; refusing native compilation")
     runtime = RUNTIME_FILES.fetch(folder, [])
+    if scripts != expected
+      # After finalize_private_runtime.rb, installers live outside Plugins/.
+      # A pinned runtime-only upgrade is safe only if every expected offline
+      # installer still exists in the designated private tools directory.
+      offline = File.join(project, "SHATTERED_OFFLINE_TOOLS", folder)
+      offline_files = INSTALLER_FILES.fetch(folder, [])
+      check(!expected.empty? && scripts == runtime && !offline_files.empty? &&
+        File.directory?(offline) && !File.symlink?(offline) &&
+        offline_files.all? { |name| File.file?(File.join(offline, name)) &&
+          !File.symlink?(File.join(offline, name)) },
+        "Unreviewed plugin source inventory for #{folder}; refusing native compilation")
+    end
     packed = runtime.map do |name|
       check(name.match?(/\A[A-Za-z0-9 _-]+\.rb\z/), "Unsafe plugin filename")
       source = File.binread(safe_file!(File.join(directory, name)))
