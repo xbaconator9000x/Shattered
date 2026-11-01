@@ -118,7 +118,7 @@ module ShatteredGateStory
       cry.is_a?(String) && /\A(?:Cries\/)?[A-Za-z0-9_ -]+\z/.match?(cry)
     end
 
-    def run_aipom(cry)
+    def run_aipom(cry, event = nil)
       raise ArgumentError, "invalid Aipom cry name" unless valid_cry_name?(cry)
       unless collapsed?
         pbMessage(_INTL("There's something shiny up ahead."))
@@ -128,8 +128,20 @@ module ShatteredGateStory
         pbMessage(_INTL("Aipom looks pleased to see you again."))
         return true
       end
+      # The native RMXP event supplies get_character(0). The actual Essentials
+      # v21.1 Game_Character#turn_up and pbExclaim animation run only on an
+      # unclaimed key, never on subsequent visits or interrupted save recovery.
+      if event
+        raise ArgumentError, "Invalid native Aipom event" unless
+          event.respond_to?(:turn_up) && event.respond_to?(:map_id)
+        raise "Essentials exclamation animation unavailable" unless defined?(pbExclaim)
+      end
       pbMessage(_INTL("There's something shiny up ahead."))
       pbMessage(_INTL("It has something in its tail."))
+      if event
+        event.turn_up
+        pbExclaim(event)
+      end
       pbSEPlay(cry)
       clue!
       if award_key!
