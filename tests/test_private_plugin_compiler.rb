@@ -248,6 +248,29 @@ class PrivatePluginCompilerTest < Minitest::Test
     end
   end
 
+  def test_pinned_route22_refresh_after_offline_installer_isolated
+    with_stage do |root|
+      add_staged_plugin(root, "Shattered Route22", {
+        "001_Route22.rb" => "module ShatteredRoute22; VERSION = 1; end\n",
+        "002_Install.rb" => "require 'json'\n"
+      })
+      ShatteredPrivatePluginCompiler.compile(root, ["Shattered Route22"])
+      plugin_dir = File.join(root, "Plugins/Shattered Route22")
+      offline = File.join(root, "SHATTERED_OFFLINE_TOOLS/Shattered Route22")
+      FileUtils.mkdir_p(offline)
+      FileUtils.mv(File.join(plugin_dir, "002_Install.rb"), File.join(offline, "002_Install.rb"))
+      previous = "module ShatteredRoute22; VERSION = 1; end\n"
+      File.write(File.join(plugin_dir, "001_Route22.rb"),
+        "module ShatteredRoute22; VERSION = 2; end\n")
+      result = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Route22"],
+        replace_pins: { "Shattered Route22" => Digest::SHA256.hexdigest(previous) })
+      assert_equal "Shattered Route22", result["replaced"].first["plugin"]
+      entries = Marshal.load(File.binread(File.join(root, "Data/PluginScripts.rxdata")))
+      actual = entries.find { |entry| entry[0] == "Shattered Route22" }
+      assert_includes Zlib::Inflate.inflate(actual[2][0][1]), "VERSION = 2"
+    end
+  end
+
   def test_requires_private_staging_report
     with_stage do |root|
       target = File.join(root, "Data/PluginScripts.rxdata")
