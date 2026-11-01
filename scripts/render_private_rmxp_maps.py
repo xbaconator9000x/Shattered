@@ -50,6 +50,38 @@ def render_map(metadata, table_bytes, image):
     return canvas, rendered
 
 
+
+def render_event_sprites(image, events, project):
+    """Composite native first-page event character frames (e.g. Aipom)."""
+    result = image.copy()
+    rendered = 0
+    directions = {2: 0, 4: 1, 6: 2, 8: 3}
+    for event in events:
+        name = event.get('character_name', '')
+        if not name:
+            continue
+        if not isinstance(name, str) or not all(c.isalnum() or c in '_ -' for c in name):
+            raise ValueError('unsafe native event sprite name')
+        direction, pattern = event.get('direction', 2), event.get('pattern', 0)
+        if direction not in directions or type(pattern) is not int or not 0 <= pattern < 4:
+            raise ValueError('invalid native event sprite frame')
+        path = project / 'Graphics' / 'Characters' / (name + '.png')
+        if not path.is_file() or path.is_symlink():
+            raise ValueError(f'missing private event sprite: {name}')
+        with Image.open(path) as sprite:
+            sprite = sprite.convert('RGBA')
+            if sprite.width % 4 or sprite.height % 4:
+                raise ValueError(f'invalid four-frame RMXP sprite: {name}')
+            fw, fh = sprite.width // 4, sprite.height // 4
+            x0, y0 = pattern * fw, directions[direction] * fh
+            frame = sprite.crop((x0, y0, x0 + fw, y0 + fh))
+            x = event['x'] * TILE + (TILE - fw) // 2
+            y = (event['y'] + 1) * TILE - fh
+            result.alpha_composite(frame, (x, y))
+            rendered += 1
+    return result, rendered
+
+
 def overlay_events(image, events):
     result = image.copy()
     drawing = ImageDraw.Draw(result)
@@ -87,9 +119,10 @@ def generate(project, output, map_ids, exporter=None):
                 raise ValueError('tileset path escapes private project')
             with Image.open(sheet) as source:
                 image, count = render_map(metadata, tiles, source.convert('RGBA'))
+            image, sprites = render_event_sprites(image, metadata['events'], project)
             records.append((map_id, image, overlay_events(image, metadata['events']), {
                 'map_id': map_id, 'dimensions': [metadata['width'], metadata['height']],
-                'events': len(metadata['events']), 'tiles_rendered': count,
+                'events': len(metadata['events']), 'sprites_rendered': sprites, 'tiles_rendered': count,
                 'source_map_sha256': hashlib.sha256((project / 'Data' / f'Map{map_id:03d}.rxdata').read_bytes()).hexdigest(),
                 'tileset_png_sha256': hashlib.sha256(sheet.read_bytes()).hexdigest(),
                 'gameplay_verified': False, 'collision_verified': False,
