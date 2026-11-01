@@ -103,7 +103,30 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_equal 1, map.events[6].pages.length
     assert_equal [12, "ShatteredGateStory.key_obtained?"],
                  map.events[7].pages.first.list.first.parameters
+    # RMXP interpreter dispatches Conditional Branch commands by indent.
+    # The transfer MUST live inside the true branch; a flat list makes
+    # it run even if the player has not obtained Aipom's key.
+    east_commands = map.events[7].pages.first.list
+    assert_equal [111, 101, 201, 411, 101, 412, 0],
+                 east_commands.map(&:code)
+    assert_equal [0, 1, 1, 0, 1, 0, 0],
+                 east_commands.map(&:indent)
+    assert_equal [0, 16, 14, 10, 2, 0],
+                 east_commands[2].parameters
     assert_equal "unchanged", U.upgrade!(@dir, expected_sha256: @pin)
+  end
+
+  def test_legacy_flat_branch_is_not_mistaken_for_safe_upgrade
+    assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin)
+    map = Marshal.load(File.binread(@map_path))
+    map.events[7].pages.first.list.each { |command| command.indent = 0 }
+    File.binwrite(@map_path, Marshal.dump(map))
+    unsafe = File.binread(@map_path)
+    refute U.upgraded?(map)
+    # Do not silently repair a different map revision; the separate private
+    # SHA-guarded migration handles already-shipped unsafe candidate maps.
+    assert_raises(RuntimeError) { U.upgrade!(@dir, expected_sha256: @pin) }
+    assert_equal unsafe, File.binread(@map_path)
   end
 
   def test_rejects_lossy_native_table_codec_before_touching_map
