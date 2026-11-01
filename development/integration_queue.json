@@ -457,7 +457,8 @@
         "PR #43 merged at e25f202bbb73e32fffef1e2dfc8615d43701e7c3; v21.1 numeric start_core battle decisions and private Murkrow sprite SHA/PNG integrity checks. GitHub validate/murkrow/main handoff passed. Actual rescue remains not installed or played.",
         "2026-10-31 PR #52 source repair: Murkrow state now rejects false (previously reset quest) and impossible saved battle/recruit/reward flag combinations before interrupted-save recovery. Two new Marshal/corruption Ruby regressions; native Murkrow event, reward UI, save-menu and Android still unverified.",
         "2026-11-02 PR #59 source commits 19bb3fa5, d1cb60c2, 9d7bd2ae, dfde4ad9: Murkrow rescue now uses Essentials v21.1 canLose/no-Pokeballs battle rules; defeat/draw restores HUMAN stamina; only quest-tagged Murkrow may reconcile recruitment or claim the one-time reward. Actual v21.1 compiled Scripts.rxdata Overworld_BattleStarting confirms WildBattle.start_core honours canLose and calls after_battle. New Ruby regressions include unrelated Murkrow, tagged save recovery, missing award, reward payout, loss/draw/escape; Murkrow CI 41317680432 and combined plugins CI 41317680344 passed at dfde4ad9. No Murkrow native event installed in the private candidate (missing licensed character sprite and reviewed location); no real battle, normal save-menu or Android acceptance.",
-        "2026-11-02 PR #59 native private Murkrow scene installed on real staged Map016 (54x34), event #8 at 20,17, source parity anchor 28.5:npc:1 (51,16). Pinned HnS 192x32 Murkrow source converted privately to 128x128 RMXP sheet; SHA256 3682708f80845145656b151ec8242af621506a642a02bb6cf848c78e994c4c61. Native Map016 original SHA256 56151d32 -> installed 173b4560, event count 7->8; tiles and all 7 preexisting events Marshal-identical; two pages with quest-completion self-switch A and Continue reconciliation. Exact source 001_Quest.rb Git blob 46a9faf2 and installer a92125fd. Private plugin v0.1.1 compiled archive SHA256 2c5be244; other 8 entries preserved. ZIP SHA256 f51adcdbed3b06523757d3c36ad39ac73d55c3879df87722923b9baec0595488, CRC passed. Provisional target location and POTION reward need original scene parity review; no actual battle, normal save/Continue or Android acceptance. Copyright clearance for redistribution unverified."
+        "2026-11-02 PR #59 native private Murkrow scene installed on real staged Map016 (54x34), event #8 at 20,17, source parity anchor 28.5:npc:1 (51,16). Pinned HnS 192x32 Murkrow source converted privately to 128x128 RMXP sheet; SHA256 3682708f80845145656b151ec8242af621506a642a02bb6cf848c78e994c4c61. Native Map016 original SHA256 56151d32 -> installed 173b4560, event count 7->8; tiles and all 7 preexisting events Marshal-identical; two pages with quest-completion self-switch A and Continue reconciliation. Exact source 001_Quest.rb Git blob 46a9faf2 and installer a92125fd. Private plugin v0.1.1 compiled archive SHA256 2c5be244; other 8 entries preserved. ZIP SHA256 f51adcdbed3b06523757d3c36ad39ac73d55c3879df87722923b9baec0595488, CRC passed. Provisional target location and POTION reward need original scene parity review; no actual battle, normal save/Continue or Android acceptance. Copyright clearance for redistribution unverified.",
+        "2026-11-02 PR #59 head 95ebf7c35a3ef61424c42f19a72029c9764545af passed 5/5 GitHub workflows: Murkrow 41323517773 (34 Ruby tests, 188 assertions), Viridian 41323517758, combined plugins 41323517752, Route22 41323517749, source handoff 41323517742. These are source/structural CI, not native engine playthrough."
       ],
       "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
     },
@@ -489,10 +490,13 @@
   ],
   "estimated_full_demo_completion_percent": 8,
   "full_demo_scope": "Conservative 8% for the complete Shattered Essentials remake. A private native HnS gate/Route22 candidate now has HUMAN, compiled Gate Key, Rattata retry and source-pinned three-sprite scatter; local native-format checks and CI pass. The full gate event path, defeat/retry, normal Save/Continue, Victory Road 1F/B1F, Viridian rescue/dojo/followers, and Android have NOT been played end to end. Original plugin infrastructure remains separately 16%.",
-  "last_verified_source_main_sha": "4c6c45e08e1fe2628466dec1adce81e6094fc7a0",
+  "last_verified_source_main_sha": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
   "last_verified_source_ci": [
-    41152946632,
-    41152946655
+    41323517773,
+    41323517758,
+    41323517752,
+    41323517749,
+    41323517742
   ],
   "private_murkrow_candidate": {
     "date": "2026-11-02",
