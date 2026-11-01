@@ -13,7 +13,12 @@ class Pokemon
   end
 end
 
-PlayerStub = Struct.new(:party)
+PlayerStub = Struct.new(:party) do
+  attr_accessor :forced_able_count
+  def able_pokemon_count
+    forced_able_count.nil? ? party.length : forced_able_count
+  end
+end
 SaveStub = Class.new
 
 load File.expand_path("../essentials/Plugins/Shattered Core/001_Core.rb", __dir__)
