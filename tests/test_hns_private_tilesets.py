@@ -12,12 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from convert_hns_victory_road import verify_private_tilesets
 
 
-def png(width=256, height=64):
+def png(width=256, height=64, *, compressed=None):
     def chunk(kind, payload):
         data = kind + payload
         return struct.pack(">I", len(payload)) + data + struct.pack(">I", binascii.crc32(data) & 0xffffffff)
     header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
-    pixels = zlib.compress((b"\x00" + b"\x00" * width * 4) * height)
+    pixels = (zlib.compress((b"\x00" + b"\x00" * width * 4) * height)
+              if compressed is None else compressed)
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", pixels) + chunk(b"IEND", b"")
 
 
@@ -54,6 +55,16 @@ class PrivateTilesetTests(unittest.TestCase):
         raw[29] ^= 1
         self.path.write_bytes(raw)
         with self.assertRaisesRegex(ValueError, "CRC"):
+            verify_private_tilesets(self.bundle, self.root)
+
+    def test_crc_correct_png_with_invalid_idat_rejected(self):
+        # Recalculate the digest so the test cannot pass on a hash mismatch.
+        # Previously the preflight accepted this file because every PNG
+        # chunk had a valid CRC and the IEND was present.
+        self.path.write_bytes(png(compressed=b"not a valid zlib stream"))
+        self.bundle["floors"][0]["target"]["tileset_sha256"] = (
+            hashlib.sha256(self.path.read_bytes()).hexdigest())
+        with self.assertRaisesRegex(ValueError, "cannot decode private tileset pixels"):
             verify_private_tilesets(self.bundle, self.root)
 
     def test_wrong_width_rejected(self):
