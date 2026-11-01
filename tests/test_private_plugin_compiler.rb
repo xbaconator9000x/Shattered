@@ -206,6 +206,48 @@ class PrivatePluginCompilerTest < Minitest::Test
     end
   end
 
+  def test_pinned_single_script_replacement_preserves_other_plugins_and_backup
+    with_stage do |root|
+      target = File.join(root, "Data/PluginScripts.rxdata")
+      ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      original = File.binread(target)
+      entries = Marshal.load(original)
+      hotfix_bytes = Marshal.dump(entries.first)
+      prior = "module Shattered; CORE_TEST = true; end\n"
+      approved_sha = Digest::SHA256.hexdigest(prior)
+      File.write(File.join(root, "Plugins/Shattered Core/001_Core.rb"),
+        "module Shattered; CORE_TEST = false; end\n")
+      report = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"],
+        replace_pins: { "Shattered Core" => approved_sha })
+      assert_equal "Shattered Core", report.fetch("replaced").first.fetch("plugin")
+      assert_equal approved_sha, report.fetch("replaced").first.fetch("previous_source_sha256")
+      updated = Marshal.load(File.binread(target))
+      assert_equal hotfix_bytes, Marshal.dump(updated.first)
+      assert_includes Zlib::Inflate.inflate(updated.last[2].first.last), "CORE_TEST = false"
+      backups = Dir.glob(target + ".pre_shattered_*.bak")
+      assert_equal 2, backups.length
+      assert backups.any? { |path| File.binread(path) == original }
+      unchanged = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      assert_equal ["Shattered Core"], unchanged["unchanged"]
+    end
+  end
+
+  def test_pinned_replacement_rejects_wrong_digest_without_archive_change
+    with_stage do |root|
+      target = File.join(root, "Data/PluginScripts.rxdata")
+      ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      original = File.binread(target)
+      File.write(File.join(root, "Plugins/Shattered Core/001_Core.rb"),
+        "module Shattered; CORE_TEST = false; end\n")
+      error = assert_raises(RuntimeError) do
+        ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"],
+          replace_pins: { "Shattered Core" => "0" * 64 })
+      end
+      assert_match(/digest differs/, error.message)
+      assert_equal original, File.binread(target)
+    end
+  end
+
   def test_requires_private_staging_report
     with_stage do |root|
       target = File.join(root, "Data/PluginScripts.rxdata")
