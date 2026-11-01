@@ -101,6 +101,7 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_equal "Aipom", map.events[6].pages.first.graphic.character_name
     assert_equal 8, map.events[6].pages.first.graphic.direction
     assert_equal 1, map.events[6].pages.length
+    assert_includes map.events[6].pages.first.list.first.parameters.first, "get_character(0)"
     assert_equal [12, "ShatteredGateStory.key_obtained?"],
                  map.events[7].pages.first.list.first.parameters
     # RMXP interpreter dispatches Conditional Branch commands by indent.
@@ -114,6 +115,32 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_equal [0, 16, 14, 10, 2, 0],
                  east_commands[2].parameters
     assert_equal "unchanged", U.upgrade!(@dir, expected_sha256: @pin)
+  end
+
+  def test_previous_native_aipom_script_migrates_without_changing_other_events
+    assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin)
+    map = Marshal.load(File.binread(@map_path))
+    old_warp = Marshal.dump(map.events[2])
+    map.events[6].pages.first.list = U.expected_commands(legacy_aipom: true)[6]
+    assert U.upgraded?(map, legacy_aipom: true)
+    refute U.upgraded?(map)
+    File.binwrite(@map_path, Marshal.dump(map))
+    assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin)
+    repaired = Marshal.load(File.binread(@map_path))
+    assert U.upgraded?(repaired)
+    assert_equal old_warp, Marshal.dump(repaired.events[2])
+    assert_equal "unchanged", U.upgrade!(@dir, expected_sha256: @pin)
+  end
+
+  def test_previous_aipom_migration_refuses_unrelated_map_drift
+    assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin)
+    map = Marshal.load(File.binread(@map_path))
+    map.events[6].pages.first.list = U.expected_commands(legacy_aipom: true)[6]
+    map.events[2].name = "unreviewed altered warp"
+    File.binwrite(@map_path, Marshal.dump(map))
+    changed = File.binread(@map_path)
+    assert_raises(RuntimeError) { U.upgrade!(@dir, expected_sha256: @pin) }
+    assert_equal changed, File.binread(@map_path)
   end
 
   def test_legacy_flat_branch_is_not_mistaken_for_safe_upgrade
