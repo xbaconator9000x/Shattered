@@ -99,7 +99,7 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_includes map.events[5].pages.first.list.map(&:parameters).flatten.join(" "),
                     "ShatteredGateStory.run_collapse"
     assert_equal "Aipom", map.events[6].pages.first.graphic.character_name
-    assert_equal 8, map.events[6].pages.first.graphic.direction
+    assert_equal 2, map.events[6].pages.first.graphic.direction
     assert_equal 1, map.events[6].pages.length
     assert_includes map.events[6].pages.first.list.first.parameters.first, "get_character(0)"
     assert_equal [12, "ShatteredGateStory.key_obtained?"],
@@ -130,6 +130,7 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
                                       expected_legacy_sha256: legacy_sha)
     repaired = Marshal.load(File.binread(@map_path))
     assert U.upgraded?(repaired)
+    assert_equal 2, repaired.events[6].pages.first.graphic.direction
     assert_equal old_warp, Marshal.dump(repaired.events[2])
     assert_equal "unchanged", U.upgrade!(@dir, expected_sha256: @pin)
   end
