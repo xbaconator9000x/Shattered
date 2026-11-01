@@ -163,7 +163,8 @@
         "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified.",
         "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed.",
         "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance.",
-        "2026-11-02 private Map223 native event #7 audit found RMXP conditional branch 111, message 101, transfer 201, else 411 and end 412 ALL incorrectly indented at 0. Actual private Scripts.rxdata Interpreter_Commands#command_skip stops at the next command with the same indent, allowing east Route22 transfer even without Aipom key. PR #59 commits 669bdcd2, 8b13fb4f, 2c158554, 03a97bd7 add a SHA-pinned, transaction-safe repair and 7 Ruby tests/17 assertions; six GitHub CI workflows passed at 03a97bd7. Native game playthrough remains unverified."
+        "2026-11-02 private Map223 native event #7 audit found RMXP conditional branch 111, message 101, transfer 201, else 411 and end 412 ALL incorrectly indented at 0. Actual private Scripts.rxdata Interpreter_Commands#command_skip stops at the next command with the same indent, allowing east Route22 transfer even without Aipom key. PR #59 commits 669bdcd2, 8b13fb4f, 2c158554, 03a97bd7 add a SHA-pinned, transaction-safe repair and 7 Ruby tests/17 assertions; six GitHub CI workflows passed at 03a97bd7. Native game playthrough remains unverified.",
+        "2026-11-02 REAL Linux mkxp-z native launch from private corrected Map223 candidate SHA 3bd21c0c: title screen, New Game menu and HnS gate opening dialogue rendered. Screenshot hashes and engine SHA in development/native_linux_gate_key_guard_2026-11-02.json. Actual rendered gate has visibly incorrect pale repeating tiles/black empty areas, so tileset/metatile visual parity FAILS. East door key gate was structurally repaired, but NOT interactively tested; Android and save/reload remain open."
       ]
     },
     {
@@ -492,7 +493,7 @@
     }
   ],
   "estimated_full_demo_completion_percent": 8,
-  "full_demo_scope": "Conservative 8% for the complete Shattered Essentials remake. A private native HnS gate/Route22 candidate now has HUMAN, compiled Gate Key, Rattata retry and source-pinned three-sprite scatter; local native-format checks and CI pass. The full gate event path, defeat/retry, normal Save/Continue, Victory Road 1F/B1F, Viridian rescue/dojo/followers, and Android have NOT been played end to end. Original plugin infrastructure remains separately 16%.",
+  "full_demo_scope": "Conservative 8% for the complete Shattered Essentials remake. Private mkxp-z actually booted the corrected Map223 candidate and rendered New Game/HnS opening dialogue on 2026-11-02; native gate tileset/metatile visual parity visibly FAILS. A source-pinned east door condition repair fixes incorrect RMXP command indentation, with source CI and private native archive verification; east door interaction, Route22 battle from map, normal Save/Continue, Victory Road 1F/B1F, full Viridian rescue/dojo/followers and Android remain unverified. Original plugin infrastructure remains separately 16%.",
   "last_verified_source_main_sha": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
   "last_verified_source_ci": [
     41327886294,
@@ -555,6 +556,9 @@
     "local_tests": "7 Ruby tests, 17 assertions passed; map guard repair run twice (changed then idempotent); private ZIP integrity and 7,734 unchanged file payloads verified",
     "actual_engine_playthrough_verified": false,
     "android_verified": false,
-    "distribution_rights_verified": false
+    "distribution_rights_verified": false,
+    "native_linux_opening_observed": true,
+    "native_linux_visual_parity_verified": false,
+    "native_linux_evidence": "development/native_linux_gate_key_guard_2026-11-02.json"
   }
 }
