@@ -166,4 +166,11 @@ end
 if defined?(EventHandlers)
   EventHandlers.add(:on_game_map_setup, :shattered_route22_reconcile,
     proc { |*args| ShatteredRoute22.reconcile_on_map_setup })
+  # Essentials v21.1 Game.load_map normally restores the saved MapFactory
+  # without calling Game_Map#setup. Scene_Map#createSpritesets does invoke
+  # :on_map_or_spriteset_change even on Continue. Reconcile there too, after
+  # the saved map and switches are restored but before the first rendered frame.
+  # Reconciliation is idempotent and never initialises state on unrelated maps.
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_route22_reconcile_on_continue,
+    proc { |*args| ShatteredRoute22.reconcile_on_map_setup })
 end
