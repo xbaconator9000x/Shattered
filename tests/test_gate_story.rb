@@ -12,6 +12,7 @@ class BagStub
   attr_reader :added
   def initialize; @added = 0; @items = {}; @can_add = true; end
   def reject!; @can_add = false; end
+  def remove!(id); @items.delete(id); end
   def has?(id); !!@items[id]; end
   def add(id, qty); return false unless @can_add; @items[id] = true; @added += qty; true; end
 end
@@ -197,6 +198,58 @@ class GateStoryTest < Minitest::Test
     $bag.add(:SHATTEREDGATEKEY,1)
     assert ShatteredGateStory.award_key!
     assert_equal 1, $bag.added
+  end
+end
+
+
+class GateKeyBagPersistenceTest < Minitest::Test
+  def setup
+    $PokemonGlobal = Object.new
+    $bag = BagStub.new
+    $messages, $sounds, $waits = [], [], []
+    6.times { ShatteredGateStory.impact! }
+    ShatteredGateStory.clue!
+  end
+
+  def test_saved_award_flag_without_bag_item_cannot_unlock_gate
+    assert ShatteredGateStory.award_key!
+    assert ShatteredGateStory.key_obtained?
+    $bag.remove!(:SHATTEREDGATEKEY)
+    assert_equal true, ShatteredGateStory.state[:key]
+    refute ShatteredGateStory.key_obtained?
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.key_obtained?
+    assert_equal 2, $bag.added
+  end
+
+  def test_full_bag_during_recovery_keeps_door_locked
+    assert ShatteredGateStory.award_key!
+    $bag.remove!(:SHATTEREDGATEKEY)
+    $bag.reject!
+    refute ShatteredGateStory.run_aipom("Cries/AIPOM")
+    refute ShatteredGateStory.key_obtained?
+    assert_equal true, ShatteredGateStory.state[:key]
+    $bag = BagStub.new
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.key_obtained?
+  end
+
+  def test_item_present_before_saved_award_is_reconciled_without_duplicate
+    assert $bag.add(:SHATTEREDGATEKEY, 1)
+    refute ShatteredGateStory.key_obtained?
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.key_obtained?
+    assert_equal 1, $bag.added
+  end
+
+  def test_bag_and_story_marshal_roundtrip_requires_both
+    assert ShatteredGateStory.award_key!
+    $PokemonGlobal, $bag = Marshal.load(Marshal.dump([$PokemonGlobal, $bag]))
+    assert ShatteredGateStory.key_obtained?
+    $bag = BagStub.new
+    refute ShatteredGateStory.key_obtained?
+    assert ShatteredGateStory.award_key!
+    assert ShatteredGateStory.key_obtained?
   end
 end
 
