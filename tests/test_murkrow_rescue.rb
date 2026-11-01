@@ -237,6 +237,25 @@ class MurkrowRescueTest < Minitest::Test
     assert_equal :recruited, ShatteredMurkrowRescue.state(@store)[:stage]
   end
 
+  def test_reward_requires_the_actual_tagged_rescue_companion
+    ready_to_befriend
+    friend = ShatteredMurkrowRescue.recruit!(@player, @store)
+    reward = { "item" => "POTION", "quantity" => 1 }
+    @player.party.delete(friend)
+    @player.party << Pokemon.new(:MURKROW, 5)
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.claim_reward!(reward, @store)
+    end
+    assert_equal 0, $reward_count
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:reward_claimed]
+    @player.party.pop
+    @player.party << friend
+    assert ShatteredMurkrowRescue.claim_reward!(reward, @store)
+    assert_equal 1, $reward_count
+    assert ShatteredMurkrowRescue.claim_reward!(reward, @store)
+    assert_equal 1, $reward_count
+  end
+
   def test_complete_native_event_recruits_and_rewards_once
     $confirm_results = [true, true]
     $battle_results = [1]
