@@ -31,10 +31,19 @@ module RPG
         attr_accessor :character_name
       end
 
-      attr_accessor :trigger, :through, :always_on_top, :graphic, :list
+      class Condition
+        attr_accessor :self_switch_valid, :self_switch_ch
+        def initialize
+          @self_switch_valid = false
+          @self_switch_ch = "A"
+        end
+      end
+
+      attr_accessor :trigger, :through, :always_on_top, :graphic, :list, :condition
 
       def initialize
         @graphic = Graphic.new
+        @condition = Condition.new
       end
     end
   end
@@ -135,6 +144,8 @@ class MurkrowRescueTest < Minitest::Test
     $fail_map_save = false
     $battle_rules = []
     $fail_battle_rule = false
+    $game_map = nil
+    $game_self_switches = nil
   end
 
   def test_loss_flee_and_interruption_leave_encounter_retryable
@@ -587,6 +598,66 @@ class MurkrowRescueTest < Minitest::Test
                     "arguments" => [{ "symbol" => "MURKROW" }, 5] },
       "reward" => { "item" => "POTION", "quantity" => 1 }
     )
+  end
+
+  def test_native_murkrow_event_hides_only_after_saved_quest_completion
+    with_staged_project do |_root, plan|
+      event = ShatteredMurkrowRescue.build_event(plan)
+      assert_equal 2, event.pages.length
+      assert_equal "Murkrow", event.pages.first.graphic.character_name
+      assert_includes event.pages.first.list.first.parameters.first,
+        "sync_event_self_switch!($game_map.map_id, @event_id)"
+      assert event.pages.last.condition.self_switch_valid
+      assert_equal "A", event.pages.last.condition.self_switch_ch
+      assert event.pages.last.through
+      assert_nil event.pages.last.graphic.character_name
+
+      live = Struct.new(:event).new(event)
+      $game_map = Struct.new(:map_id, :events, :need_refresh).new(
+        plan["target_map_id"], { plan["event_id"] => live }, false)
+      $game_self_switches = Hash.new(false)
+      key = [plan["target_map_id"], plan["event_id"], "A"]
+      $game_self_switches[key] = true # stale switch must NOT bypass the rescue
+      assert ShatteredMurkrowRescue.reconcile_current_map
+      refute $game_self_switches[key]
+      assert $game_map.need_refresh
+
+      ShatteredMurkrowRescue.discover!
+      ShatteredMurkrowRescue.begin_battle!
+      ShatteredMurkrowRescue.finish_battle!(true)
+      assert ShatteredMurkrowRescue.recruit!
+      assert ShatteredMurkrowRescue.claim_reward!({ "item" => "POTION", "quantity" => 1 })
+      $game_map.need_refresh = false
+      assert ShatteredMurkrowRescue.reconcile_current_map
+      assert $game_self_switches[key]
+      assert $game_map.need_refresh
+
+      $PokemonGlobal = Marshal.load(Marshal.dump($PokemonGlobal))
+      $game_self_switches[key] = false # normal Continue may restore stale state
+      $game_map.need_refresh = false
+      assert ShatteredMurkrowRescue.reconcile_current_map
+      assert $game_self_switches[key]
+      assert $game_map.need_refresh
+    end
+  end
+
+  def test_murkrow_reconcile_ignores_unrelated_maps_and_invalid_event_ids
+    $game_self_switches = Hash.new(false)
+    ordinary = RPG::Event.new(1, 1)
+    ordinary.id = 5
+    ordinary.name = "Other event"
+    $game_map = Struct.new(:map_id, :events, :need_refresh).new(
+      16, { 5 => Struct.new(:event).new(ordinary) }, false)
+    $game_self_switches[[16, 5, "A"]] = true
+    refute ShatteredMurkrowRescue.reconcile_current_map
+    assert $game_self_switches[[16, 5, "A"]]
+    refute $game_map.need_refresh
+    assert_raises(ArgumentError) do
+      ShatteredMurkrowRescue.sync_event_self_switch!(16, 0)
+    end
+    assert_raises(RuntimeError) do
+      ShatteredMurkrowRescue.sync_event_self_switch!(16, 5)
+    end
   end
 
   def with_staged_project
