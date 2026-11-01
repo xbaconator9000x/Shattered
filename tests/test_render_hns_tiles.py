@@ -101,6 +101,44 @@ class RenderHnsTests(unittest.TestCase):
             self.convert()
         self.assertFalse(self.png.exists())
 
+    def test_private_preview_renders_real_source_pixels_without_passage_approval(self):
+        self.base.write_text(json.dumps({
+            "target": {"tileset_name": "approved", "tileset_image": "approved.png"},
+            "passage_reviewed": False}))
+        result = self.convert()
+        manifest = result["private_hns_art_manifest"]
+        self.assertTrue(manifest["preview_only"])
+        self.assertFalse(manifest["passage_reviewed"])
+        self.assertEqual(0, result["entries"]["0:0:0"]["tables"][0]["passage"])
+        with Image.open(self.png) as image:
+            self.assertEqual((255, 0, 0, 255), image.getpixel((0, 0)))
+        self.assertEqual(result, json.loads(self.mapping.read_text()))
+
+    def test_private_preview_blocks_nonzero_source_collision(self):
+        (self.root / "data/layouts/Test/map.bin").write_bytes(struct.pack("<H", 2 << 10))
+        self.base.write_text(json.dumps({
+            "target": {"tileset_name": "approved", "tileset_image": "approved.png"},
+            "passage_reviewed": False}))
+        result = self.convert()
+        self.assertEqual(15, result["entries"]["0:2:0"]["tables"][0]["passage"])
+        self.assertEqual(15, result["entries"]["0:2:0"]["tables"][1]["passage"])
+
+    def test_private_preview_refuses_misleading_reviewed_passages(self):
+        self.base.write_text(json.dumps({
+            "target": {"tileset_name": "approved", "tileset_image": "approved.png"},
+            "passage_reviewed": False,
+            "passage_by_metatile": {"0": 0}}))
+        with self.assertRaisesRegex(ValueError, "provisional preview"):
+            self.convert()
+        self.assertFalse(self.png.exists())
+
+    def test_private_preview_requires_boolean_review_flag(self):
+        self.base.write_text(json.dumps({
+            "target": {"tileset_name": "approved", "tileset_image": "approved.png"},
+            "passage_reviewed": "false"}))
+        with self.assertRaisesRegex(ValueError, "must be a boolean"):
+            self.convert()
+
     def test_invalid_source_blockdata_fails(self):
         (self.root / "data/layouts/Test/map.bin").write_bytes(b"\x00")
         with self.assertRaisesRegex(ValueError, "incorrect blockdata"):
