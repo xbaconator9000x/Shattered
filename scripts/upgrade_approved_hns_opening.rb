@@ -25,8 +25,8 @@ module ShatteredApprovedHNSOpening
     raise "HnS opening upgrade: #{message}" unless condition
   end
 
-  def cmd(code, *parameters)
-    RPG::EventCommand.new(code, 0, parameters)
+  def cmd(code, *parameters, indent: 0)
+    RPG::EventCommand.new(code, indent, parameters)
   end
 
   def expected_commands
@@ -38,11 +38,15 @@ module ShatteredApprovedHNSOpening
             cmd(355, "ShatteredGateStory.run_collapse(#{IMPACTS.inspect}, #{ROAR.inspect})"),
             cmd(123, "A", 0), cmd(0)],
       6 => [cmd(355, "ShatteredGateStory.run_aipom(#{AIPOM_CRY.inspect})"), cmd(0)],
+      # RMXP interpreter uses indent to delimit Conditional Branch (111).
+      # Indent 0 on the transfer previously bypassed the key requirement.
+      # Both dialogue/transfer in the true arm and locked dialogue in Else
+      # must be at indent 1; Else/End remain at indent 0.
       7 => [cmd(111, 12, "ShatteredGateStory.key_obtained?"),
-            cmd(101, "The eastern Kanto door unlocks."),
-            cmd(201, 0, 16, 14, 10, 2, 0),
+            cmd(101, "The eastern Kanto door unlocks.", indent: 1),
+            cmd(201, 0, 16, 14, 10, 2, 0, indent: 1),
             cmd(411),
-            cmd(101, "The eastern Route 22 door is locked. You need the key."),
+            cmd(101, "The eastern Route 22 door is locked. You need the key.", indent: 1),
             cmd(412), cmd(0)]
     }
   end
