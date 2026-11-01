@@ -70,6 +70,26 @@ module ShatteredViridian
     $game_switches[switches[:rain]] = value[:started] && !value[:center]
     value
   end
+  # Both New Game map transfers and normal Continue can restore native RMXP
+  # event pages from saved switches without running the original event setup.
+  # PokemonGlobal is the authoritative persistent story state. Reconcile only
+  # on the reviewed Viridian city/Center maps; never create quest state on
+  # unrelated maps or while the save object is not ready.
+  def self.reconcile_on_map_restore
+    return false unless defined?($PokemonGlobal) && $PokemonGlobal &&
+      defined?($game_switches) && $game_switches &&
+      defined?($game_map) && $game_map &&
+      $game_map.respond_to?(:map_id) && [10, 11].include?($game_map.map_id)
+    ids = { :started => 993, :arrived => 994, :center => 995, :rain => 996 }
+    before = ids.values.map { |id| $game_switches[id] }
+    sync!(ids)
+    after = ids.values.map { |id| $game_switches[id] }
+    if before != after && $game_map.respond_to?(:need_refresh=)
+      $game_map.need_refresh = true
+    end
+    true
+  end
+
   # Called after both nonblocking move routes finish. If either NPC was
   # obstructed, the escort remains retryable rather than marking success.
   def self.complete_route!(guard_id, nidoran_id, guard_start, nidoran_start,
@@ -91,4 +111,14 @@ module ShatteredViridian
     true
   end
 
+end
+
+# Essentials v21.1 normal Continue restores the saved MapFactory without
+# necessarily invoking Game_Map#setup. The spriteset-change hook covers that
+# path, while the map-setup hook covers New Game and map transfers.
+if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_viridian_restore,
+    proc { |*args| ShatteredViridian.reconcile_on_map_restore })
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_viridian_continue,
+    proc { |*args| ShatteredViridian.reconcile_on_map_restore })
 end
