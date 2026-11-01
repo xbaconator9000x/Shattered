@@ -25,7 +25,7 @@ class PrivateViridianEscortTest < Minitest::Test
     assert_equal 4, e::DELTA.size
     route = e.move_route(e::GUARD_STEPS)
     refute route.repeat
-    refute route.skippable
+    assert route.skippable
     assert_equal e::GUARD_STEPS + [0], route.list.map(&:code)
   end
 
