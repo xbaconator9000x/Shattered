@@ -6,6 +6,8 @@ on:
       - "essentials/Plugins/Shattered Gate Story/**"
       - "essentials/PBS/SHATTEREDGATEKEY.pbs"
       - "scripts/install_gate_key_pbs.py"
+      - "scripts/compile_private_gate_key.rb"
+      - "tests/test_compile_private_gate_key.rb"
       - "tests/test_gate_story.rb"
       - "tests/test_upgrade_approved_hns_opening.rb"
       - "scripts/upgrade_approved_hns_opening.rb"
@@ -28,5 +30,7 @@ jobs:
           ruby tests/test_gate_story.rb
           ruby -c scripts/upgrade_approved_hns_opening.rb
           ruby tests/test_upgrade_approved_hns_opening.rb
+          ruby -c scripts/compile_private_gate_key.rb
+          ruby tests/test_compile_private_gate_key.rb
       - name: Gate key staged PBS tests
         run: python3 -m unittest discover -s tests -p 'test_gate_key_pbs.py' -v
