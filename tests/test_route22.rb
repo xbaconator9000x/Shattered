@@ -86,7 +86,7 @@ class Route22BattleTest < Minitest::Test
     assert $game_switches[92]
     assert_equal true, $game_map.need_refresh
     assert_equal [[:RATTATA,5]], $battle_calls
-    assert_equal [["disablePokeBalls",nil],["outcome",91]], $rules
+    assert_equal [["disablePokeBalls",nil],["canLose",nil],["outcome",91]], $rules
     assert ShatteredRoute22.encounter(91,92)
     assert_equal 1, $battle_calls.size
     $PokemonGlobal=Marshal.load(Marshal.dump($PokemonGlobal))
@@ -114,6 +114,16 @@ class Route22BattleTest < Minitest::Test
     $battle_outcome=1
     assert ShatteredRoute22.encounter(91,92)
   end
+  def test_defeat_enables_can_lose_and_remains_retryable
+    $battle_outcome = 2
+    refute ShatteredRoute22.encounter(91, 92)
+    assert_includes $rules, ["canLose", nil]
+    refute ShatteredRoute22.cleared?
+    $battle_outcome = 1
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 2, $battle_calls.length
+  end
+
   def test_capture_is_detected_and_never_clears
     $battle_outcome=4
     refute ShatteredRoute22.encounter(91,92)
