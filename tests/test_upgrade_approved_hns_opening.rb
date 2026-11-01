@@ -122,6 +122,7 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     map = Marshal.load(File.binread(@map_path))
     old_warp = Marshal.dump(map.events[2])
     map.events[6].pages.first.list = U.expected_commands(legacy_aipom: true)[6]
+    map.events[6].pages.first.graphic.direction = 8
     assert U.upgraded?(map, legacy_aipom: true)
     refute U.upgraded?(map)
     File.binwrite(@map_path, Marshal.dump(map))
@@ -139,6 +140,7 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin)
     map = Marshal.load(File.binread(@map_path))
     map.events[6].pages.first.list = U.expected_commands(legacy_aipom: true)[6]
+    map.events[6].pages.first.graphic.direction = 8
     approved_legacy_sha = Digest::SHA256.hexdigest(Marshal.dump(map))
     map.events[2].name = "unreviewed altered warp"
     File.binwrite(@map_path, Marshal.dump(map))
