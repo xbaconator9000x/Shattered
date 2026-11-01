@@ -12,6 +12,8 @@ on:
       - "tests/test_private_viridian_handoff.rb"
       - "scripts/upgrade_private_viridian_escort.rb"
       - "tests/test_private_viridian_escort.rb"
+      - "tests/test_viridian_map_restore.rb"
+      - "essentials/Plugins/Shattered Viridian/**"
       - ".github/workflows/route22-ci.yml"
 
 permissions:
@@ -35,3 +37,5 @@ jobs:
           ruby tests/test_private_viridian_handoff.rb
           ruby -c scripts/upgrade_private_viridian_escort.rb
           ruby tests/test_private_viridian_escort.rb
+          ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
+          ruby tests/test_viridian_map_restore.rb
