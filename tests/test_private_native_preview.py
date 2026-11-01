@@ -34,6 +34,30 @@ class NativeMapPreviewTest(unittest.TestCase):
         self.assertEqual((255, 0, 0, 255), original.getpixel((0, 0)))
         self.assertNotEqual(original.getpixel((0, 0)), marked.getpixel((0, 0)))
 
+    def test_real_rmxp_event_sprite_direction_and_frame(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'Graphics' / 'Characters').mkdir(parents=True)
+            sheet = Image.new('RGBA', (128, 128), (0, 0, 0, 0))
+            sheet.paste((0, 255, 0, 255), (64, 96, 96, 128))
+            sheet.save(root / 'Graphics' / 'Characters' / 'Aipom.png')
+            canvas = Image.new('RGBA', (64, 64), (0, 0, 0, 255))
+            events = [{'x': 1, 'y': 1, 'character_name': 'Aipom',
+                       'direction': 8, 'pattern': 2}]
+            preview, count = mod.render_event_sprites(canvas, events, root)
+            self.assertEqual(1, count)
+            self.assertEqual((0, 255, 0, 255), preview.getpixel((48, 48)))
+            self.assertEqual((0, 0, 0, 255), canvas.getpixel((48, 48)))
+
+    def test_missing_native_event_sprite_fails_closed(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, 'missing private event sprite'):
+                mod.render_event_sprites(Image.new('RGBA', (32, 32)),
+                    [{'x': 0, 'y': 0, 'character_name': 'Aipom',
+                      'direction': 8, 'pattern': 0}], Path(directory))
+
     def test_rejects_unsupported_autotile(self):
         with self.assertRaisesRegex(ValueError, 'unsupported autotile'):
             mod.render_map(self.meta, table([1, 0, 0]), self.atlas)
