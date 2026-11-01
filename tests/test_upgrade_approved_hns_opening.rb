@@ -238,6 +238,9 @@ class HNSRoarPathTest < Minitest::Test
   def test_real_essentials_cry_path_plays_in_collapse
     $PokemonGlobal = Object.new
     played = []
+    shakes = []
+    $game_screen = Object.new
+    $game_screen.define_singleton_method(:start_shake) { |*args| shakes << args }
     [:pbSEPlay, :pbWait, :pbMessage, :_INTL].each do |name|
       ShatteredGateStory.define_singleton_method(name) { |value| value }
     end
@@ -253,10 +256,12 @@ class HNSRoarPathTest < Minitest::Test
       end
     end
     assert_equal 7, played.length
+    assert_equal ShatteredGateStory::IMPACT_SHAKES, shakes
     assert_equal "Cries/TYRANITAR", played.last
     assert_equal 6, ShatteredGateStory.state[:impacts]
     assert ShatteredGateStory.state[:final_roar]
   ensure
     $PokemonGlobal = nil
+    $game_screen = nil
   end
 end
