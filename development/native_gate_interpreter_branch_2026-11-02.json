@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "kind": "private_offline_native_essentials_interpreter_branch_execution_not_gameplay",
+  "candidate_zip_sha256": "3bd21c0c9e43b2536e52383d975828cf25c2833252b20f88b9e137134d1283fa",
+  "native_map223_sha256": "1b46bc347b2094d81c9bcde64dc40b1f6ef3a368a43312a5ef22f742da3bbb6a",
+  "engine_scripts_from_private_Scripts_rxdata": {
+    "Interpreter": "b2f4c542a1542a5908d1208b87eae05d8b6f6ec0d26df1835871595842ed0355",
+    "Interpreter_Commands": "ec927a007bee1889223dbc8b3de115f062a5308ab4410f87dab965eef3032561"
+  },
+  "native_event": {
+    "map_id": 223,
+    "event_id": 7,
+    "command_codes": [
+      111,
+      101,
+      201,
+      411,
+      101,
+      412,
+      0
+    ],
+    "command_indents": [
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0
+    ]
+  },
+  "execution": {
+    "locked_key_stub_false": {
+      "transfer": false,
+      "message": "The eastern Route 22 door is locked. You need the key.",
+      "interpreter_steps": 4
+    },
+    "unlocked_key_stub_true": {
+      "transfer": true,
+      "destination": {
+        "map_id": 16,
+        "x": 14,
+        "y": 10
+      },
+      "interpreter_steps": 3
+    },
+    "legacy_unsafe_all_zero_indent_reproduction": {
+      "key_stub": false,
+      "transfer": true,
+      "destination_map_id": 16,
+      "interpreter_steps": 3
+    }
+  },
+  "limitations": [
+    "Actual pinned Essentials v21.1 Interpreter and Interpreter_Commands methods were evaluated privately from the user-held Scripts.rxdata; no game or commercial assets were committed.",
+    "Only event command interpreter semantics were executed; key_obtained? was stubbed true/false and text UI was intercepted.",
+    "Full mkxp-z scene execution, actual bag key, save/reload, directional collision, HnS visual parity and Android remain unverified.",
+    "PR #57 now generates the safe native command indentation for fresh builds; PR #59 separately repairs previously staged unsafe maps."
+  ],
+  "acceptance": {
+    "source_event_guard": "implemented_and_private_interpreter_verified",
+    "native_gameplay": false,
+    "android": false
+  }
+}
