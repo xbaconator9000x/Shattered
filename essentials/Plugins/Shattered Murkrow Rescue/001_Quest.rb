@@ -12,6 +12,65 @@ module ShatteredMurkrowRescue
   SYMBOL_PATTERN = /\A[A-Z][A-Z0-9_]*\z/
   STATE_IVAR = :@shattered_murkrow_rescue
   RECRUIT_TAG = :@shattered_murkrow_rescue_award
+  PREFIX = "SHATTERED_MURKROW_RESCUE:"
+
+  # The saved quest is authoritative; the RMXP self-switch only selects the
+  # empty event page after Murkrow joins. Reconcile it on map setup AND normal
+  # Continue (which restores a MapFactory without calling Game_Map#setup).
+  # This prevents a recruited Murkrow reappearing, and a stale self-switch
+  # hiding an unfinished rescue.
+  def self.sync_event_self_switch!(map_id, event_id, store = nil)
+    raise ArgumentError, "Invalid Murkrow map/event identity" unless
+      map_id.instance_of?(Integer) && event_id.instance_of?(Integer) &&
+      map_id.between?(1, 999) && event_id.between?(1, 9999)
+    map = defined?($game_map) ? $game_map : nil
+    raise "Murkrow event map unavailable" unless map &&
+      map.respond_to?(:map_id) && map.map_id == map_id &&
+      map.respond_to?(:events) && map.events.is_a?(Hash)
+    live = map.events[event_id]
+    source = if live && live.respond_to?(:event)
+               live.event
+             elsif live && live.instance_variable_defined?(:@event)
+               live.instance_variable_get(:@event)
+             else
+               live
+             end
+    raise "Murkrow event identity changed" unless source &&
+      source.respond_to?(:name) && source.name.is_a?(String) &&
+      source.name.start_with?(PREFIX)
+    raise "Murkrow self-switch storage unavailable" unless
+      defined?($game_self_switches) && $game_self_switches
+    complete = state(store)[:stage] == :complete
+    key = [map_id, event_id, "A"]
+    previous = $game_self_switches[key]
+    $game_self_switches[key] = complete
+    map.need_refresh = true if previous != complete &&
+      map.respond_to?(:need_refresh=)
+    complete
+  end
+
+  def self.reconcile_current_map
+    map = defined?($game_map) ? $game_map : nil
+    return false unless map && map.respond_to?(:map_id) &&
+      map.respond_to?(:events) && map.events.is_a?(Hash) &&
+      defined?($PokemonGlobal) && $PokemonGlobal &&
+      defined?($game_self_switches) && $game_self_switches
+    managed = map.events.filter_map do |event_id, live|
+      source = if live && live.respond_to?(:event)
+                 live.event
+               elsif live && live.instance_variable_defined?(:@event)
+                 live.instance_variable_get(:@event)
+               else
+                 live
+               end
+      event_id if source && source.respond_to?(:name) &&
+        source.name.is_a?(String) && source.name.start_with?(PREFIX)
+    end
+    return false if managed.empty?
+    raise "Multiple native Murkrow rescue events on one map" if managed.length != 1
+    sync_event_self_switch!(map.map_id, managed.first)
+    true
+  end
 
   def self.tagged_murkrow?(pokemon)
     pokemon && pokemon.respond_to?(:species) && pokemon.species == SPECIES &&
@@ -310,4 +369,13 @@ module ShatteredMurkrowRescue
       (defined?(JSON::ParserError) && error.is_a?(JSON::ParserError))
     false
   end
+end
+
+# Normal Continue does not necessarily invoke on_game_map_setup in Essentials
+# v21.1. Both callbacks are idempotent; they never touch unrelated maps.
+if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_murkrow_page_reconcile,
+    proc { |*args| ShatteredMurkrowRescue.reconcile_current_map })
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_murkrow_continue_reconcile,
+    proc { |*args| ShatteredMurkrowRescue.reconcile_current_map })
 end
