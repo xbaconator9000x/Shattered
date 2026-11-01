@@ -4,6 +4,12 @@
 module ShatteredGateStory
   KEY_ITEM = :SHATTEREDGATEKEY
   MAX_IMPACTS = 6
+  # Native Essentials v21.1 Game_Screen#start_shake duration is measured in
+  # 1/20-second units; pbWait uses frames. Keep the shake within each beat.
+  IMPACT_SHAKES = [[3, 5, 5], [4, 5, 5], [6, 6, 8],
+                   [4, 5, 5], [5, 6, 5], [8, 7, 8]].freeze
+  KEY_AFTERSHOCK = [6, 6, 8].freeze
+  KEY_AFTERSHOCK_SE = "Mining collapse"
   class InvalidState < StandardError; end
 
   class << self
@@ -12,7 +18,8 @@ module ShatteredGateStory
       raw = store.instance_variable_get(:@shattered_gate_story)
       if raw.nil?
         raw = { :version => 1, :impacts => 0, :aipom_clue => false, :key => false,
-                :johto_blocked_message => false, :final_roar => false }
+                :johto_blocked_message => false, :final_roar => false,
+                :post_key_impact => false }
         store.instance_variable_set(:@shattered_gate_story, raw)
       end
       valid = raw.is_a?(Hash) && raw[:version] == 1 &&
@@ -26,7 +33,13 @@ module ShatteredGateStory
         raw[flag] = false unless raw.key?(flag)
         raise InvalidState, "Invalid gate save flag: #{flag}" unless [true, false].include?(raw[flag])
       end
-      consistent = (!raw[:aipom_clue] || raw[:impacts] == MAX_IMPACTS) &&
+      # Legacy v1 saves already holding the key must not receive a surprise
+      # aftershock on their next Continue. New saves start with false.
+      raw[:post_key_impact] = raw[:key] unless raw.key?(:post_key_impact)
+      raise InvalidState, "Invalid gate save flag: post_key_impact" unless
+        [true, false].include?(raw[:post_key_impact])
+      consistent = (!raw[:post_key_impact] || raw[:key]) &&
+        (!raw[:aipom_clue] || raw[:impacts] == MAX_IMPACTS) &&
         (!raw[:key] || raw[:aipom_clue]) &&
         (!raw[:final_roar] || raw[:impacts] == MAX_IMPACTS) &&
         (!raw[:johto_blocked_message] || raw[:impacts] >= 3)
@@ -89,6 +102,28 @@ module ShatteredGateStory
       true
     end
 
+    # Run the real Essentials screen effect; do not mark an impact complete
+    # if the native screen object is unavailable.
+    def shake!(power, speed, duration)
+      screen = defined?($game_screen) ? $game_screen : nil
+      raise "Native Game_Screen unavailable for gate cinematic" unless
+        screen && screen.respond_to?(:start_shake)
+      screen.start_shake(power, speed, duration)
+    end
+
+    # A one-time aftershock after receiving Aipom's key. If audio/wait fails,
+    # the key remains awarded but the effect is retryable on the next visit.
+    def play_key_aftershock_once
+      current = state
+      return false unless key_obtained?
+      return true if current[:post_key_impact]
+      shake!(*KEY_AFTERSHOCK)
+      pbSEPlay(KEY_AFTERSHOCK_SE)
+      pbWait(16)
+      current[:post_key_impact] = true
+      true
+    end
+
     # Each effect is an existing, locally licensed SE basename. No audio is committed.
     # The beat is saved after each successful playback, allowing interrupted scene recovery.
     def run_collapse(sound_names, final_roar)
@@ -100,6 +135,7 @@ module ShatteredGateStory
       announce_johto_blocked_once
       while state[:impacts] < MAX_IMPACTS
         index = state[:impacts]
+        shake!(*IMPACT_SHAKES.fetch(index))
         pbSEPlay(sound_names[index])
         pbWait(index == 2 || index == 5 ? 24 : 16)
         impact!
@@ -125,6 +161,7 @@ module ShatteredGateStory
         return false
       end
       if key_obtained?
+        play_key_aftershock_once
         pbMessage(_INTL("Aipom looks pleased to see you again."))
         return true
       end
@@ -146,6 +183,7 @@ module ShatteredGateStory
       clue!
       if award_key!
         pbMessage(_INTL("You received the gate key from Aipom!"))
+        play_key_aftershock_once
         true
       else
         pbMessage(_INTL("You need space for the gate key."))
