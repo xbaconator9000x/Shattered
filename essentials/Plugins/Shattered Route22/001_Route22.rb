@@ -44,6 +44,18 @@ module ShatteredRoute22
     done
   end
 
+  # Native RMXP map setup can restore event pages before the Route22 trigger
+  # executes. Reconcile the saved encounter flag as soon as Map016 loads so a
+  # completed fight cannot display its Rattata sprites again on Continue.
+  # Leave all other maps untouched and do not initialise save data prematurely.
+  def self.reconcile_on_map_setup
+    return false unless defined?($PokemonGlobal) && $PokemonGlobal &&
+      defined?($game_switches) && $game_switches &&
+      defined?($game_map) && $game_map &&
+      $game_map.respond_to?(:map_id) && $game_map.map_id == 16
+    reconcile(992)
+  end
+
   def self.validate_id(value)
     raise ArgumentError, "expected a reserved game ID" unless value.instance_of?(Integer) &&
       (1..9999).include?(value)
@@ -147,4 +159,11 @@ module ShatteredRoute22
   def self.capture_violation?
     !!@last_capture_violation
   end
+end
+
+# Use the saved quest state, not a potentially stale RMXP switch, when native
+# Map016 is opened via transfer, New Game, or Continue.
+if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_route22_reconcile,
+    proc { |*args| ShatteredRoute22.reconcile_on_map_setup })
 end
