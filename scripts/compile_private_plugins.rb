@@ -163,10 +163,20 @@ module ShatteredPrivatePluginCompiler
         elsif replace_pins.key?(folder)
           # Explicit one-script upgrade of an already compiled private runtime.
           # Refuse any unexpected prior bytes, script count or metadata drift.
+          # A pinned source upgrade may bump the plugin version, but must not
+          # silently change its identity, Essentials compatibility or credits.
+          # Reject downgrades and all other metadata drift before writing.
+          old_version = old[1][:version]
+          new_version = proposed[1][:version]
+          version_safe = old_version.is_a?(String) &&
+            /\\A\\d+\\.\\d+\\.\\d+\\z/.match?(old_version) &&
+            (new_version.split(".").map(&:to_i) <=> old_version.split(".").map(&:to_i)) >= 0
+          metadata_safe = old[1].reject { |key, _| key == :version } ==
+            proposed[1].reject { |key, _| key == :version }
           check(old[2].length == 1 && proposed[2].length == 1 &&
             old[2][0][0] == proposed[2][0][0] &&
-            old[1][:version] == proposed[1][:version],
-            "Pinned replacement requires identical single-script plugin metadata")
+            version_safe && metadata_safe,
+            "Pinned replacement requires a non-downgrade single-script plugin with unchanged metadata")
           actual = Digest::SHA256.hexdigest(Zlib::Inflate.inflate(old[2][0][1]))
           check(actual == replace_pins.fetch(folder),
             "Compiled #{folder} source digest differs from approved replacement pin")
