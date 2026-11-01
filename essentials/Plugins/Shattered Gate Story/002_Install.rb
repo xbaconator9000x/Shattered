@@ -147,7 +147,7 @@ module ShatteredGateStory
     end
     scripts = {
       "collapse" => "ShatteredGateStory.run_collapse(#{config['collapse_sounds'][0, MAX_IMPACTS].inspect}, #{config['final_roar_sound'].inspect})",
-      "aipom" => "ShatteredGateStory.run_aipom(#{config['aipom_cry'].inspect})",
+      "aipom" => "ShatteredGateStory.run_aipom(#{config['aipom_cry'].inspect}, get_character(0))",
       "johto_block" => "ShatteredGateStory.blocked_johto"
     }
     expected = {}
