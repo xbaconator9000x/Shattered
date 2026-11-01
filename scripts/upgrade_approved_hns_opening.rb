@@ -117,6 +117,8 @@ module ShatteredApprovedHNSOpening
     map = Marshal.load(raw)
     check!(map.is_a?(RPG::Map) && map.width == 22 && map.height == 21,
            "not the approved native reception gate")
+    check!(Marshal.dump(map) == raw,
+           "native Marshal codec cannot preserve original map layers; abort")
     return "unchanged" if upgraded?(map)
     check!(Digest::SHA256.hexdigest(raw) == expected_sha256,
            "Map223 differs from the reviewed private candidate; no changes made")
