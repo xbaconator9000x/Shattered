@@ -162,7 +162,8 @@
         "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
         "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified.",
         "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed.",
-        "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance."
+        "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance.",
+        "2026-11-02 private Map223 native event #7 audit found RMXP conditional branch 111, message 101, transfer 201, else 411 and end 412 ALL incorrectly indented at 0. Actual private Scripts.rxdata Interpreter_Commands#command_skip stops at the next command with the same indent, allowing east Route22 transfer even without Aipom key. PR #59 commits 669bdcd2, 8b13fb4f, 2c158554, 03a97bd7 add a SHA-pinned, transaction-safe repair and 7 Ruby tests/17 assertions; six GitHub CI workflows passed at 03a97bd7. Native game playthrough remains unverified."
       ]
     },
     {
@@ -530,5 +531,30 @@
     "android_verified": false,
     "source_rights_cleared_for_redistribution": false,
     "local_guard_tests": "2 tests / 13 assertions passed; source and native plugin archive Ruby syntax validated; 5/5 CI passed at source commit"
+  },
+  "private_hns_gate_key_guard_candidate": {
+    "date": "2026-11-02",
+    "file": "Shattered_Essentials_HnS_Gate_Key_Guard_Candidate.zip",
+    "bytes": 160865852,
+    "sha256": "3bd21c0c9e43b2536e52383d975828cf25c2833252b20f88b9e137134d1283fa",
+    "original_map223_sha256": "77f309fcf2f0c3c1cdbacf27939be2d5f5fec14c31678d141d66f2ace732bfc4",
+    "repaired_map223_sha256": "1b46bc347b2094d81c9bcde64dc40b1f6ef3a368a43312a5ef22f742da3bbb6a",
+    "modified_private_project_files": [
+      "Data/Map223.rxdata"
+    ],
+    "source_pr": 59,
+    "source_commit": "03a97bd7627f0766e2478ec0d823dd081e4ad4f2",
+    "ci_runs": [
+      41333431393,
+      41333431404,
+      41333431394,
+      41333431401,
+      41333431388,
+      41333431384
+    ],
+    "local_tests": "7 Ruby tests, 17 assertions passed; map guard repair run twice (changed then idempotent); private ZIP integrity and 7,734 unchanged file payloads verified",
+    "actual_engine_playthrough_verified": false,
+    "android_verified": false,
+    "distribution_rights_verified": false
   }
 }
