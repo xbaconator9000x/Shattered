@@ -70,4 +70,57 @@ class Route22MapSetupTest < Minitest::Test
     assert_raises(RuntimeError) { fire }
     assert $game_switches[992]
   end
+
+  # Essentials v21.1 normal Continue restores the saved MapFactory directly,
+  # skipping Game_Map#setup. Scene_Map#createSpritesets fires this event.
+  def continue_scene
+    EventHandlers.fire(:on_map_or_spriteset_change, :shattered_route22_reconcile_on_continue)
+  end
+
+  def test_continue_scene_hook_is_registered
+    assert EventHandlers.registered?(:on_map_or_spriteset_change, :shattered_route22_reconcile_on_continue)
+  end
+
+  def test_continue_repairs_saved_victory_with_stale_switch
+    ShatteredRoute22.state[:cleared] = true
+    refute $game_switches[992]
+    assert continue_scene
+    assert $game_switches[992]
+    assert $game_map.need_refresh
+  end
+
+  def test_continue_repairs_stale_switch_that_would_skip_mandatory_battle
+    $game_switches[992] = true
+    refute continue_scene
+    refute $game_switches[992]
+    assert $game_map.need_refresh
+    refute ShatteredRoute22.cleared?
+  end
+
+  def test_continue_does_not_mutate_unrelated_map_or_uninitialized_save
+    $game_map.map_id = 223
+    $game_switches[992] = true
+    refute continue_scene
+    assert $game_switches[992]
+    refute $PokemonGlobal.instance_variable_defined?(:@shattered_route22_rattata)
+    $game_map.map_id = 16
+    $PokemonGlobal = nil
+    refute continue_scene
+  end
+
+  def test_continue_and_map_setup_callbacks_are_idempotent
+    ShatteredRoute22.state[:cleared] = true
+    assert continue_scene
+    assert fire
+    assert continue_scene
+    assert $game_switches[992]
+  end
+
+  def test_continue_rejects_corrupted_save_without_overwriting_it
+    $PokemonGlobal.instance_variable_set(:@shattered_route22_rattata,
+      { :version => 9, :cleared => true })
+    $game_switches[992] = true
+    assert_raises(RuntimeError) { continue_scene }
+    assert $game_switches[992]
+  end
 end
