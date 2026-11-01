@@ -651,7 +651,7 @@ class MurkrowRescueTest < Minitest::Test
       map = load_data(path)
       event = map.events[plan["event_id"]]
       event.pages.first.condition.self_switch_ch = "A".dup.force_encoding(Encoding::BINARY)
-      event.pages.last.graphic.character_name = "".dup.force_encoding(Encoding::BINARY)
+      event.pages.first.graphic.character_name = "Murkrow".dup.force_encoding(Encoding::BINARY)
       save_data(map, path)
       assert_equal 1, Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }["unchanged"]
       event.pages.first.graphic.character_name = "WrongSprite"
