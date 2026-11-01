@@ -76,7 +76,7 @@ class Route22RattataGroupTest < Minitest::Test
     map=RPG::Map.allocate
     map.width=54;map.height=34;map.tileset_id=1
     count=54*34*3
-    map.data=Table._load([3,54,34,3,count].pack('V5')+"\\0"*(count*2))
+    map.data=Table._load([3,54,34,3,count].pack('V5')+0.chr*(count*2))
     map.events={}
     {1=>[14,9],2=>[13,16],3=>[30,17],4=>[32,17]}.each do |id,(x,y)|
       event=RPG::Event.new(x,y);event.id=id
