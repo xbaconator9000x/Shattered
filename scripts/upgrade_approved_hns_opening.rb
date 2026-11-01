@@ -29,7 +29,9 @@ module ShatteredApprovedHNSOpening
     RPG::EventCommand.new(code, indent, parameters)
   end
 
-  def expected_commands
+  def expected_commands(legacy_aipom: false)
+    aipom_script = "ShatteredGateStory.run_aipom(#{AIPOM_CRY.inspect})"
+    aipom_script = "ShatteredGateStory.run_aipom(#{AIPOM_CRY.inspect}, get_character(0))" unless legacy_aipom
     {
       1 => [cmd(355, "ShatteredGateStory.blocked_johto"), cmd(0)],
       5 => [cmd(101, "Twenty Years Later..."),
@@ -37,7 +39,7 @@ module ShatteredApprovedHNSOpening
             cmd(355, "Shattered.ensure_human"),
             cmd(355, "ShatteredGateStory.run_collapse(#{IMPACTS.inspect}, #{ROAR.inspect})"),
             cmd(123, "A", 0), cmd(0)],
-      6 => [cmd(355, "ShatteredGateStory.run_aipom(#{AIPOM_CRY.inspect})"), cmd(0)],
+      6 => [cmd(355, aipom_script), cmd(0)],
       # RMXP interpreter uses indent to delimit Conditional Branch (111).
       # Indent 0 on the transfer previously bypassed the key requirement.
       # Both dialogue/transfer in the true arm and locked dialogue in Else
@@ -59,8 +61,8 @@ module ShatteredApprovedHNSOpening
       end
   end
 
-  def upgraded?(map)
-    expected = expected_commands
+  def upgraded?(map, legacy_aipom: false)
+    expected = expected_commands(legacy_aipom: legacy_aipom)
     EVENT_SPECS.all? do |id, (_old, x, y)|
       event = map.events[id]
       event && event.name == "#{PREFIX}#{id}" && event.x == x && event.y == y &&
@@ -124,25 +126,32 @@ module ShatteredApprovedHNSOpening
     check!(Marshal.dump(map) == raw,
            "native Marshal codec cannot preserve original map layers; abort")
     return "unchanged" if upgraded?(map)
-    check!(Digest::SHA256.hexdigest(raw) == expected_sha256,
-           "Map223 differs from the reviewed private candidate; no changes made")
-    validate_original!(map)
-    commands = expected_commands
-    EVENT_SPECS.each do |id, (_old, _x, _y)|
-      event = map.events[id]
-      event.name = "#{PREFIX}#{id}"
-      event.pages[0].list = commands[id]
+    # Safely migrate the exact previously released HnS gate: only the Aipom
+    # script changes. A SHA-only original import guard cannot upgrade an
+    # already converted private candidate, and must not accept other drift.
+    if upgraded?(map, legacy_aipom: true)
+      map.events[6].pages[0].list = expected_commands[6]
+    else
+      check!(Digest::SHA256.hexdigest(raw) == expected_sha256,
+             "Map223 differs from the reviewed private candidate; no changes made")
+      validate_original!(map)
+      commands = expected_commands
+      EVENT_SPECS.each do |id, (_old, _x, _y)|
+        event = map.events[id]
+        event.name = "#{PREFIX}#{id}"
+        event.pages[0].list = commands[id]
+      end
+      south = map.events[1].pages[0]
+      south.trigger = 1
+      south.through = false
+      intro = map.events[5].pages[0]
+      intro.trigger = 3
+      aipom_event = map.events[6]
+      aipom_event.pages = [aipom_event.pages[0]]
+      aipom_event.pages[0].through = false
+      aipom_event.pages[0].graphic.character_name = AIPOM_SPRITE
+      aipom_event.pages[0].graphic.direction = 8
     end
-    south = map.events[1].pages[0]
-    south.trigger = 1
-    south.through = false
-    intro = map.events[5].pages[0]
-    intro.trigger = 3
-    aipom_event = map.events[6]
-    aipom_event.pages = [aipom_event.pages[0]]
-    aipom_event.pages[0].through = false
-    aipom_event.pages[0].graphic.character_name = AIPOM_SPRITE
-    aipom_event.pages[0].graphic.direction = 8
     check!(upgraded?(map), "upgraded native events failed postconditions")
     new_bytes = Marshal.dump(map)
     check!(Marshal.load(new_bytes).is_a?(RPG::Map), "cannot decode upgraded map")
