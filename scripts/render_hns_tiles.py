@@ -178,7 +178,17 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
     if "entries" in mapping:
         raise ValueError("base mapping must not predefine generated entries")
     targets = checked_output_targets(mapping, png_path)
+    # A private visual-review pass can render genuine source pixels before
+    # anyone has signed off every directional passage bit. Never present those
+    # provisional cells as reviewed or as an install-ready game tileset.
+    reviewed = mapping.pop("passage_reviewed", True)
+    if type(reviewed) is not bool:
+        raise ValueError("passage_reviewed must be a boolean")
     passage = mapping.pop("passage_by_metatile", {})
+    if not isinstance(passage, dict):
+        raise ValueError("passage_by_metatile must be an object")
+    if not reviewed and passage:
+        raise ValueError("provisional preview cannot contain claimed reviewed passages")
     keys = set()
     for record in selected:
         binary = (root / record["blockdata_filepath"]).read_bytes()
@@ -186,9 +196,15 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
             raise ValueError(f"incorrect blockdata size for {record['id']}")
         for (word,) in struct.iter_unpack("<H", binary):
             keys.add((word & 1023, (word >> 10) & 3, (word >> 12) & 15))
-    missing = sorted({metatile for metatile, _, _ in keys if str(metatile) not in passage})
-    if missing:
-        raise ValueError(f"passage_by_metatile needs explicit reviewed entries: {missing}")
+    if reviewed:
+        missing = sorted({metatile for metatile, _, _ in keys if str(metatile) not in passage})
+        if missing:
+            raise ValueError(f"passage_by_metatile needs explicit reviewed entries: {missing}")
+    else:
+        # Only GBA per-cell collision is applied for these private preview
+        # sheets: a zero collision flag is tentatively open, every nonzero
+        # flag is blocked. This is NOT an RMXP passage approval.
+        passage = {str(metatile): 0 for metatile, _, _ in keys}
     count = len(keys) * 2
     if 384 + count > 8192:
         raise ValueError("too many unique tiles for RMXP")
@@ -239,7 +255,8 @@ def build(source_root, layout_ids, primary_dir, secondary_dir, base_mapping, png
         "layouts": list(layout_ids), "primary_tileset": expected_pair[0],
         "secondary_tileset": expected_pair[1], "primary_source": primary["sha256"],
         "secondary_source": secondary["sha256"], "source_pixel_scale": 2,
-        "unique_mapping_keys": len(keys), "passage_reviewed": True,
+        "unique_mapping_keys": len(keys), "passage_reviewed": reviewed,
+        "preview_only": not reviewed,
         "rendered_tileset_sha256": image_sha,
         "in_engine_visual_and_collision_verified": False}
     mapping_bytes = (json.dumps(mapping, indent=2) + "\n").encode("utf-8")
