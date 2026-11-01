@@ -62,6 +62,7 @@ def pbMessage(msg); ($messages ||= []) << msg; end
 def _INTL(msg); msg; end
 def pbSEPlay(name); ($sounds ||= []) << name; end
 def pbWait(frames); ($waits ||= []) << frames; end
+def pbExclaim(event); ($exclaims ||= []) << event; end
 
 load File.expand_path("../essentials/Plugins/Shattered Gate Story/001_GateStory.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Gate Story/002_Install.rb", __dir__)
@@ -71,6 +72,7 @@ class GateStoryTest < Minitest::Test
     $PokemonGlobal = Object.new
     $bag = BagStub.new
     $messages, $sounds, $waits = [], [], []
+    $exclaims = []
   end
   def test_six_impacts_resume_and_collapse_persist_in_save
     assert_equal false, ShatteredGateStory.collapsed?
@@ -119,6 +121,30 @@ class GateStoryTest < Minitest::Test
     assert ShatteredGateStory.run_aipom("cry")
     assert_equal 1, $bag.added
   end
+  def test_native_aipom_turns_north_and_exclaims_only_before_first_key
+    event = Object.new
+    event.define_singleton_method(:map_id) { 223 }
+    turns = []
+    event.define_singleton_method(:turn_up) { turns << :north }
+    6.times { ShatteredGateStory.impact! }
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM", event)
+    assert_equal [:north], turns
+    assert_equal [event], $exclaims
+    assert_equal ["Cries/AIPOM"], $sounds
+    assert_equal 1, $bag.added
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM", event)
+    assert_equal [:north], turns
+    assert_equal [event], $exclaims
+    assert_equal 1, $bag.added
+  end
+
+  def test_native_aipom_rejects_invalid_event_before_award
+    6.times { ShatteredGateStory.impact! }
+    assert_raises(ArgumentError) { ShatteredGateStory.run_aipom("Cries/AIPOM", Object.new) }
+    assert_equal 0, $bag.added
+    assert_empty $exclaims
+  end
+
   def test_original_private_aipom_cry_subdirectory_and_path_safety
     6.times { ShatteredGateStory.impact! }
     assert ShatteredGateStory.run_aipom("Cries/AIPOM")
@@ -322,6 +348,7 @@ class GateInstallerTest < Minitest::Test
     assert_equal "Exit north", map.events[2].name
     aipom = map.events.values.find { |e| e.name == "SHATTERED_GATE:aipom" }
     assert_equal "Aipom", aipom.pages[0].graphic.character_name
+    assert_includes aipom.pages[0].list[0].parameters[0], "get_character(0)"
     assert_equal 0, aipom.pages[0].trigger
     assert_equal 6, @config["collapse_sounds"].length
     collapse_script = map.events.values.find { |e| e.name == "SHATTERED_GATE:collapse" }.pages[0].list[0].parameters[0]
