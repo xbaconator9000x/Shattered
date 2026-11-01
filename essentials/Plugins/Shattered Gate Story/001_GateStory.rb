@@ -10,6 +10,11 @@ module ShatteredGateStory
                    [4, 5, 5], [5, 6, 5], [8, 7, 8]].freeze
   KEY_AFTERSHOCK = [6, 6, 8].freeze
   KEY_AFTERSHOCK_SE = "Mining collapse"
+  # Reserved for native Map223 rock event pages. The saved story state, not
+  # this ordinary RMXP switch, remains authoritative after Continue.
+  DEBRIS_SWITCH = 997
+  DEBRIS_MAP_ID = 223
+  DEBRIS_EVENT_IDS = [1, 8, 9].freeze
   class InvalidState < StandardError; end
 
   class << self
@@ -124,6 +129,35 @@ module ShatteredGateStory
       true
     end
 
+    # The native Johto corridor has three walkable cells at y=19. Event #1
+    # previously had an empty graphic, which Game_Character#passable? treats
+    # as non-blocking even with through=false. A separate offline installer
+    # adds switch-controlled solid rock pages at all three cells. Reconcile
+    # after the collapse and on map setup/Continue so a stale switch cannot
+    # hide rocks or display them before the collapse.
+    def reconcile_debris
+      return false unless defined?($PokemonGlobal) && $PokemonGlobal &&
+        defined?($game_map) && $game_map &&
+        $game_map.respond_to?(:map_id) && $game_map.map_id == DEBRIS_MAP_ID &&
+        $game_map.respond_to?(:events) && $game_map.events.is_a?(Hash) &&
+        defined?($game_switches) && $game_switches
+      events = $game_map.events
+      # Older private candidates do not yet have the debris installer.
+      return false unless DEBRIS_EVENT_IDS.all? { |id| events.key?(id) }
+      unless events[8].name == "SHATTERED_HNS_DEBRIS:8" &&
+             events[9].name == "SHATTERED_HNS_DEBRIS:9" &&
+             events[1].name == "SHATTERED_HNS:1"
+        raise InvalidState, "Native Johto debris event identity changed"
+      end
+      desired = collapsed?
+      previous = $game_switches[DEBRIS_SWITCH]
+      $game_switches[DEBRIS_SWITCH] = desired
+      if (previous != desired || desired) && $game_map.respond_to?(:need_refresh=)
+        $game_map.need_refresh = true
+      end
+      true
+    end
+
     # Each effect is an existing, locally licensed SE basename. No audio is committed.
     # The beat is saved after each successful playback, allowing interrupted scene recovery.
     def run_collapse(sound_names, final_roar)
@@ -141,6 +175,7 @@ module ShatteredGateStory
         impact!
         announce_johto_blocked_once
       end
+      reconcile_debris
       if !state[:final_roar]
         pbSEPlay(final_roar)
         state[:final_roar] = true
@@ -191,4 +226,13 @@ module ShatteredGateStory
       end
     end
   end
+end
+
+// Native map setup covers new transfers; spriteset recreation covers Continue
+// from a saved MapFactory without calling Game_Map#setup again.
+if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_hns_debris_map_setup,
+    proc { |*args| ShatteredGateStory.reconcile_debris })
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_hns_debris_continue,
+    proc { |*args| ShatteredGateStory.reconcile_debris })
 end
