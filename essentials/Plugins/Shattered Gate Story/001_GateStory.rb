@@ -90,11 +90,9 @@ module ShatteredGateStory
     def run_collapse(sound_names, final_roar)
       raise ArgumentError, "six impact sound names required" unless
         sound_names.is_a?(Array) && sound_names.length == MAX_IMPACTS &&
-        sound_names.all? { |name| name.is_a?(String) && !name.strip.empty? &&
-          /\A[A-Za-z0-9_ -]+\z/.match(name) }
+        sound_names.all? { |name| valid_cry_name?(name) }
       raise ArgumentError, "invalid final roar name" unless
-        final_roar.is_a?(String) && !final_roar.strip.empty? &&
-        /\A[A-Za-z0-9_ -]+\z/.match(final_roar)
+        valid_cry_name?(final_roar)
       announce_johto_blocked_once
       while state[:impacts] < MAX_IMPACTS
         index = state[:impacts]
