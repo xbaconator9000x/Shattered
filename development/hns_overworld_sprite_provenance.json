@@ -25,6 +25,17 @@
       "source_sha256": "05e3e63cfbea4809604e09476320eebad923c93484ddd211ff12790013cdcf53",
       "private_output": "Graphics/Characters/Rattata.png",
       "private_output_sha256": "3b7119e99a4bba28ceeab6250792ca9d3aad6f3aa6ca2ead37fdbeb448efef03"
+    },
+    {
+      "species": "MURKROW",
+      "source_path": "graphics/pokemon/murkrow/overworld.png",
+      "source_commit_sha": "167aa6d537b109bb229c231ddce4616974c4da71",
+      "source_git_blob_sha": "1b72d9093076ba6e750d7773d8ec0aa9eb5a80dc",
+      "source_sha256": "d518d65f407c960086a1bae9120361e653cd7912a41632ffc84ad64f618f43fd",
+      "private_output": "Graphics/Characters/Murkrow.png",
+      "private_output_sha256": "3682708f80845145656b151ec8242af621506a642a02bb6cf848c78e994c4c61",
+      "source_rights_verified": false,
+      "redistribution_authorised": false
     }
   ],
   "private_local_staging": {
@@ -39,6 +50,21 @@
   "blockers": [
     "HnS repository has no declared license; do not redistribute sprite binaries without rights review",
     "Source v0.4 remains distinct from fully pinned Essentials v21.1 integrated build",
-    "Native Essentials/RMXP animation and save/reload not executed"
-  ]
+    "Native Essentials/RMXP animation and save/reload not executed",
+    "Murkrow sprite was converted from pinned HnS source for private staging only; upstream copyright/redistribution permissions and original Shattered reward/location parity remain unverified"
+  ],
+  "private_murkrow_staging": {
+    "candidate": "private source-derived staged project, not public",
+    "native_map_id": 16,
+    "native_event_id": 8,
+    "source_map_sha256": "56151d32ce1146bc9229db51fbd49a28e35e7c571183661ee6df608c1d01fe08",
+    "installed_map_sha256": "173b4560718fbf9d46df1ecf2bc52c181cbbeaada38f2846381114c66f02f2c3",
+    "compiled_murkrow_plugin_version": "0.1.1",
+    "compiled_archive_sha256": "2c5be244983c6e7e7ab4366ebb707905b8a8a5f7ab887255f80d2e3bfff70852",
+    "native_event_structure_checked": true,
+    "engine_playthrough_verified": false,
+    "android_playthrough_verified": false,
+    "reward_parity_verified": false,
+    "location_parity_verified": false
+  }
 }
