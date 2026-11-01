@@ -314,7 +314,8 @@
       ],
       "evidence": [
         "2026-10-31 HnS source asset check: exact Aipom and Rattata overworld.png (192x32 indexed, six 32x32 poses) fetched via connected GitHub; converted to private 128x128 four-direction RMXP character sheets using asset-free scripts/convert_hns_overworld.py; SHA-256 and source Git blob identities in development/hns_overworld_sprite_provenance.json. Both sprites staged in a separate private v0.4 candidate, 5 original core files SHA-256 unchanged. No binaries committed; native animation and game runtime UNVERIFIED; upstream GitHub repository has no declared license.",
-        "2026-10-31 PR #39 merged at 364865b55027e512bf3c7eeb89151072c36205ed: asset-free HnS Aipom/Rattata PNG converter, private provenance SHA records and native sprite PNG preflight; merged-main validate, handoff and synthetic-contract all green. Actual character animation and game runtime still unverified."
+        "2026-10-31 PR #39 merged at 364865b55027e512bf3c7eeb89151072c36205ed: asset-free HnS Aipom/Rattata PNG converter, private provenance SHA records and native sprite PNG preflight; merged-main validate, handoff and synthetic-contract all green. Actual character animation and game runtime still unverified.",
+        "2026-11-02 HnS Murkrow overworld art privately converted from source commit 167aa6d5, blob 1b72d909, source SHA256 d518d65f to 128x128 PNG SHA256 3682708f; staged only in private candidate. Asset-free provenance updated; no binary uploaded to GitHub. Rights and in-game animation unverified."
       ]
     },
     {
@@ -340,7 +341,8 @@
         "2026-10-31 original v0.4 ZIP rechecked locally: Game.ini uses Data/Scripts.rxdata; Plugins/v21.1 Hotfixes/meta.txt declares 1.0.3 (target 1.0.9), no licensed HnS gate mapping. PR #39 merged source-only, PR #40 merged as source-only and adds strict source/output sprite SHA pins and atomic private writes. No native Essentials v21.1 build compiled or executed.",
         "2026-10-31 actual private v0.4 Data/Scripts.rxdata SHA256 38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05: all 402 decompressed Ruby script sections syntax-compiled with MRI Ruby 3.3.8; Data/PluginScripts.rxdata SHA256 f2974f1973356a1b577f6c01a40712400804b4364529305e48b48d665879a7c0: 2 Hotfixes 1.0.3 plugin scripts syntax-compiled; 0 syntax failures. Added read-only source-free syntax preflight with 7 regression tests/14 assertions. This is NOT native Essentials engine compilation, gameplay, save/reload or Android evidence; Hotfixes 1.0.9 and HnS map remain blocked.",
         "2026-10-31 PR #53 source-only private candidate builder: stages ten reviewed Shattered plugin folders into an atomic separate copy, compiles eight runtime modules into native-format PluginScripts.rxdata, isolates offline-only installers, optionally creates Linux map aliases, records source/compiled SHA-256 pins and fail-closed acceptance flags. CI 41156346708: 133 Python tests passed, including five new end-to-end synthetic fixture tests. This is NOT actual v0.4 native build, HnS map install, PBS compile, engine launch, save/reload or Android proof.",
-        "2026-10-31 PR #54 private runtime: exact source-only artifact 13027306302 from d145e084; authorised v0.4 SHA256 c6fa8d1f compiled eight Shattered runtime plugins into PluginScripts SHA256 5cf12e23, isolated nine offline files, created 222 Linux map aliases. Official mkxp-z SHA256 9a100525 executed Essentials native Compiler.compile_pbs_files, HUMAN species.dat SHA256 a339087a, restored original Scripts.rxdata SHA256 38d9b59f. After restarting without diagnostic code, New Game displayed the original v0.4 Twenty Years Later intro. Hashes and unverified gates in development/native_linux_candidate_pbs_newgame_2026-10-31.json. HnS gate and full opening map events still uninstalled; no save/reload of this candidate or Android."
+        "2026-10-31 PR #54 private runtime: exact source-only artifact 13027306302 from d145e084; authorised v0.4 SHA256 c6fa8d1f compiled eight Shattered runtime plugins into PluginScripts SHA256 5cf12e23, isolated nine offline files, created 222 Linux map aliases. Official mkxp-z SHA256 9a100525 executed Essentials native Compiler.compile_pbs_files, HUMAN species.dat SHA256 a339087a, restored original Scripts.rxdata SHA256 38d9b59f. After restarting without diagnostic code, New Game displayed the original v0.4 Twenty Years Later intro. Hashes and unverified gates in development/native_linux_candidate_pbs_newgame_2026-10-31.json. HnS gate and full opening map events still uninstalled; no save/reload of this candidate or Android.",
+        "2026-11-02 private native candidate assembled from prior Viridian escort v0.1.1 ZIP; only five existing files changed (Map016, PluginScripts, Murkrow runtime source, metadata and offline installer) plus Murkrow PNG and private receipts. Native plugin archive rebuilt to v0.1.1, eight other plugin records preserved; ZIP 160865195 bytes SHA256 f51adcdbed3b06523757d3c36ad39ac73d55c3879df87722923b9baec0595488. This is native map/compiled-source verification, not a launched game, PBS recompilation, actual save/load or Android acceptance."
       ]
     },
     {
@@ -454,7 +456,8 @@
         "2026-10-31 source repair PR (new) replaces obsolete hooks, accepts only decision 1, enforces wild Murkrow species and tests retry on 0/2/3/4/5. GitHub CI/native runtime evidence pending.",
         "PR #43 merged at e25f202bbb73e32fffef1e2dfc8615d43701e7c3; v21.1 numeric start_core battle decisions and private Murkrow sprite SHA/PNG integrity checks. GitHub validate/murkrow/main handoff passed. Actual rescue remains not installed or played.",
         "2026-10-31 PR #52 source repair: Murkrow state now rejects false (previously reset quest) and impossible saved battle/recruit/reward flag combinations before interrupted-save recovery. Two new Marshal/corruption Ruby regressions; native Murkrow event, reward UI, save-menu and Android still unverified.",
-        "2026-11-02 PR #59 source commits 19bb3fa5, d1cb60c2, 9d7bd2ae, dfde4ad9: Murkrow rescue now uses Essentials v21.1 canLose/no-Pokeballs battle rules; defeat/draw restores HUMAN stamina; only quest-tagged Murkrow may reconcile recruitment or claim the one-time reward. Actual v21.1 compiled Scripts.rxdata Overworld_BattleStarting confirms WildBattle.start_core honours canLose and calls after_battle. New Ruby regressions include unrelated Murkrow, tagged save recovery, missing award, reward payout, loss/draw/escape; Murkrow CI 41317680432 and combined plugins CI 41317680344 passed at dfde4ad9. No Murkrow native event installed in the private candidate (missing licensed character sprite and reviewed location); no real battle, normal save-menu or Android acceptance."
+        "2026-11-02 PR #59 source commits 19bb3fa5, d1cb60c2, 9d7bd2ae, dfde4ad9: Murkrow rescue now uses Essentials v21.1 canLose/no-Pokeballs battle rules; defeat/draw restores HUMAN stamina; only quest-tagged Murkrow may reconcile recruitment or claim the one-time reward. Actual v21.1 compiled Scripts.rxdata Overworld_BattleStarting confirms WildBattle.start_core honours canLose and calls after_battle. New Ruby regressions include unrelated Murkrow, tagged save recovery, missing award, reward payout, loss/draw/escape; Murkrow CI 41317680432 and combined plugins CI 41317680344 passed at dfde4ad9. No Murkrow native event installed in the private candidate (missing licensed character sprite and reviewed location); no real battle, normal save-menu or Android acceptance.",
+        "2026-11-02 PR #59 native private Murkrow scene installed on real staged Map016 (54x34), event #8 at 20,17, source parity anchor 28.5:npc:1 (51,16). Pinned HnS 192x32 Murkrow source converted privately to 128x128 RMXP sheet; SHA256 3682708f80845145656b151ec8242af621506a642a02bb6cf848c78e994c4c61. Native Map016 original SHA256 56151d32 -> installed 173b4560, event count 7->8; tiles and all 7 preexisting events Marshal-identical; two pages with quest-completion self-switch A and Continue reconciliation. Exact source 001_Quest.rb Git blob 46a9faf2 and installer a92125fd. Private plugin v0.1.1 compiled archive SHA256 2c5be244; other 8 entries preserved. ZIP SHA256 f51adcdbed3b06523757d3c36ad39ac73d55c3879df87722923b9baec0595488, CRC passed. Provisional target location and POTION reward need original scene parity review; no actual battle, normal save/Continue or Android acceptance. Copyright clearance for redistribution unverified."
       ],
       "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
     },
@@ -490,5 +493,19 @@
   "last_verified_source_ci": [
     41152946632,
     41152946655
-  ]
+  ],
+  "private_murkrow_candidate": {
+    "date": "2026-11-02",
+    "file": "Shattered_Essentials_HnS_Murkrow_Native_Rescue_v011_Candidate.zip",
+    "sha256": "f51adcdbed3b06523757d3c36ad39ac73d55c3879df87722923b9baec0595488",
+    "bytes": 160865195,
+    "source_pr": 59,
+    "native_map_id": 16,
+    "event_id": 8,
+    "compiled_murkrow_version": "0.1.1",
+    "source_rights_cleared_for_redistribution": false,
+    "native_runtime_playthrough_verified": false,
+    "android_verified": false,
+    "original_scene_parity_verified": false
+  }
 }
