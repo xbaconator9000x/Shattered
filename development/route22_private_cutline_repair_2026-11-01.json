@@ -45,10 +45,34 @@
     "HUMAN vs Rattata actual defeat and retry",
     "Gate to Route22 continuous playthrough",
     "normal save/close/reopen/Continue",
-    "HnS Rattata overworld group/scatter artwork",
-    "Android JoiPlay/NaviaXP"
+    "Android JoiPlay/NaviaXP",
+    "Rattata overworld scatter animation and event-trigger timing in actual Essentials runtime"
   ],
   "asset_policy": "Private candidate contains copyrighted user-provided game assets; never commit or redistribute via GitHub. This record contains hashes and test results only.",
   "compiled_plugin_archive_sha256": "1fd3b17ee80c7d9f28ec1a114c8c739ad2fb59729dee05a3935062a7f83cc938",
-  "previous_plugin_archive_sha256": "31bfa8e81f9e26fbcc4f3fae8a2abce769620f200ed3638d6605efcbbe3f5d5c"
+  "previous_plugin_archive_sha256": "31bfa8e81f9e26fbcc4f3fae8a2abce769620f200ed3638d6605efcbbe3f5d5c",
+  "rattata_group_2026_11_01": {
+    "status": "source_implemented_and_private_native_map_installed_not_engine_verified",
+    "hns_source_sha256": "05e3e63cfbea4809604e09476320eebad923c93484ddd211ff12790013cdcf53",
+    "source_revision": "PokemonHnS-Development/pokehns-expansion@167aa6d537b109bb229c231ddce4616974c4da71",
+    "private_sprite_sha256": "3b7119e99a4bba28ceeab6250792ca9d3aad6f3aa6ca2ead37fdbeb448efef03",
+    "private_map016_sha256": "56151d32ce1146bc9229db51fbd49a28e35e7c571183661ee6df608c1d01fe08",
+    "private_compiled_plugin_archive_sha256": "232b0d466832c4b78d3adf25f7bbdb784351f6d8f9b1ac8cf5e9ba89eaf5adf5",
+    "private_candidate_sha256": "f100a64cd3810977434c6bbcdc491fbeebc763082890bb37d18c1854ba40ac27",
+    "private_candidate_bytes": 160851281,
+    "native_event_ids": [
+      5,
+      6,
+      7
+    ],
+    "switch_hides_sprites": 992,
+    "local_tests": "6 tests / 40 assertions passed; native Map016 transform 7 events, preserves unrelated events/tile bytes; 9 compiled plugins preserved (8 unchanged)",
+    "github_ci": [
+      "41290049755",
+      "41290049675",
+      "41290049667"
+    ],
+    "native_gameplay_verified": false,
+    "android_verified": false
+  }
 }
