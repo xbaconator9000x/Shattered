@@ -1,0 +1,116 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "kind": "private_native_map_and_actual_essentials_passable_method_offline_execution_not_gameplay",
+  "private_input_candidate_sha256": "35535e86e67e2c564e3a138fe49e8cedc19898a58901a15b0adb4aaf642318fb",
+  "private_input_map223_sha256": "a972e7963d7c0ed4ab773e90dd054021e7e3a76801d79731fdd4eb669f1656cf",
+  "private_output_map223_sha256": "eb6a12f51b324d727f95890b79948db261ac71b047c993d71f6582c1e4f3833f",
+  "private_candidate_zip_sha256": "d86c50b31aad61d50077ac52f8c211ba16e26034577b7748cb5d29dc14ec8cda",
+  "private_candidate_zip_bytes": 160870845,
+  "private_candidate_entries": 7737,
+  "gate_story_version": "0.2.3",
+  "reserved_switch": 997,
+  "rock_character_sheet": "Object rock.png (existing private 128x128 RGSS sprite)",
+  "native_debris_event_ids": [
+    1,
+    8,
+    9
+  ],
+  "native_blocker_cells": [
+    [
+      10,
+      19
+    ],
+    [
+      11,
+      19
+    ],
+    [
+      12,
+      19
+    ]
+  ],
+  "source_engine": "Actual Essentials v21.1 Game_Character#passable? method from private Scripts.rxdata, not a hand-written imitation",
+  "game_character_source_sha256": "0cb6a5149f998c053055d3c7726d557fe1a1368fcabe14bb4a7c159f09a686b9",
+  "collision_probe": {
+    "before_collapse": {
+      "from": [
+        [
+          10,
+          18
+        ],
+        [
+          11,
+          18
+        ],
+        [
+          12,
+          18
+        ]
+      ],
+      "direction": "south",
+      "passable": [
+        true,
+        true,
+        true
+      ]
+    },
+    "after_collapse": {
+      "from": [
+        [
+          10,
+          18
+        ],
+        [
+          11,
+          18
+        ],
+        [
+          12,
+          18
+        ]
+      ],
+      "direction": "south",
+      "passable": [
+        false,
+        false,
+        false
+      ]
+    },
+    "stubs": "Map terrain passability and Game_Event active-page selection simulated from native event pages; actual Game_Character#passable? Ruby method executed"
+  },
+  "local_tests": [
+    "5 synthetic native installer tests / 41 assertions passed",
+    "5 compiled Gate Story state tests / 10 assertions passed",
+    "real private Map223 offline install and repeat idempotence passed",
+    "all nine compiled plugin entries preserved, Gate Story source 0.2.3 compiled",
+    "ZIP integrity testzip passed"
+  ],
+  "github_ci": [
+    {
+      "run": 41353510412,
+      "workflow": "gate-story",
+      "result": "success"
+    },
+    {
+      "run": 41353510389,
+      "workflow": "combined plugins",
+      "result": "success"
+    },
+    {
+      "run": 41353510431,
+      "workflow": "Victory Road",
+      "result": "success"
+    }
+  ],
+  "acceptance": {
+    "source_implemented": true,
+    "native_map_installed": true,
+    "native_engine_collision_method_offline_executed": true,
+    "native_gameplay_verified": false,
+    "visual_animation_verified": false,
+    "save_continue_in_engine_verified": false,
+    "android_verified": false
+  },
+  "asset_policy": "Only source Ruby, synthetic tests, hashes and evidence on private GitHub. No original game archive, tiles, sprite or other commercial assets uploaded."
+}
