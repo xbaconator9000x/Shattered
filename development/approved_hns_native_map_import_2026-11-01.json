@@ -1,0 +1,149 @@
+{
+  "source_commit": "22286be3df9d72462ccee68d9699d82a938aaff9",
+  "hns_commit": "167aa6d537b109bb229c231ddce4616974c4da71",
+  "imported_maps": [
+    {
+      "name": "ReceptionGate_hns",
+      "map_id": 223,
+      "tileset_id": 28,
+      "width": 22,
+      "height": 21,
+      "source_collision_retained": true
+    },
+    {
+      "name": "VictoryRoadKanto_B2F_hns",
+      "map_id": 224,
+      "tileset_id": 29,
+      "width": 40,
+      "height": 50,
+      "source_collision_retained": true
+    },
+    {
+      "name": "Route26North_hns",
+      "map_id": 225,
+      "tileset_id": 30,
+      "width": 39,
+      "height": 30,
+      "source_collision_retained": true
+    },
+    {
+      "name": "Route26_hns",
+      "map_id": 226,
+      "tileset_id": 31,
+      "width": 39,
+      "height": 81,
+      "source_collision_retained": true
+    },
+    {
+      "name": "Route28_hns",
+      "map_id": 227,
+      "tileset_id": 32,
+      "width": 67,
+      "height": 36,
+      "source_collision_retained": true
+    }
+  ],
+  "optional_gen2_maps_installed": false,
+  "new_game": [
+    223,
+    11,
+    14
+  ],
+  "connections": [
+    [
+      225,
+      "S",
+      0,
+      226,
+      "N",
+      0
+    ],
+    [
+      227,
+      "E",
+      29,
+      225,
+      "W",
+      0
+    ]
+  ],
+  "deferred_boundaries": [
+    {
+      "map": "VictoryRoadKanto_B2F_hns",
+      "x": 4,
+      "y": 3,
+      "destination": "MAP_VICTORY_ROAD_KANTO_B1F_HNS"
+    },
+    {
+      "map": "Route26_hns",
+      "x": 24,
+      "y": 11,
+      "destination": "MAP_ROUTE26_HOUSE1_HNS"
+    },
+    {
+      "map": "Route26_hns",
+      "x": 9,
+      "y": 31,
+      "destination": "MAP_ROUTE26_HOUSE2_HNS"
+    },
+    {
+      "map": "Route28_hns",
+      "x": 20,
+      "y": 9,
+      "destination": "MAP_ROUTE28_HOUSE_HNS"
+    },
+    {
+      "map": "Route26North_hns",
+      "connection": {
+        "map": "MAP_ROUTE22_HNS",
+        "offset": -28,
+        "direction": "right"
+      }
+    },
+    {
+      "map": "Route26_hns",
+      "connection": {
+        "map": "MAP_ROUTE27_HNS",
+        "offset": 42,
+        "direction": "left"
+      }
+    },
+    {
+      "map": "Route28_hns",
+      "connection": {
+        "map": "MAP_MT_SILVER_OUTSIDE_HNS",
+        "offset": -6,
+        "direction": "left"
+      }
+    }
+  ],
+  "notes": [
+    "Original v0.4 source unchanged. Existing Shattered Route22/Viridian artwork retained.",
+    "Existing opening dialogue and key event migrated; full cutscene remake is not claimed.",
+    "Source collision 0 walkable, nonzero blocked. Surf, ledge, elevation transitions and bridge semantics need engine validation.",
+    "Static tiles only; source animations are not installed."
+  ],
+  "native_engine_launched": true,
+  "gameplay_verified": false,
+  "android_verified": false,
+  "native_pbs_compiled": true,
+  "native_new_game_human_verified": true,
+  "native_maps_loaded_and_rendered": [
+    223,
+    224,
+    225,
+    226,
+    227
+  ],
+  "native_map_render_matches_approved_preview": true,
+  "transfer_destinations_static_passability": "all clear",
+  "private_build": {
+    "library_file_id": "libfile_f47d15bc7a388191bf2ddf2969240ad7",
+    "filename": "Shattered_Essentials_HnS_Imported_Build.zip"
+  },
+  "private_evidence": {
+    "library_file_id": "libfile_3076400368fc8191bb79b953b1994ec1"
+  },
+  "user_approved_maps": true,
+  "scope": "Native approved map import checkpoint; not full demo acceptance. Optional HnS Viridian and Route22 remain excluded. No game assets in this commit."
+}
