@@ -76,7 +76,7 @@ module ShatteredApprovedHNSOpening
       map.events[5].pages[0].trigger == 3 &&
       map.events[6].pages.length == 1 &&
       map.events[6].pages[0].graphic.character_name == AIPOM_SPRITE &&
-      map.events[6].pages[0].graphic.direction == 8 &&
+      map.events[6].pages[0].graphic.direction == (legacy_aipom ? 8 : 2) &&
       map.events[7].pages[0].trigger == 0
   end
 
@@ -137,6 +137,7 @@ module ShatteredApprovedHNSOpening
       check!(Digest::SHA256.hexdigest(raw) == expected_legacy_sha256,
              "previously upgraded Map223 SHA changed; refusing unreviewed migration")
       map.events[6].pages[0].list = expected_commands[6]
+      map.events[6].pages[0].graphic.direction = 2 # face south before turning north
     else
       check!(Digest::SHA256.hexdigest(raw) == expected_sha256,
              "Map223 differs from the reviewed private candidate; no changes made")
@@ -156,7 +157,7 @@ module ShatteredApprovedHNSOpening
       aipom_event.pages = [aipom_event.pages[0]]
       aipom_event.pages[0].through = false
       aipom_event.pages[0].graphic.character_name = AIPOM_SPRITE
-      aipom_event.pages[0].graphic.direction = 8
+      aipom_event.pages[0].graphic.direction = 2 # visible north turn on interaction
     end
     check!(upgraded?(map), "upgraded native events failed postconditions")
     new_bytes = Marshal.dump(map)
