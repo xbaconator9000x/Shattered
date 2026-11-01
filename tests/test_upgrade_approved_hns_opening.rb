@@ -125,7 +125,9 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert U.upgraded?(map, legacy_aipom: true)
     refute U.upgraded?(map)
     File.binwrite(@map_path, Marshal.dump(map))
-    assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin)
+    legacy_sha = Digest::SHA256.file(@map_path).hexdigest
+    assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin,
+                                      expected_legacy_sha256: legacy_sha)
     repaired = Marshal.load(File.binread(@map_path))
     assert U.upgraded?(repaired)
     assert_equal old_warp, Marshal.dump(repaired.events[2])
@@ -136,10 +138,14 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_equal "upgraded", U.upgrade!(@dir, expected_sha256: @pin)
     map = Marshal.load(File.binread(@map_path))
     map.events[6].pages.first.list = U.expected_commands(legacy_aipom: true)[6]
+    approved_legacy_sha = Digest::SHA256.hexdigest(Marshal.dump(map))
     map.events[2].name = "unreviewed altered warp"
     File.binwrite(@map_path, Marshal.dump(map))
     changed = File.binread(@map_path)
-    assert_raises(RuntimeError) { U.upgrade!(@dir, expected_sha256: @pin) }
+    assert_raises(RuntimeError) do
+      U.upgrade!(@dir, expected_sha256: @pin,
+                 expected_legacy_sha256: approved_legacy_sha)
+    end
     assert_equal changed, File.binread(@map_path)
   end
 
