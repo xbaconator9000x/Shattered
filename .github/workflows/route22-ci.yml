@@ -5,6 +5,8 @@ on:
     paths:
       - "essentials/Plugins/Shattered Route22/**"
       - "tests/test_route22.rb"
+      - "tests/test_route22_rattata_group.rb"
+      - "scripts/install_private_route22_rattata_sprites.rb"
       - ".github/workflows/route22-ci.yml"
 
 permissions:
@@ -21,3 +23,5 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Route22/001_Route22.rb'
           ruby -c 'essentials/Plugins/Shattered Route22/002_Install.rb'
           ruby tests/test_route22.rb
+          ruby -c scripts/install_private_route22_rattata_sprites.rb
+          ruby tests/test_route22_rattata_group.rb
