@@ -10,6 +10,8 @@ on:
       - "scripts/install_private_route22_rattata_sprites.rb"
       - "scripts/upgrade_private_viridian_handoff.rb"
       - "tests/test_private_viridian_handoff.rb"
+      - "scripts/upgrade_private_viridian_escort.rb"
+      - "tests/test_private_viridian_escort.rb"
       - ".github/workflows/route22-ci.yml"
 
 permissions:
@@ -31,3 +33,5 @@ jobs:
           ruby tests/test_route22_rattata_group.rb
           ruby -c scripts/upgrade_private_viridian_handoff.rb
           ruby tests/test_private_viridian_handoff.rb
+          ruby -c scripts/upgrade_private_viridian_escort.rb
+          ruby tests/test_private_viridian_escort.rb
