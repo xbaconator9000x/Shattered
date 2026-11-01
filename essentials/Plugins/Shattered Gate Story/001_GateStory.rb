@@ -57,15 +57,19 @@ module ShatteredGateStory
       true
     end
 
-    def key_obtained?(store = (defined?($PokemonGlobal) ? $PokemonGlobal : nil))
-      !!state(store)[:key]
+    # The saved flag records Aipom's award; the bag is the actual door key.
+    # Never unlock a door solely from a stale flag after an interrupted save,
+    # item removal, or migration. Revisit Aipom to recover a missing key.
+    def key_obtained?(store = (defined?($PokemonGlobal) ? $PokemonGlobal : nil),
+                      bag = (defined?($bag) ? $bag : nil))
+      !!state(store)[:key] && !!(bag && bag.respond_to?(:has?) && bag.has?(KEY_ITEM))
     end
 
     # Mark awarded only after bag.add succeeds. Revisit/loaded save cannot duplicate.
     def award_key!(bag = (defined?($bag) ? $bag : nil),
                    store = (defined?($PokemonGlobal) ? $PokemonGlobal : nil))
       return false unless collapsed?(store) && state(store)[:aipom_clue]
-      return true if key_obtained?(store)
+      return true if key_obtained?(store, bag)
       raise "Shattered gate key not compiled in PBS/items.txt" unless
         defined?(GameData::Item) && GameData::Item.respond_to?(:exists?) && GameData::Item.exists?(KEY_ITEM)
       raise "Bag unavailable" unless bag && bag.respond_to?(:add)
