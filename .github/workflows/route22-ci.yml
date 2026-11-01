@@ -39,3 +39,5 @@ jobs:
           ruby tests/test_private_viridian_escort.rb
           ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
           ruby tests/test_viridian_map_restore.rb
+          ruby -c scripts/verify_private_route22_viridian_guard.rb
+          ruby tests/test_private_route22_viridian_guard.rb
