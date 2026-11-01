@@ -169,7 +169,7 @@ module ShatteredPrivatePluginCompiler
           old_version = old[1][:version]
           new_version = proposed[1][:version]
           version_safe = old_version.is_a?(String) &&
-            /\\A\\d+\\.\\d+\\.\\d+\\z/.match?(old_version) &&
+            /\A\d+\.\d+\.\d+\z/.match?(old_version) &&
             (new_version.split(".").map(&:to_i) <=> old_version.split(".").map(&:to_i)) >= 0
           metadata_safe = old[1].reject { |key, _| key == :version } ==
             proposed[1].reject { |key, _| key == :version }
