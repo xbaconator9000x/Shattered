@@ -38,6 +38,33 @@ module ShatteredMurkrowRescue
     end
   end
 
+  # Native Marshal may roundtrip ASCII-only RMXP strings with a different
+  # Ruby encoding flag (US-ASCII/UTF-8/ASCII-8BIT). Compare EVERY event field
+  # recursively by class, ivar name and string bytes, without treating a
+  # harmless encoding tag as foreign event drift. Actual content changes still
+  # fail closed; never skip identity or map/source SHA checks.
+  def self.event_signature(value)
+    case value
+    when String
+      [:bytes, value.b]
+    when Array
+      [:array, value.map { |item| event_signature(item) }]
+    when Hash
+      [:hash, value.map { |key, item|
+        [event_signature(key), event_signature(item)]
+      }.sort_by { |pair| pair.first.inspect }]
+    when Integer, Float, Symbol, TrueClass, FalseClass, NilClass
+      value
+    else
+      klass = value.class.name
+      raise "Unexpected native Murkrow event member" unless
+        klass.is_a?(String) && klass.start_with?("RPG::")
+      [klass, value.instance_variables.sort.map { |ivar|
+        [ivar, event_signature(value.instance_variable_get(ivar))]
+      }]
+    end
+  end
+
   def self.validate_plan!(plan)
     raise ArgumentError, "Murkrow plan must be a JSON object" unless plan.is_a?(Hash)
     raise ArgumentError, "Unsupported Murkrow plan" unless plan["schema_version"] == 1 &&
@@ -273,7 +300,7 @@ module ShatteredMurkrowRescue
     if managed.any?
       raise "Partial or foreign Murkrow installation" unless managed.length == 1 &&
         managed.first.id == plan["event_id"] &&
-        Marshal.dump(expected) == Marshal.dump(managed.first)
+        event_signature(expected) == event_signature(managed.first)
       return { "installed" => 0, "unchanged" => 1, "map_id" => map_id,
                "event_id" => plan["event_id"] }
     end
