@@ -83,6 +83,12 @@ module ShatteredRoute22
     # encounter. This is a native engine contract, not a synthetic battle rule.
     return false unless player.respond_to?(:able_pokemon_count) &&
       player.able_pokemon_count > 0
+    # Essentials chooses the first able party member as the opening battler.
+    # A fainted HUMAN with a healthy companion would otherwise let this
+    # mandatory *first HUMAN battle* be cleared without HUMAN fighting.
+    # Pokemon#able? in the pinned v21.1 Scripts.rxdata excludes eggs/fainted.
+    first_able = player.party.find { |member| member.respond_to?(:able?) && member.able? }
+    return false unless first_able && Shattered.human?(first_able)
     return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
       defined?(Input::CTRL) && Input.press?(Input::CTRL)
     return false if @running
