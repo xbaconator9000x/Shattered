@@ -77,7 +77,7 @@ class Route22BattleTest < Minitest::Test
     $PokemonGlobal=Object.new
     $game_variables=Hash.new(0)
     $game_switches=Hash.new(false)
-    $player=OpenStruct.new(:party=>[:HUMAN])
+    $player=OpenStruct.new(:party=>[:HUMAN], :able_pokemon_count=>1)
     $game_map=OpenStruct.new(:need_refresh=>false)
     $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false; $stamina_restores=[]
   end
