@@ -90,6 +90,7 @@ jobs:
           # and mock Pokemon classes intentionally differ across files.
           for suite in \
             tests/test_gate_story.rb \
+            tests/test_upgrade_approved_hns_opening.rb \
             tests/test_hns_gate_import.rb \
             tests/test_route22.rb \
             tests/test_murkrow_rescue.rb \
