@@ -6,6 +6,9 @@ require "digest"
 module ShatteredApprovedHNSOpening
   MAP_ID = 223
   ORIGINAL_MAP_SHA256 = "c9cf23ce102cd2540ca8da4d36f1fe9f92e440ace0dc0371dffcc8d72d95b6f8"
+  # The exact previously shipped private HnS gate with the corrected east
+  # key guard, before Aipom turn/exclamation. Never accept arbitrary drift.
+  LEGACY_AIPOM_MAP_SHA256 = "1b46bc347b2094d81c9bcde64dc40b1f6ef3a368a43312a5ef22f742da3bbb6a"
   PREFIX = "SHATTERED_HNS:"
   IMPACTS = ["Cries/TYRANITAR", "Mining collapse", "Cries/TYRANITAR",
              "Mining collapse", "Cries/TYRANITAR", "Mining collapse"].freeze
@@ -114,7 +117,8 @@ module ShatteredApprovedHNSOpening
     end
   end
 
-  def upgrade!(root, expected_sha256: ORIGINAL_MAP_SHA256)
+  def upgrade!(root, expected_sha256: ORIGINAL_MAP_SHA256,
+               expected_legacy_sha256: LEGACY_AIPOM_MAP_SHA256)
     root = File.expand_path(root)
     verify_inputs!(root)
     path = File.join(root, "Data/Map223.rxdata")
@@ -130,6 +134,8 @@ module ShatteredApprovedHNSOpening
     # script changes. A SHA-only original import guard cannot upgrade an
     # already converted private candidate, and must not accept other drift.
     if upgraded?(map, legacy_aipom: true)
+      check!(Digest::SHA256.hexdigest(raw) == expected_legacy_sha256,
+             "previously upgraded Map223 SHA changed; refusing unreviewed migration")
       map.events[6].pages[0].list = expected_commands[6]
     else
       check!(Digest::SHA256.hexdigest(raw) == expected_sha256,
