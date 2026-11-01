@@ -8,6 +8,8 @@ on:
       - "tests/test_route22_map_setup.rb"
       - "tests/test_route22_rattata_group.rb"
       - "scripts/install_private_route22_rattata_sprites.rb"
+      - "scripts/upgrade_private_viridian_handoff.rb"
+      - "tests/test_private_viridian_handoff.rb"
       - ".github/workflows/route22-ci.yml"
 
 permissions:
@@ -27,3 +29,5 @@ jobs:
           ruby tests/test_route22_map_setup.rb
           ruby -c scripts/install_private_route22_rattata_sprites.rb
           ruby tests/test_route22_rattata_group.rb
+          ruby -c scripts/upgrade_private_viridian_handoff.rb
+          ruby tests/test_private_viridian_handoff.rb
