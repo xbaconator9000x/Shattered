@@ -104,6 +104,20 @@ class Route22BattleTest < Minitest::Test
     assert_empty $battle_calls
   end
 
+  def test_no_able_party_cannot_trigger_essentials_skipped_wild_victory
+    # Actual v21.1 WildBattle.start_core skips with decision 1 when the
+    # player has no able Pokemon. It must not mark Route22 as cleared.
+    $player.able_pokemon_count = 0
+    $battle_outcome = 1
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.cleared?
+    refute $game_switches[92]
+    assert_empty $battle_calls
+    assert_empty $rules
+    $player.able_pokemon_count = 1
+    assert ShatteredRoute22.encounter(91, 92)
+  end
+
   def test_nonvictory_remains_mandatory
     [0,2,3,5].each do |result|
       $battle_outcome=result
