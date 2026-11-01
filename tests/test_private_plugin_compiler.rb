@@ -271,6 +271,52 @@ class PrivatePluginCompilerTest < Minitest::Test
     end
   end
 
+  def test_pinned_version_upgrade_replaces_only_selected_plugin
+    with_stage do |root|
+      target = File.join(root, "Data/PluginScripts.rxdata")
+      ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      original = Marshal.load(File.binread(target))
+      original_hotfix = Marshal.dump(original.first)
+      old_source = File.read(File.join(root, "Plugins/Shattered Core/001_Core.rb"))
+      File.write(File.join(root, "Plugins/Shattered Core/meta.txt"),
+        File.read(File.join(root, "Plugins/Shattered Core/meta.txt")).sub("0.2.3", "0.2.4"))
+      File.write(File.join(root, "Plugins/Shattered Core/001_Core.rb"),
+        "module Shattered; CORE_TEST = :upgraded; end\\n")
+      report = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"],
+        replace_pins: { "Shattered Core" => Digest::SHA256.hexdigest(old_source) })
+      assert_equal ["Shattered Core"], report.fetch("replaced").map { |entry| entry["plugin"] }
+      entries = Marshal.load(File.binread(target))
+      assert_equal original_hotfix, Marshal.dump(entries.first)
+      assert_equal "0.2.4", entries.last[1][:version]
+      assert_includes Zlib::Inflate.inflate(entries.last[2].first.last), "CORE_TEST = :upgraded"
+    end
+  end
+
+  def test_pinned_version_downgrade_and_metadata_drift_are_refused
+    with_stage do |root|
+      target = File.join(root, "Data/PluginScripts.rxdata")
+      ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      original = File.binread(target)
+      meta = File.join(root, "Plugins/Shattered Core/meta.txt")
+      source = File.join(root, "Plugins/Shattered Core/001_Core.rb")
+      old_source = File.read(source)
+      pin = Digest::SHA256.hexdigest(old_source)
+      File.write(source, "module Shattered; CORE_TEST = :changed; end\\n")
+      File.write(meta, File.read(meta).sub("0.2.3", "0.2.2"))
+      assert_raises(RuntimeError) do
+        ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"],
+          replace_pins: { "Shattered Core" => pin })
+      end
+      assert_equal original, File.binread(target)
+      File.write(meta, File.read(meta).sub("0.2.2", "0.2.4").sub("Shattered contributors", "Unreviewed authors"))
+      assert_raises(RuntimeError) do
+        ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"],
+          replace_pins: { "Shattered Core" => pin })
+      end
+      assert_equal original, File.binread(target)
+    end
+  end
+
   def test_requires_private_staging_report
     with_stage do |root|
       target = File.join(root, "Data/PluginScripts.rxdata")
