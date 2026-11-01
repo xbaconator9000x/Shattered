@@ -1,0 +1,317 @@
+{
+  "date": "2026-11-01",
+  "purpose": "Hard backup before requested Gen 5+ content purge",
+  "current": "xx0.95",
+  "pre_consolidation_checkpoint": "xx0.92",
+  "archives": [
+    {
+      "name": "xx0.92_Pokemon_Shattered_Backup.zip",
+      "size_bytes": 49685462,
+      "sha256": "5179d20f9a35de1a645b63e85a32cd5a761adc17d9d6e5a01e10ef229c3a7243",
+      "members": [
+        {
+          "name": "xx092-byte-patches.json",
+          "size_bytes": 1500,
+          "sha256": "cfdbb407b71170567c93e9e482aefcdf6d3bafca8c19af4f11f3c6c79173bc1c"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered.gba",
+          "size_bytes": 33554432,
+          "sha256": "08081cf65ac92ad2cf50c4b08f14ba9e435bc8cbade54f89ad3eff6751696400"
+        },
+        {
+          "name": "README.txt",
+          "size_bytes": 619,
+          "sha256": "01f29f2d6c4d2a56b8648e3488e44c77e1da958e574baa61f441f121edc734a3"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered.pokebacon.json",
+          "size_bytes": 33795556,
+          "sha256": "235c3b832c8afde71ba38fc9caf7b6da41ad0ea196d8b01de610e08c00b1adcb"
+        },
+        {
+          "name": "verification/avatar-patch.json",
+          "size_bytes": 661,
+          "sha256": "a2ec6a216985b8dfd38627a91e6e1ed640da150b3222d7ecd9d1a76af08994de"
+        },
+        {
+          "name": "verification/gate-patch.json",
+          "size_bytes": 700,
+          "sha256": "1745c32af8abc6a60f648f7923b9aad8d64093b3b267dfd41742e0345b93f800"
+        },
+        {
+          "name": "verification/gate-validation.json",
+          "size_bytes": 5761,
+          "sha256": "d557bf8da212602233b76c7e5adb7fe93aa7ad43f94d0978ceda7451460e608b"
+        },
+        {
+          "name": "verification/avatar_patch.py",
+          "size_bytes": 1190,
+          "sha256": "ac1c41c59d56873fb6b75880396d7ab9c65f031225e2ca5336b6ad5fc464cb62"
+        },
+        {
+          "name": "verification/gate_patch.mjs",
+          "size_bytes": 1546,
+          "sha256": "8fd93568fe1bd6c3ea3ce7eb1b76b1e05a14bd0d69ec0af58bb98b8aefaee85b"
+        },
+        {
+          "name": "verification/fixed_exit.py",
+          "size_bytes": 636,
+          "sha256": "43a8d1a21415d5e5a03ff4821db16cb6c1face24a5bf9506e9e3314c0a47181d"
+        },
+        {
+          "name": "verification/test_gate.py",
+          "size_bytes": 2054,
+          "sha256": "93993869e764aa5b684db6824a8ecccae4e6d21921c216b23ea9ca84af64025a"
+        },
+        {
+          "name": "reconstruction/xx0.91_Pokemon_Shattered.gba",
+          "size_bytes": 33554432,
+          "sha256": "2b99053b82f3819454545c0c3314e5ab59e57bacbd59c52f24a1daa053e0bd1e"
+        }
+      ],
+      "parts": [
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part000",
+          "size_bytes": 4194304,
+          "sha256": "b03c9d13ed8d1ec70a2d1bafc0a22e5f5744e9fe399cf103fea61855668b733e",
+          "git_blob_sha": "2afc5661d31456e180d37c12a1787bbabe4f2cdf"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part001",
+          "size_bytes": 4194304,
+          "sha256": "e361bc3ca32214499e6bd624d2058b507264816167cb658132475703b7b9db29",
+          "git_blob_sha": "7fba05c253f0c9acf00fb022367e9600e7799f59"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part002",
+          "size_bytes": 4194304,
+          "sha256": "aafc22635a34d48851c206602935ce149ee6a6419f33f030cdedd8a290291d84",
+          "git_blob_sha": "c1c3612a424ac10f4d9f04a52186e8b599ec5ed9"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part003",
+          "size_bytes": 4194304,
+          "sha256": "bb699a8e83889b43f2e06b7208420c236eef72d00b4d177a42a75da93a0a27e6",
+          "git_blob_sha": "d62493787d69d305d762e673efe1a3993499341d"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part004",
+          "size_bytes": 4194304,
+          "sha256": "b64d452a038ea35a6e88d32eb09b945f3c1df3a5035ea1db14b091274631b195",
+          "git_blob_sha": "f5c57f7d74236b3f6a1f35f9ddef68f477624baf"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part005",
+          "size_bytes": 4194304,
+          "sha256": "93ff0638ddf1a2515204c70dc1c40c7c6f9e9310a86b45aec0da46165c0649d4",
+          "git_blob_sha": "bd1de8ef18523a65a842fe6e7f5f150d6df9b8cd"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part006",
+          "size_bytes": 4194304,
+          "sha256": "1ce610419b4ae58b668bc094f5cce4355f62d7b17ad111a25b7750e05d2470dc",
+          "git_blob_sha": "8c8eb2a256d0133069dfd1498d939daae0af23a3"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part007",
+          "size_bytes": 4194304,
+          "sha256": "60c00cd2a4be6309ff24481b543486af56f5d8d212ef7afabc01c67f4c9502bb",
+          "git_blob_sha": "b46692870adc25f5f8eaddc5e0e0caa3f6e19760"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part008",
+          "size_bytes": 4194304,
+          "sha256": "fe1c84b502f50a59280f77c47b459e5993172fae7b0a24f2e739a36bec26a0eb",
+          "git_blob_sha": "89338e09bcf6e7825a9fecd20c2116fd11947116"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part009",
+          "size_bytes": 4194304,
+          "sha256": "db326df8b4fec134f3dff1edd776e8a5ae579884a41d89fc3e533b61a2e8c656",
+          "git_blob_sha": "b4041f2c89ee5c21bd64e4971a235e11f7d69bbb"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part010",
+          "size_bytes": 4194304,
+          "sha256": "9c3975f7b913f0b500376f55a92120242e0ba6e6ecd52139ce09ec297132948e",
+          "git_blob_sha": "a3f713dabf1257402df508ec0f01af984bd6d5e1"
+        },
+        {
+          "name": "xx0.92_Pokemon_Shattered_Backup.zip.part011",
+          "size_bytes": 3548118,
+          "sha256": "08bc265aa9a257a2d24fb22d369cc79913105058d66f3c5b7ba2613d01503793",
+          "git_blob_sha": "334f5d71f2ade0fd39052bb911038d8b7e2e7673"
+        }
+      ]
+    },
+    {
+      "name": "xx0.95_Pokemon_Shattered_Backup.zip",
+      "size_bytes": 35085503,
+      "sha256": "04e175299d65fb3c14fe3e767c0cd17efef4152725b52d2455affca5d9d0a639",
+      "members": [
+        {
+          "name": "xx0.95_Pokemon_Shattered.gba",
+          "size_bytes": 33554432,
+          "sha256": "bc09e447794fa0bab229512f2eda8dac9413e340e6f66ff334b42fc59fb31874"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered.pokebacon.json",
+          "size_bytes": 38722799,
+          "sha256": "c6c21190fff1d9bb888de11c6b1df2f6179f3aa65c0d1b51aaecb4f70ef7d9ad"
+        },
+        {
+          "name": "README.txt",
+          "size_bytes": 1419,
+          "sha256": "ac6b9b57ebf2207268d3b19999e9aecba3436737c6079547530418ee9405b90c"
+        },
+        {
+          "name": "extract_embedded_rom.py",
+          "size_bytes": 418,
+          "sha256": "51f8995687fbed8eeb66380ad7e374fc09f7b0ee7f2de37335910fda7aa1ade5"
+        },
+        {
+          "name": "verification/intro-repair.json",
+          "size_bytes": 100,
+          "sha256": "04aaec3ab8252876124eafbfcc6cedb481c483d53f1c7e92c5f97c79ddbab8e8"
+        },
+        {
+          "name": "verification/fix_native.py",
+          "size_bytes": 1373,
+          "sha256": "dc480052866a2fe173f5440240ee253206fabf43f8daeb995f636c48d818dac0"
+        },
+        {
+          "name": "verification/reloaded.png",
+          "size_bytes": 2306,
+          "sha256": "96a051985947710c758d79a608606d994d57500ea8f4eb84c641086a93cdcb3e"
+        },
+        {
+          "name": "verification/post-intro.png",
+          "size_bytes": 5100,
+          "sha256": "778a3d9f07c417df99f628c896cbb3ce2136e5798e0dd9336152f59d0cc3c6ed"
+        },
+        {
+          "name": "verification/post-transition.png",
+          "size_bytes": 4667,
+          "sha256": "f29b2f0c8f1892d9907801c83083d46357aee2bb9565dd1ccc26342aaf84af11"
+        },
+        {
+          "name": "verification/validation.json",
+          "size_bytes": 516,
+          "sha256": "f56f9f1e03c76adab6aaa29a42d3066612fb9a509febcb49c4ff5188aefe62a1"
+        },
+        {
+          "name": "verification/native-repair.json",
+          "size_bytes": 344,
+          "sha256": "bd4a81297c6f15274fbefd7c0b0dd4de04f808dc5e08b325983e00cfbb0099cd"
+        },
+        {
+          "name": "verification/Compaction_Ledger.json",
+          "size_bytes": 466224,
+          "sha256": "ec12e98f7d6b263015e662cc00fccbb56da77ef6d4160bc508593f0b64ab1130"
+        },
+        {
+          "name": "verification/verify.py",
+          "size_bytes": 1576,
+          "sha256": "dce333dcfc7a725380402d5edaad364cff31e81246c8c569560931a092d7c5e9"
+        },
+        {
+          "name": "verification/repair_frames.py",
+          "size_bytes": 2754,
+          "sha256": "0b11da4359f25710af0615ac97128dabc3096b5776d41f833fd97dbefd919063"
+        },
+        {
+          "name": "verification/fixed95.log",
+          "size_bytes": 794,
+          "sha256": "643a64cb805f9218e80fc96ca3f1d3f384078261bba3ce782acc708d6dfc5a6a"
+        },
+        {
+          "name": "verification/playable.log",
+          "size_bytes": 43,
+          "sha256": "22e5a60d6ddd827c26f305714685d711f37be3681a4d0d32e3704eb4cd2686d6"
+        },
+        {
+          "name": "verification/save_reload.log",
+          "size_bytes": 49,
+          "sha256": "4beb9a29b24724b83242c9ada3e46933c21afec898a41ac850e0dc73fff3c8b7"
+        },
+        {
+          "name": "verification/fix_intro.py",
+          "size_bytes": 726,
+          "sha256": "1c4b9cfa0e3b530be6fcc1f673c1c761ae22ba9ea68a3709042404203d9e5ac1"
+        },
+        {
+          "name": "verification/allocator-validation.json",
+          "size_bytes": 94,
+          "sha256": "01a26cb7b164591397387ddb66d19a48f22ccdd7ef01dc24c028ff8b9f92febb"
+        },
+        {
+          "name": "verification/raw_repair_plan.py",
+          "size_bytes": 2069,
+          "sha256": "8eb62db78693e2fe31bc25553c7ecdfd89c8e05837ae04b628e321f69abdbb95"
+        },
+        {
+          "name": "verification/Raw_Frame_Repair.json",
+          "size_bytes": 171964,
+          "sha256": "3e43c374294bcb121a1cefc20cd4627d49b2e80709808476101e3c18d66ccb66"
+        }
+      ],
+      "parts": [
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part000",
+          "size_bytes": 4194304,
+          "sha256": "4fc1c4bdce4cbd06556be49a32bc7195fd152804637757699629244659cba567",
+          "git_blob_sha": "6829868eeca67ca166a111202a5bfd5f1477d4bd"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part001",
+          "size_bytes": 4194304,
+          "sha256": "f6034909f32ef1354a47216e3903457abc6262643e60832e50cb1413869a0d83",
+          "git_blob_sha": "deeb0f96b0cf288e2c5cf9230295d8134e360724"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part002",
+          "size_bytes": 4194304,
+          "sha256": "71edeeca29919eb8d12a4b4b626ed245ad1dca971b68779f6b19417d283e406b",
+          "git_blob_sha": "9c31e32c7e1a83434e2eb948c41d527049e920a1"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part003",
+          "size_bytes": 4194304,
+          "sha256": "a802972c9c3ee3b3281031ba2b60551786300067e322f6734af9e6aff073c208",
+          "git_blob_sha": "b5e1a387db85d2422e08b4ec4fcbc976d99cc9ae"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part004",
+          "size_bytes": 4194304,
+          "sha256": "11de8ca47860ef5fa775bc2e08546ef68edaa78a5ecd6e201d6b71937d20bee3",
+          "git_blob_sha": "f8ec5649fd6a421434694f43770208fff69fa64e"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part005",
+          "size_bytes": 4194304,
+          "sha256": "1cd3279e2f30a26912a4db008c4210d453913fc82f1e6d3eabf4c2f41066142d",
+          "git_blob_sha": "695b4cbc3a335318c54ffe7809912ab2f46f05ba"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part006",
+          "size_bytes": 4194304,
+          "sha256": "834eadeb071e11d618858d0b378c3d8f89f48cee644de5e2e19725478e29cdb7",
+          "git_blob_sha": "afc9986111527a7783a7c63cb945c0340e40b629"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part007",
+          "size_bytes": 4194304,
+          "sha256": "bf0e0de655d0391996352d1be07ae5323242fc0e80dc0484f56bc440dca3e127",
+          "git_blob_sha": "932cf109fee926b5f451ca89723bcabca8eb9a24"
+        },
+        {
+          "name": "xx0.95_Pokemon_Shattered_Backup.zip.part008",
+          "size_bytes": 1531071,
+          "sha256": "75beca37cad52af7330f7f5ad2dfbba07e3639efc10ee614ddac1ebee2429955",
+          "git_blob_sha": "cd193111d75554e9ff7ea80d58f5b0090d3deb9a"
+        }
+      ]
+    }
+  ]
+}
