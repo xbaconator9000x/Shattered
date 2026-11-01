@@ -252,7 +252,8 @@
         "2026-10-31 correction to earlier PR #38 cutline claim: independent audit of original v0.4 Map222 east transfer [0,16,30,17,2,0] and Map016 Viridian warp at (32,17) proved original x27 trigger cutline could be bypassed entirely from actual gate arrival. PR #56 revises pinned native triggers to (31,17),(31,18),(32,18), adds fail-closed tile-path checks from Crystal (30,17) and HnS candidate (24,17), and tests the previous bypass. The exact original ZIP SHA c6fa8d1f... was reverified; 222 original maps/3,058 events/34,548 commands/402 compiled scripts independently scanned with no static collisions for switch IDs 991/992 and variable 991. Production corrected cutline gameplay, full gate-to-Viridian path, and Android remain NOT runtime verified; PR #56 CI/review pending.",
         "2026-11-01 PR #59 private candidate: actual pinned HnS Rattata six-pose source SHA 05e3e63c converted into 128x128 native RGSS sheet SHA 3b7119e9; Map016 native Marshal patched from reviewed 064d6643 to 56151d32 with 3 visible sprite events (IDs 5-7), switch-992 hidden pages and retry-reset scatter. No licensed art committed. Ruby tests 6/40 assertions and CI 41290049755/41290049675 passed; compiled Route22 v0.1.1 native archive preserves other eight plugins. Actual engine scatter/battle/save/Android remain unverified. Candidate SHA 56d65a601a67eef11abeb3ddf0a30397bc8b479f056d4edbe2beec27cf8d2ce9.",
         "2026-11-01 PR #59 Route22 v0.1.2: register on_game_map_setup reconciliation for actual native Map016 so Continue/transfer corrects stale RMXP switch 992 from saved quest state before sprite pages are used; unrelated maps untouched and malformed saved state fails closed. Local isolated Ruby tests 6/15 assertions; private native PluginScripts.rxdata updated with exact source and other eight compiled entries preserved. Private candidate ZIP SHA256 457717b71da8dcc10ecc900929e366987bb3fadf2ba7134b7530bb1de71541d3; CI at source head 21aa7e38 passed 3/3. No engine Continue or Android acceptance claimed.",
-        "2026-11-01 PR #59 Route22 v0.1.3: inspected actual private Essentials v21.1 Scripts.rxdata (Game.load_map, Game_Map#setup, Scene_Map#createSpritesets) and found normal Continue restores saved MapFactory WITHOUT firing on_game_map_setup. Added on_map_or_spriteset_change reconciliation for loaded Route22 to repair stale switch 992 before first rendered frame, preserving unrelated maps and rejecting corrupt saves. Local 6 Ruby regressions/19 assertions passed; private compiled PluginScripts.rxdata Route22 v0.1.3 SHA256 74e486ef264de2a5ec8c03043dd4545fc2b825ce644f7e6edf11740baa54a0b9 preserves eight other entries. Private candidate ZIP SHA256 76435c77ddca905bad8df0aedb3d427372eb247022d5e58d39bc5cba19053111 (160853779 bytes), ZIP integrity passed. Added SHA-pinned, non-downgrade plugin-version upgrade support with regression tests. CI at source head pending final confirmation. This is source/native archive verification, NOT an executed Continue/playthrough or Android acceptance."
+        "2026-11-01 PR #59 Route22 v0.1.3: inspected actual private Essentials v21.1 Scripts.rxdata (Game.load_map, Game_Map#setup, Scene_Map#createSpritesets) and found normal Continue restores saved MapFactory WITHOUT firing on_game_map_setup. Added on_map_or_spriteset_change reconciliation for loaded Route22 to repair stale switch 992 before first rendered frame, preserving unrelated maps and rejecting corrupt saves. Local 6 Ruby regressions/19 assertions passed; private compiled PluginScripts.rxdata Route22 v0.1.3 SHA256 74e486ef264de2a5ec8c03043dd4545fc2b825ce644f7e6edf11740baa54a0b9 preserves eight other entries. Private candidate ZIP SHA256 76435c77ddca905bad8df0aedb3d427372eb247022d5e58d39bc5cba19053111 (160853779 bytes), ZIP integrity passed. Added SHA-pinned, non-downgrade plugin-version upgrade support with regression tests. CI at source head pending final confirmation. This is source/native archive verification, NOT an executed Continue/playthrough or Android acceptance.",
+        "2026-11-02 PR #59: native Essentials v21.1 Overworld_BattleStarting::BattleCreationHelperMethods.skip_battle? returns a skipped wild victory when no able party member; Route22 v0.1.4 now refuses battle entry in that state (and Debug Ctrl skip), preserving mandatory encounter flags. Added regression, 5/5 GitHub workflows passed at 698165b179e5599b566e8125898b6851770663da. Private compiled candidate staged; actual gameplay not executed."
       ],
       "blocker": "Native Route22 0.1.3 compiled in private candidate, but normal Continue switch reconciliation and Gate -> Rattata scatter -> defeat/retry -> Viridian still require executed Essentials engine gameplay; Victory Road 1F/B1F, Android and licensed distribution remain open."
     },
@@ -458,7 +459,8 @@
         "2026-10-31 PR #52 source repair: Murkrow state now rejects false (previously reset quest) and impossible saved battle/recruit/reward flag combinations before interrupted-save recovery. Two new Marshal/corruption Ruby regressions; native Murkrow event, reward UI, save-menu and Android still unverified.",
         "2026-11-02 PR #59 source commits 19bb3fa5, d1cb60c2, 9d7bd2ae, dfde4ad9: Murkrow rescue now uses Essentials v21.1 canLose/no-Pokeballs battle rules; defeat/draw restores HUMAN stamina; only quest-tagged Murkrow may reconcile recruitment or claim the one-time reward. Actual v21.1 compiled Scripts.rxdata Overworld_BattleStarting confirms WildBattle.start_core honours canLose and calls after_battle. New Ruby regressions include unrelated Murkrow, tagged save recovery, missing award, reward payout, loss/draw/escape; Murkrow CI 41317680432 and combined plugins CI 41317680344 passed at dfde4ad9. No Murkrow native event installed in the private candidate (missing licensed character sprite and reviewed location); no real battle, normal save-menu or Android acceptance.",
         "2026-11-02 PR #59 native private Murkrow scene installed on real staged Map016 (54x34), event #8 at 20,17, source parity anchor 28.5:npc:1 (51,16). Pinned HnS 192x32 Murkrow source converted privately to 128x128 RMXP sheet; SHA256 3682708f80845145656b151ec8242af621506a642a02bb6cf848c78e994c4c61. Native Map016 original SHA256 56151d32 -> installed 173b4560, event count 7->8; tiles and all 7 preexisting events Marshal-identical; two pages with quest-completion self-switch A and Continue reconciliation. Exact source 001_Quest.rb Git blob 46a9faf2 and installer a92125fd. Private plugin v0.1.1 compiled archive SHA256 2c5be244; other 8 entries preserved. ZIP SHA256 f51adcdbed3b06523757d3c36ad39ac73d55c3879df87722923b9baec0595488, CRC passed. Provisional target location and POTION reward need original scene parity review; no actual battle, normal save/Continue or Android acceptance. Copyright clearance for redistribution unverified.",
-        "2026-11-02 PR #59 head 95ebf7c35a3ef61424c42f19a72029c9764545af passed 5/5 GitHub workflows: Murkrow 41323517773 (34 Ruby tests, 188 assertions), Viridian 41323517758, combined plugins 41323517752, Route22 41323517749, source handoff 41323517742. These are source/structural CI, not native engine playthrough."
+        "2026-11-02 PR #59 head 95ebf7c35a3ef61424c42f19a72029c9764545af passed 5/5 GitHub workflows: Murkrow 41323517773 (34 Ruby tests, 188 assertions), Viridian 41323517758, combined plugins 41323517752, Route22 41323517749, source handoff 41323517742. These are source/structural CI, not native engine playthrough.",
+        "2026-11-02 PR #59: Murkrow Rescue v0.1.2 guards against Essentials skipped wild victory (no able party or Debug Ctrl) before battle entry; test confirms no recruitment/reward and retry remains possible. 5/5 CI at 698165b179e5599b566e8125898b6851770663da; private native archive compiled, engine and Android not run."
       ],
       "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
     },
@@ -492,11 +494,11 @@
   "full_demo_scope": "Conservative 8% for the complete Shattered Essentials remake. A private native HnS gate/Route22 candidate now has HUMAN, compiled Gate Key, Rattata retry and source-pinned three-sprite scatter; local native-format checks and CI pass. The full gate event path, defeat/retry, normal Save/Continue, Victory Road 1F/B1F, Viridian rescue/dojo/followers, and Android have NOT been played end to end. Original plugin infrastructure remains separately 16%.",
   "last_verified_source_main_sha": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
   "last_verified_source_ci": [
-    41323517773,
-    41323517758,
-    41323517752,
-    41323517749,
-    41323517742
+    41327886294,
+    41327886275,
+    41327886288,
+    41327886247,
+    41327886245
   ],
   "private_murkrow_candidate": {
     "date": "2026-11-02",
@@ -511,5 +513,22 @@
     "native_runtime_playthrough_verified": false,
     "android_verified": false,
     "original_scene_parity_verified": false
+  },
+  "private_battle_skip_guard_candidate": {
+    "date": "2026-11-02",
+    "file": "Shattered_Essentials_HnS_Mandatory_Battle_Skip_Guard_Candidate.zip",
+    "sha256": "f04fce6420f2f423c893f722675e842cf098d95a772f1f874c1f4b8246b9c85a",
+    "bytes": 160865846,
+    "source_pr": 59,
+    "source_commit": "698165b179e5599b566e8125898b6851770663da",
+    "compiled_plugin_archive_sha256": "8aec9144ae93c55dde75904cb1d155066013c23920c0f123f4ec3bedc05dafb3",
+    "compiled_versions": {
+      "Shattered Route22": "0.1.4",
+      "Shattered Murkrow Rescue": "0.1.2"
+    },
+    "native_runtime_playthrough_verified": false,
+    "android_verified": false,
+    "source_rights_cleared_for_redistribution": false,
+    "local_guard_tests": "2 tests / 13 assertions passed; source and native plugin archive Ruby syntax validated; 5/5 CI passed at source commit"
   }
 }
