@@ -140,6 +140,10 @@ module ShatteredMurkrowRescue
     value = state(store)
     return true if value[:stage] == :complete || value[:flags][:reward_claimed]
     return false unless value[:stage] == :recruited
+    # Never pay out a rescue reward when the actual tagged companion has
+    # vanished or was replaced by an unrelated Murkrow after save/reload.
+    # recruit! is idempotent here and checks the saved award provenance.
+    return false unless recruit!(nil, store)
     validate_reward!(reward)
     return false unless Object.new.respond_to?(:pbReceiveItem, true)
     value[:flags][:reward_claimed] = true
