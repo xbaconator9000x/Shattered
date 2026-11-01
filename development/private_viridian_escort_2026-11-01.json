@@ -1,0 +1,36 @@
+{
+  "kind": "private_native_viridian_guard_nidoran_escort_not_runtime_acceptance",
+  "date": "2026-11-01",
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "source_commit_before_receipt": "a611eb0405ccc80406c0230cc3a783c50022cd12",
+  "candidate_name_private_only": "Shattered_Essentials_HnS_Viridian_Guard_Nidoran_Escort_Candidate.zip",
+  "candidate_sha256": "7e57d367a628dc01a3a7be6e745220bc260b5774c4c4b7c5b1a1934b0c6c01b1",
+  "candidate_bytes": 160855231,
+  "input_native_map_sha256": "dcc96f73607eca6b83bceee85473a8eff77b17d79234dcbc0bfc95edee2d0bcf",
+  "output_native_map_sha256": "40fbd3ec821a328536cbbd80c1bd8a5e68269d1d31c174b276abaac82be56c06",
+  "native_map_id": 10,
+  "changes": [
+    "Added native Map010 events 25-28 for guard and male Nidoran overworld actors, initial and persistent post-escort positions",
+    "Replaced arrival event23 instant-arrival script with native 10-step guard and 8-step Nidoran move routes and wait commands",
+    "Arrival switch 994 now requires ShatteredViridian.complete_route! to confirm both actors reached Center",
+    "Failed route leaves arrival uncleared and erases autorun until next map setup to avoid infinite retry",
+    "Only Map010 native bytes changed; original tiles and unrelated 23 events preserved"
+  ],
+  "verification": {
+    "private_native_marshal_roundtrip": true,
+    "native_tile_and_existing_event_collision_check": true,
+    "original_map_tiles_preserved": true,
+    "unrelated_native_events_preserved": true,
+    "private_zip_integrity": true,
+    "ruby_source_tests": "5 tests, 33 assertions passed locally",
+    "github_ci_latest": "pending at receipt creation",
+    "native_essentials_engine_playthrough": false,
+    "android_playthrough": false
+  },
+  "limitations": [
+    "City still uses original v0.4 Viridian geometry rather than the final walled-city conversion",
+    "NPC 07 is a provisional pre-existing private guard sprite, not verified final guard art",
+    "Actual NPC animation, weather, normal save/Continue and device gameplay remain unverified",
+    "Private Pokémon assets and native game project must not be uploaded to GitHub"
+  ]
+}
