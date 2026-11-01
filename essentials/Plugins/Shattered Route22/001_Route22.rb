@@ -84,6 +84,16 @@ module ShatteredRoute22
         request_map_refresh
         return true
       end
+      # Essentials v21.1 heals the party after a canLose loss/draw (decisions
+      # 2/5), but Shattered's stamina lives on PokemonGlobal, not the Pokemon.
+      # Restore HUMAN stamina as well or repeated mandatory defeats can leave
+      # a fully healed HUMAN unable to use any techniques on the next attempt.
+      # Do not grant free stamina after escape, abort or capture violations.
+      if [2, 5].include?(decision)
+        player.party.each do |member|
+          Shattered.restore_stamina(member) if Shattered.human?(member)
+        end
+      end
       # A result of 4 is an explicit violation of the no-capture acceptance gate.
       @last_capture_violation = (decision == 4)
       false
