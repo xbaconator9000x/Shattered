@@ -42,7 +42,13 @@ module ShatteredNativeMapPreviewExport
     File.write(metadata, JSON.pretty_generate({
       'map_id' => map_id, 'width' => width, 'height' => height,
       'tileset_name' => name, 'tileset_path' => graphic.to_s,
-      'events' => map.events.sort.map { |id, e| { 'id' => id, 'x' => e.x, 'y' => e.y, 'name' => e.name.to_s } }
+      'events' => map.events.sort.map { |id, e|
+        graphic = e.pages&.first&.graphic
+        { 'id' => id, 'x' => e.x, 'y' => e.y, 'name' => e.name.to_s,
+          'character_name' => graphic&.character_name.to_s,
+          'direction' => graphic&.direction || 2,
+          'pattern' => graphic&.pattern || 0 }
+      }
     }) + "\n")
     metadata
   end
