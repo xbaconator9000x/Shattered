@@ -62,6 +62,15 @@ def _INTL(message); message; end
 load File.expand_path("../essentials/Plugins/Shattered Route22/001_Route22.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Route22/002_Install.rb", __dir__)
 
+# Match the real Essentials v21.1 Pokemon#able? contract for the compact
+# party symbols used by these isolated tests. RATTATA represents a healthy
+# non-HUMAN companion; HUMAN can be fainted independently.
+class Symbol
+  def able?
+    self == :RATTATA || (self == :HUMAN && $human_able != false)
+  end
+end
+
 class Route22TestPlayer
   attr_reader :x, :y
   def initialize(x, y)
@@ -78,6 +87,7 @@ class Route22BattleTest < Minitest::Test
     $game_variables=Hash.new(0)
     $game_switches=Hash.new(false)
     $player=OpenStruct.new(:party=>[:HUMAN], :able_pokemon_count=>1)
+    $human_able=true
     $game_map=OpenStruct.new(:need_refresh=>false)
     $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false; $stamina_restores=[]
   end
@@ -116,6 +126,32 @@ class Route22BattleTest < Minitest::Test
     assert_empty $rules
     $player.able_pokemon_count = 1
     assert ShatteredRoute22.encounter(91, 92)
+  end
+
+  def test_fainted_human_cannot_bypass_first_human_battle_with_companion
+    $human_able = false
+    $player.party = [:HUMAN, :RATTATA]
+    $player.able_pokemon_count = 1
+    $battle_outcome = 1
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.cleared?
+    refute $game_switches[92]
+    assert_empty $battle_calls
+    assert_empty $rules
+    $human_able = true
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, $battle_calls.length
+  end
+
+  def test_non_human_party_lead_cannot_clear_mandatory_first_human_battle
+    $player.party = [:RATTATA, :HUMAN]
+    $player.able_pokemon_count = 2
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.cleared?
+    assert_empty $battle_calls
+    $player.party = [:HUMAN, :RATTATA]
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, $battle_calls.length
   end
 
   def test_nonvictory_remains_mandatory
