@@ -64,7 +64,7 @@ module ShatteredPrivateViridianEscort
   def move_route(steps)
     route = RPG::MoveRoute.new
     route.repeat = false
-    route.skippable = false
+    route.skippable = true # dynamic obstacles must not freeze the escort autorun
     route.list = steps.map { |code| RPG::MoveCommand.new(code) } + [RPG::MoveCommand.new(0)]
     route
   end
