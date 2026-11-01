@@ -201,13 +201,40 @@ class MurkrowRescueTest < Minitest::Test
     assert ShatteredMurkrowRescue.state(@store)[:flags][:murkrow_recruited]
   end
 
-  def test_existing_murkrow_is_not_duplicated_after_interrupted_recruitment
+  def test_unrelated_murkrow_cannot_be_adopted_as_quest_reward
     ready_to_befriend
     existing = Pokemon.new(:MURKROW, 5)
     @player.party << existing
-
-    assert_same existing, ShatteredMurkrowRescue.recruit!(@player, @store)
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.recruit!(@player, @store)
+    end
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:murkrow_recruited]
+    assert_equal :befriending, ShatteredMurkrowRescue.state(@store)[:stage]
     assert_equal 1, @player.party.count { |pokemon| pokemon.species == :MURKROW }
+  end
+
+  def test_tagged_murkrow_recovers_after_interrupted_save_without_duplication
+    ready_to_befriend
+    friend = Pokemon.new(:MURKROW, 5)
+    friend.instance_variable_set(ShatteredMurkrowRescue::RECRUIT_TAG, ShatteredMurkrowRescue::VERSION)
+    @player.party << friend
+    restored = Marshal.load(Marshal.dump(@store))
+    assert_same friend, ShatteredMurkrowRescue.recruit!(@player, restored)
+    assert ShatteredMurkrowRescue.state(restored)[:flags][:murkrow_recruited]
+    assert_equal :recruited, ShatteredMurkrowRescue.state(restored)[:stage]
+    assert_equal 1, @player.party.count { |pokemon| pokemon.species == :MURKROW }
+  end
+
+  def test_missing_tagged_reward_does_not_adopt_an_unrelated_murkrow
+    ready_to_befriend
+    friend = ShatteredMurkrowRescue.recruit!(@player, @store)
+    assert ShatteredMurkrowRescue.tagged_murkrow?(friend)
+    @player.party.delete(friend)
+    @player.party << Pokemon.new(:MURKROW, 5)
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.recruit!(@player, @store)
+    end
+    assert_equal :recruited, ShatteredMurkrowRescue.state(@store)[:stage]
   end
 
   def test_complete_native_event_recruits_and_rewards_once
@@ -231,11 +258,30 @@ class MurkrowRescueTest < Minitest::Test
     assert_equal 1, $reward_count
   end
 
+  def test_failed_wild_rescue_restores_human_stamina_only_after_loss_or_draw
+    human = @player.party.first
+    [2, 5].each do |decision|
+      @store.instance_variable_set(:@shattered_stamina, 0)
+      $confirm_results = [true]
+      $battle_results = [decision]
+      refute ShatteredMurkrowRescue.run_event(runtime_plan)
+      assert_equal Shattered.max_stamina(human.level), Shattered.stamina(human, @store)
+      assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    end
+    [0, 3, 4].each do |decision|
+      @store.instance_variable_set(:@shattered_stamina, 0)
+      $confirm_results = [true]
+      $battle_results = [decision]
+      refute ShatteredMurkrowRescue.run_event(runtime_plan)
+      assert_equal 0, Shattered.stamina(human, @store)
+    end
+  end
+
   def test_wild_rescue_battle_enforces_no_pokeballs
     $confirm_results = [true, true]
     $battle_results = [1]
     assert ShatteredMurkrowRescue.run_event(runtime_plan)
-    assert_equal ["disablePokeBalls"], $battle_rules
+    assert_equal ["disablePokeBalls", "canLose"], $battle_rules
   end
 
   def test_failed_battle_rule_does_not_start_rescue_or_complete_it
@@ -272,7 +318,7 @@ class MurkrowRescueTest < Minitest::Test
       assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
       refute ShatteredMurkrowRescue.state(@store)[:flags][:battle_won]
       assert_equal 0, $reward_count
-      assert_equal ["disablePokeBalls"], $battle_rules
+      assert_equal ["disablePokeBalls", "canLose"], $battle_rules
     end
   end
 
