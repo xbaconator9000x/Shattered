@@ -1,0 +1,63 @@
+{
+  "kind": "actual_pinned_essentials_interpreter_offline_route22_probe",
+  "date": "2026-11-02",
+  "source_pr": 59,
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "private_candidate_filename": "Shattered_Essentials_HnS_Route22_AbleHuman_v015_Candidate.zip",
+  "private_candidate_sha256": "b3d12fe6e953a9459ae3db11d52c506011e3d84c3b92261cd2ce432b914c127f",
+  "native_map016_sha256": "173b4560718fbf9d46df1ecf2bc52c181cbbeaada38f2846381114c66f02f2c3",
+  "engine_scripts_sha256": {
+    "Interpreter": "b2f4c542a1542a5908d1208b87eae05d8b6f6ec0d26df1835871595842ed0355",
+    "Interpreter_Commands": "ec927a007bee1889223dbc8b3de115f062a5308ab4410f87dab965eef3032561"
+  },
+  "actual_execution": "Exact Essentials v21.1 Interpreter/Interpreter_Commands source was SHA-verified, decompressed and evaluated against native Map016 event #4 commands. Battle outcome and quest-cleared state were stubbed; no battle engine/game loop ran.",
+  "scenarios": [
+    {
+      "name": "not_cleared_battle_fails",
+      "battle_invocations": 1,
+      "transferred": false,
+      "return_to_entry": [
+        16,
+        29,
+        17
+      ]
+    },
+    {
+      "name": "not_cleared_battle_wins",
+      "battle_invocations": 1,
+      "transferred": true,
+      "destination": [
+        10,
+        25,
+        20
+      ]
+    },
+    {
+      "name": "previously_cleared",
+      "battle_invocations": 0,
+      "transferred": true,
+      "destination": [
+        10,
+        25,
+        20
+      ]
+    }
+  ],
+  "local_regressions": {
+    "tests": 7,
+    "assertions": 7,
+    "failures": 0,
+    "errors": 0
+  },
+  "local_probe_json_sha256": "fd7dcdc3645a7842c2649b472b3f38d0297f31966e3e26d78caa85bc85d8d2f9",
+  "validation_scope": {
+    "native_interpreter_branch": true,
+    "actual_battle": false,
+    "actual_map_walk": false,
+    "save_reload": false,
+    "android": false,
+    "visual_parity": false
+  },
+  "source_assets_uploaded": false,
+  "next_acceptance": "Run actual mkxp-z game: New Game/HUMAN -> gate collapse -> Aipom key -> Route22 battle failure and retry -> Viridian transfer -> normal Save/Continue."
+}
