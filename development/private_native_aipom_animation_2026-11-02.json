@@ -28,7 +28,8 @@
     "victory_road_ci": "https://github.com/xbaconator9000x/Shattered/actions/runs/41343112992",
     "combined_ci": "https://github.com/xbaconator9000x/Shattered/actions/runs/41343112959",
     "private_zip_integrity": "7735 ZIP entries, no CRC errors",
-    "unrelated_compiled_plugins": "8 entries byte-for-byte unchanged"
+    "unrelated_compiled_plugins": "8 entries byte-for-byte unchanged",
+    "private_offline_compiled_event": "PASS: actual native Map223 Aipom script evaluated through extracted Essentials v21.1 Interpreter#get_character(0) against compiled Shattered Gate Story 0.2.1; first key award, repeat idempotence and Marshal state/bag reload passed. Graphics pbExclaim and character turn were stubbed; NOT mkxp-z gameplay or real Game.save."
   },
   "acceptance": {
     "source_implemented": true,
