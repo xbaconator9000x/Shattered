@@ -11,6 +11,12 @@ module ShatteredMurkrowRescue
   ITEM_PATTERN = /\A[A-Z][A-Z0-9_]*\z/
   SYMBOL_PATTERN = /\A[A-Z][A-Z0-9_]*\z/
   STATE_IVAR = :@shattered_murkrow_rescue
+  RECRUIT_TAG = :@shattered_murkrow_rescue_award
+
+  def self.tagged_murkrow?(pokemon)
+    pokemon && pokemon.respond_to?(:species) && pokemon.species == SPECIES &&
+      pokemon.instance_variable_get(RECRUIT_TAG) == VERSION
+  end
 
   class InvalidState < StandardError; end
 
@@ -94,6 +100,9 @@ module ShatteredMurkrowRescue
     value
   end
 
+  # A species match is NOT evidence of this quest's reward. Without a tag,
+  # an unrelated Murkrow can be silently adopted and the rescue skipped.
+  # Tag the actual befriended Pokemon before committing the saved quest flag.
   def self.recruit!(player = nil, store = nil)
     player ||= (defined?($player) ? $player : nil)
     value = state(store)
@@ -101,27 +110,27 @@ module ShatteredMurkrowRescue
     party = player.party
     friends = party.select { |pokemon| pokemon.respond_to?(:species) && pokemon.species == SPECIES }
     raise InvalidState, "Multiple Murkrow already exist in the party" if friends.length > 1
+    tagged = friends.select { |pokemon| tagged_murkrow?(pokemon) }
     if value[:flags][:murkrow_recruited]
-      return friends.first || false
+      raise InvalidState, "Tagged Murkrow rescue companion missing" if tagged.empty?
+      return tagged.first
     end
     return false unless value[:stage] == :befriending
-    if friends.first
+    if tagged.any?
+      # Recover only a tagged companion from an interrupted save, never a
+      # random Murkrow already travelling with the player.
       value[:flags][:murkrow_recruited] = true
       value[:stage] = :recruited
-      return friends.first
+      return tagged.first
     end
+    raise InvalidState, "Unrelated Murkrow cannot be adopted as rescue reward" if friends.any?
     return false if party.length >= 6
     raise "Shattered Core befriending API unavailable" unless
       defined?(Shattered) && Shattered.respond_to?(:befriend)
-    begin
-      friend = Shattered.befriend(SPECIES, 5, player)
-    rescue StandardError
-      friend = party.find { |pokemon| pokemon.respond_to?(:species) && pokemon.species == SPECIES }
-      raise unless friend
-    end
-    return false unless friend && party.include?(friend) && friend.species == SPECIES
-    friends = party.select { |pokemon| pokemon.respond_to?(:species) && pokemon.species == SPECIES }
-    raise InvalidState, "Befriending created duplicate Murkrow" unless friends.length == 1
+    friend = Shattered.befriend(SPECIES, 5, player)
+    raise InvalidState, "Befriending did not create a new Murkrow" unless
+      friend && party.include?(friend) && friend.species == SPECIES
+    friend.instance_variable_set(RECRUIT_TAG, VERSION)
     value[:flags][:murkrow_recruited] = true
     value[:stage] = :recruited
     friend
@@ -213,11 +222,24 @@ module ShatteredMurkrowRescue
       raise "Essentials no-capture battle rule unavailable" unless
         rules.respond_to?(:setBattleRule, true)
       rules.send(:setBattleRule, "disablePokeBalls")
+      # A failed rescue must return to the overworld for a retry rather than
+      # ending the run at Game Over. This also lets Essentials restore HP.
+      rules.send(:setBattleRule, "canLose")
     end
     # start_core returns the actual Essentials decision (1 victory, 2 loss,
     # 3 escape, 4 capture, 5 draw). WildBattle.start returns true for escape
     # and capture as well as victory, so never use its boolean for quest flags.
-    receiver.start_core(*arguments) == 1
+    decision = receiver.start_core(*arguments)
+    # Essentials restores HP on canLose loss/draw, but HUMAN stamina is saved
+    # separately. Mirror the mandatory Route 22 retry recovery contract.
+    if battle["hook"] == "WildBattle.start_core" && [2, 5].include?(decision) &&
+       defined?(Shattered) && Shattered.respond_to?(:restore_stamina) &&
+       defined?($player) && $player && $player.respond_to?(:party)
+      $player.party.each do |member|
+        Shattered.restore_stamina(member) if Shattered.human?(member)
+      end
+    end
+    decision == 1
   end
 
   # New native events pass a reviewed Ruby Hash directly. Legacy JSON event
