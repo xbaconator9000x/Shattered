@@ -111,6 +111,32 @@ module ShatteredHnSEastWalkway
     }
   end
 
+  # The reciprocal native door must exist at the actual HnS landing. A
+  # correct Map223 transfer alone cannot prove the player can enter Route22
+  # or return to the Reception Gate after a save/Continue.
+  def verify_route22_landing!(route, tilesets)
+    check!(route.is_a?(RPG::Map) && route.instance_variable_get(:@width) == 54 &&
+           route.instance_variable_get(:@height) == 34, "wrong native Route22 dimensions")
+    events = route.instance_variable_get(:@events)
+    door = events[1] if events.is_a?(Hash)
+    check!(door && door.instance_variable_get(:@name) == 'Plateau Gate Door' &&
+           [door.instance_variable_get(:@x), door.instance_variable_get(:@y)] == [14, 9],
+           "Route22 return door missing or displaced")
+    pages = door.instance_variable_get(:@pages)
+    check!(pages && pages.first && pages.first.trigger == 1,
+           "Route22 return door no longer activates on player touch")
+    transfers = pages.first.list.select { |cmd| cmd.code == 201 }
+    check!(transfers.length == 1 &&
+           transfers.first.parameters == [0, 223, 19, 9, 4, 0],
+           "Route22 return door does not lead to the reviewed Gate landing")
+    tileset = tilesets[route.instance_variable_get(:@tileset_id)]
+    check!(tileset.is_a?(RPG::Tileset), "Route22 native tileset missing")
+    check!(tile_passable?(route, tileset, 14, 10, 8) &&
+           tile_passable?(route, tileset, 14, 9, 2),
+           "Route22 landing or return-door approach is blocked")
+    true
+  end
+
   def run!(project, expected_map_sha256, expected_tilesets_sha256)
     root = Pathname.new(project)
     check!(root.directory? && !(root.symlink?) &&
@@ -127,8 +153,14 @@ module ShatteredHnSEastWalkway
     map = Marshal.load(map_path.binread)
     tilesets = Marshal.load(tilesets_path.binread)
     result = audit!(map, tilesets)
+    route_path = root / 'Data/Map016.rxdata'
+    check!(route_path.file? && !route_path.symlink?, "missing private Route22 native map")
+    route = Marshal.load(route_path.binread)
+    verify_route22_landing!(route, tilesets)
     result.merge('native_map_sha256' => expected_map_sha256,
-                 'native_tilesets_sha256' => expected_tilesets_sha256)
+                 'native_tilesets_sha256' => expected_tilesets_sha256,
+                 'route22_native_sha256' => Digest::SHA256.file(route_path).hexdigest,
+                 'route22_landing_and_return_door_preflight' => true)
   end
 end
 
