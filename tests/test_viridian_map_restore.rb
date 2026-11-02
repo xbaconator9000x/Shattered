@@ -101,4 +101,54 @@ class ViridianMapRestoreTest < Minitest::Test
     assert_raises(RuntimeError) { ShatteredViridian.reconcile_on_map_restore }
     assert $game_switches[994]
   end
+  def test_native_autorun_progression_refreshes_active_map_pages
+    # Pinned Essentials Game_Switches#[]= does not set need_refresh.
+    assert ShatteredViridian.start!(993, 996)
+    assert $game_map.need_refresh, "arrival autorun must refresh after switch 993"
+    $game_map.need_refresh = false
+    assert ShatteredViridian.arrive!(994)
+    assert $game_map.need_refresh, "city autorun must switch to its completed page"
+    $game_map.need_refresh = false
+    assert ShatteredViridian.center!(995, 996)
+    assert $game_map.need_refresh, "Center autorun must switch to its completed page"
+    assert $game_switches[995]
+    refute $game_switches[996]
+  end
+
+  def test_repeated_transitions_do_not_force_unnecessary_refresh
+    ShatteredViridian.start!(993, 996)
+    ShatteredViridian.arrive!(994)
+    ShatteredViridian.center!(995, 996)
+    $game_map.need_refresh = false
+    refute ShatteredViridian.start!(993, 996)
+    refute ShatteredViridian.arrive!(994)
+    refute ShatteredViridian.center!(995, 996)
+    refute $game_map.need_refresh
+  end
+
+  def test_center_refuses_premature_entry_until_both_escort_actors_arrive
+    ShatteredViridian.start!(993, 996)
+    $game_map.need_refresh = false
+    refute ShatteredViridian.center!(995, 996)
+    refute ShatteredViridian.state[:center]
+    refute $game_switches[995]
+    assert $game_switches[996]
+    refute $game_map.need_refresh
+    ShatteredViridian.arrive!(994)
+    assert ShatteredViridian.center!(995, 996)
+  end
+
+  def test_stale_native_switches_are_repaired_and_refreshed
+    ShatteredViridian.start!(993, 996)
+    ShatteredViridian.arrive!(994)
+    ShatteredViridian.center!(995, 996)
+    $game_map.need_refresh = false
+    $game_switches[995] = false
+    $game_switches[996] = true
+    refute ShatteredViridian.center!(995, 996)
+    assert $game_map.need_refresh
+    assert $game_switches[995]
+    refute $game_switches[996]
+  end
+
 end
