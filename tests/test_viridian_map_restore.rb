@@ -101,6 +101,28 @@ class ViridianMapRestoreTest < Minitest::Test
     assert_raises(RuntimeError) { ShatteredViridian.reconcile_on_map_restore }
     assert $game_switches[994]
   end
+  def test_impossible_saved_escort_or_center_progression_fails_closed
+    # A partial/corrupted save must not unlock the Center, end the rain, or
+    # make Beedrill available before the guard/Nidoran escort completed.
+    [
+      { started: false, arrived: true, center: false },
+      { started: true, arrived: false, center: true },
+      { started: false, arrived: false, center: true }
+    ].each do |progression|
+      $PokemonGlobal = Object.new
+      $PokemonGlobal.instance_variable_set(:@shattered_viridian_entry,
+        { version: 1 }.merge(progression))
+      $game_switches = Hash.new(false)
+      $game_switches[994] = true
+      $game_switches[996] = true
+      $game_map.need_refresh = false
+      before = [993, 994, 995, 996].map { |id| $game_switches[id] }
+      assert_raises(RuntimeError) { ShatteredViridian.reconcile_on_map_restore }
+      assert_equal before, [993, 994, 995, 996].map { |id| $game_switches[id] }
+      refute $game_map.need_refresh
+    end
+  end
+
   def test_native_autorun_progression_refreshes_active_map_pages
     # Pinned Essentials Game_Switches#[]= does not set need_refresh.
     assert ShatteredViridian.start!(993, 996)
