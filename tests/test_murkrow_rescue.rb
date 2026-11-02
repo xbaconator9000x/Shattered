@@ -350,6 +350,24 @@ class MurkrowRescueTest < Minitest::Test
     assert_equal 1, @player.party.length
   end
 
+  def test_murkrow_setup_failure_clears_queued_rules_and_preserves_retry
+    temp = Object.new
+    temp.instance_variable_set(:@clear_count, 0)
+    temp.define_singleton_method(:clear_battle_rules) { @clear_count += 1 }
+    temp.define_singleton_method(:clear_count) { @clear_count }
+    $game_temp = temp
+    $confirm_results = [true]
+    $battle_results = [:raise]
+    refute ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal 1, temp.clear_count
+    assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:battle_won]
+    $confirm_results = [true, true]
+    $battle_results = [1]
+    assert ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal 1, temp.clear_count, "successful battle should retain engine-owned rule lifecycle"
+  end
+
   def test_event_battle_loss_or_abort_can_be_retried
     $confirm_results = [true, true, true]
     $battle_results = [2, :raise, 1]
