@@ -43,6 +43,23 @@ class PrivateOpeningConvergenceTest < Minitest::Test
       File.open(gate_source, 'ab') { |f| f.write('# tampered') }
       error = assert_raises(RuntimeError) { V.verify!(dir) }
       assert_match(/Source Git blob mismatch/, error.message)
+      FileUtils.cp(File.join(source, 'Plugins/Shattered Gate Story/001_GateStory.rb'), gate_source)
+      archive_path = File.join(dir, 'Data/PluginScripts.rxdata')
+      entries = Marshal.load(File.binread(archive_path))
+      compiled = entries.find { |entry| entry[0] == 'Shattered Route22' }
+      compiled[2][0][1] = Zlib::Deflate.deflate('# stale compiled script')
+      File.binwrite(archive_path, Marshal.dump(entries))
+      error = assert_raises(RuntimeError) { V.verify!(dir) }
+      assert_match(/Stale compiled source/, error.message)
+      FileUtils.cp(File.join(source, 'Data/PluginScripts.rxdata'), archive_path)
+      gate_map_path = File.join(dir, 'Data/Map223.rxdata')
+      gate = Marshal.load(File.binread(gate_map_path))
+      north_a = V.commands(gate.events[2]).find { |command| command.code == 201 }
+      north_b = V.commands(gate.events[3]).find { |command| command.code == 201 }
+      north_b.parameters[2, 2] = north_a.parameters[2, 2]
+      File.binwrite(gate_map_path, Marshal.dump(gate))
+      error = assert_raises(RuntimeError) { V.verify!(dir) }
+      assert_match(/north exits collapse/, error.message)
     end
   end
 end
