@@ -89,6 +89,35 @@ class ReceptionGateConversionTest(unittest.TestCase):
         self.assertEqual([15, 0, 0], output["tileset_tables"]["384"])
         self.assertEqual(5, len(output["warps"]))
 
+    def test_two_north_doors_keep_distinct_native_landings(self):
+        self.mapping["per_warp_destinations"] = {
+            "10,1": {"map_id": 224, "x": 29, "y": 47, "direction": 8},
+            "11,1": {"map_id": 224, "x": 30, "y": 46, "direction": 8},
+        }
+        self.mapping["require_distinct_warp_landings"] = True
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        output = convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+        north = {(w["x"], w["y"]): w["target"] for w in output["warps"]
+                 if w["direction"] == "north"}
+        self.assertEqual((224, 29, 47), tuple(north[(10, 1)][key]
+            for key in ("map_id", "x", "y")))
+        self.assertEqual((224, 30, 46), tuple(north[(11, 1)][key]
+            for key in ("map_id", "x", "y")))
+
+    def test_duplicate_north_landings_fail_closed_in_strict_mode(self):
+        self.mapping["require_distinct_warp_landings"] = True
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "distinct native landing"):
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+
+    def test_unknown_source_warp_override_rejected(self):
+        self.mapping["per_warp_destinations"] = {
+            "15,15": {"map_id": 224, "x": 29, "y": 47, "direction": 8},
+        }
+        self.mapping_json.write_text(json.dumps(self.mapping))
+        with self.assertRaisesRegex(ValueError, "unknown source coordinate"):
+            convert(self.map_json, self.layouts_json, self.map_bin, self.mapping_json)
+
     def test_missing_metatile_mapping_is_rejected(self):
         self.map_bin.write_bytes(struct.pack("<462H", *([0x0409] * 462)))
         with self.assertRaisesRegex(ValueError, "missing tile mapping entry 9:1:0"):
