@@ -5,6 +5,27 @@ require_relative '../scripts/verify_private_hns_east_path'
 class HnSEastWalkwayTest < Minitest::Test
   V = ShatteredHnSEastWalkway
 
+  # audit_native_project intentionally defines only empty Marshal-compatible
+  # RMXP classes. Use raw ivars, just as actual native deserialization does.
+  def command_fixture(code, indent, parameters)
+    command = RPG::EventCommand.allocate
+    command.instance_variable_set(:@code, code)
+    command.instance_variable_set(:@indent, indent)
+    command.instance_variable_set(:@parameters, parameters)
+    command
+  end
+
+  def page_fixture(trigger, commands, through: false, graphic: '')
+    page = RPG::Event::Page.allocate
+    page.instance_variable_set(:@trigger, trigger)
+    page.instance_variable_set(:@through, through)
+    page.instance_variable_set(:@list, commands)
+    sprite = RPG::Event::Page::Graphic.allocate
+    sprite.instance_variable_set(:@character_name, graphic)
+    page.instance_variable_set(:@graphic, sprite)
+    page
+  end
+
   def table(width, height = 1, depth = 1, initial = 0)
     count = width * height * depth
     Table._load([3, width, height, depth, count].pack('V5') +
@@ -28,28 +49,23 @@ class HnSEastWalkwayTest < Minitest::Test
       event = RPG::Event.allocate
       event.instance_variable_set(:@x, x)
       event.instance_variable_set(:@y, y)
-      page = RPG::Event::Page.new
       if id == 6
-        page.trigger = 0
-        page.list = [
-          RPG::EventCommand.new(355, 0,
+        page = page_fixture(0, [
+          command_fixture(355, 0,
             ['ShatteredGateStory.run_aipom("Cries/AIPOM", get_character(0))']),
-          RPG::EventCommand.new(0, 0, [])
-        ]
+          command_fixture(0, 0, [])
+        ])
       else
-        page.trigger = 0
-        page.through = false
-        page.graphic.character_name = 'doors1'
-        page.list = [
-          RPG::EventCommand.new(111, 0, [12, 'ShatteredGateStory.key_obtained?']),
-          RPG::EventCommand.new(101, 1, ['The eastern Kanto door unlocks.']),
-          RPG::EventCommand.new(201, 1, [0, 16, 14, 10, 2, 0]),
-          RPG::EventCommand.new(411, 0, []),
-          RPG::EventCommand.new(101, 1,
+        page = page_fixture(0, [
+          command_fixture(111, 0, [12, 'ShatteredGateStory.key_obtained?']),
+          command_fixture(101, 1, ['The eastern Kanto door unlocks.']),
+          command_fixture(201, 1, [0, 16, 14, 10, 2, 0]),
+          command_fixture(411, 0, []),
+          command_fixture(101, 1,
             ['The eastern Route 22 door is locked. You need the key.']),
-          RPG::EventCommand.new(412, 0, []),
-          RPG::EventCommand.new(0, 0, [])
-        ]
+          command_fixture(412, 0, []),
+          command_fixture(0, 0, [])
+        ], graphic: 'doors1')
       end
       event.instance_variable_set(:@pages, [page])
       events[id] = event
@@ -76,12 +92,10 @@ class HnSEastWalkwayTest < Minitest::Test
     door.instance_variable_set(:@name, 'Plateau Gate Door')
     door.instance_variable_set(:@x, 14)
     door.instance_variable_set(:@y, 9)
-    page = RPG::Event::Page.new
-    page.trigger = 1
-    page.list = [
-      RPG::EventCommand.new(201, 0, [0, 223, 19, 9, 4, 0]),
-      RPG::EventCommand.new(0, 0, [])
-    ]
+    page = page_fixture(1, [
+      command_fixture(201, 0, [0, 223, 19, 9, 4, 0]),
+      command_fixture(0, 0, [])
+    ])
     door.instance_variable_set(:@pages, [page])
     route.instance_variable_set(:@events, { 1 => door })
     [route, tilesets]
@@ -90,16 +104,16 @@ class HnSEastWalkwayTest < Minitest::Test
   def test_route22_landing_and_reciprocal_gate_door
     route, tilesets = route22_and_tilesets
     assert V.verify_route22_landing!(route, tilesets)
-    route.instance_variable_get(:@events)[1].pages.first.list.first.parameters[1] = 222
+    route.instance_variable_get(:@events)[1].instance_variable_get(:@pages).first.instance_variable_get(:@list).first.instance_variable_get(:@parameters)[1] = 222
     assert_raises(RuntimeError) { V.verify_route22_landing!(route, tilesets) }
   end
 
   def test_route22_wrong_return_trigger_and_blocked_landing_fail_closed
     route, tilesets = route22_and_tilesets
-    door = route.instance_variable_get(:@events)[1].pages.first
-    door.trigger = 0
+    door = route.instance_variable_get(:@events)[1].instance_variable_get(:@pages).first
+    door.instance_variable_set(:@trigger, 0)
     assert_raises(RuntimeError) { V.verify_route22_landing!(route, tilesets) }
-    door.trigger = 1
+    door.instance_variable_set(:@trigger, 1)
     passage = tilesets[1].instance_variable_get(:@passages)
     bytes = passage.instance_variable_get(:@bytes).dup
     bytes[20 + 384 * 2, 2] = [15].pack('s<')
@@ -139,31 +153,31 @@ class HnSEastWalkwayTest < Minitest::Test
 
   def test_wrong_route22_destination_or_unguarded_key_fails_closed
     map, tilesets = map_and_tilesets
-    door = map.instance_variable_get(:@events)[7].pages.first
-    door.list[2].parameters[1] = 10
+    door = map.instance_variable_get(:@events)[7].instance_variable_get(:@pages).first
+    door.instance_variable_get(:@list)[2].instance_variable_get(:@parameters)[1] = 10
     assert_raises(RuntimeError) { V.audit!(map, tilesets) }
-    door.list[2].parameters[1] = 16
-    door.list[0].parameters[1] = 'true'
+    door.instance_variable_get(:@list)[2].instance_variable_get(:@parameters)[1] = 16
+    door.instance_variable_get(:@list)[0].instance_variable_get(:@parameters)[1] = 'true'
     assert_raises(RuntimeError) { V.audit!(map, tilesets) }
   end
 
   def test_east_door_must_be_solid_action_button_with_locked_response
     map, tilesets = map_and_tilesets
-    door = map.instance_variable_get(:@events)[7].pages.first
-    door.trigger = 1
+    door = map.instance_variable_get(:@events)[7].instance_variable_get(:@pages).first
+    door.instance_variable_set(:@trigger, 1)
     assert_raises(RuntimeError) { V.audit!(map, tilesets) }
-    door.trigger = 0
-    door.through = true
+    door.instance_variable_set(:@trigger, 0)
+    door.instance_variable_set(:@through, true)
     assert_raises(RuntimeError) { V.audit!(map, tilesets) }
-    door.through = false
-    door.list[4].parameters = ['Door is open.']
+    door.instance_variable_set(:@through, false)
+    door.instance_variable_get(:@list)[4].instance_variable_set(:@parameters, ['Door is open.'])
     assert_raises(RuntimeError) { V.audit!(map, tilesets) }
   end
 
   def test_aipom_must_retain_actual_key_award_interaction
     map, tilesets = map_and_tilesets
-    aipom = map.instance_variable_get(:@events)[6].pages.first
-    aipom.list[0].parameters = ['pbMessage("placeholder")']
+    aipom = map.instance_variable_get(:@events)[6].instance_variable_get(:@pages).first
+    aipom.instance_variable_get(:@list)[0].instance_variable_set(:@parameters, ['pbMessage("placeholder")'])
     assert_raises(RuntimeError) { V.audit!(map, tilesets) }
   end
 end
