@@ -50,6 +50,36 @@ module ShatteredHnSEastWalkway
       tile_passable?(map, tileset, *to, 10 - direction)
   end
 
+  # A walkable corridor is not a working exit. Validate the actual native
+  # Action Button event and the key-gated interpreter branch as well as tiles.
+  # A misplaced transfer or an unconditional warp would otherwise pass this
+  # walkway-only preflight and be mistaken for opening-route acceptance.
+  def verify_east_door!(events)
+    aipom = events[6]
+    check!(aipom && aipom.pages.length == 1 &&
+           aipom.pages.first.trigger == 0 &&
+           aipom.pages.first.list.any? { |c|
+             c.code == 355 &&
+             c.parameters == ['ShatteredGateStory.run_aipom("Cries/AIPOM", get_character(0))']
+           }, "Aipom interaction missing or no longer grants the gate key")
+    door = events[7]
+    check!(door && door.pages.length == 1, "missing or ambiguous east-door event")
+    page = door.pages.first
+    commands = page.list
+    check!(page.trigger == 0 && page.through == false &&
+           page.graphic.character_name == 'doors1',
+           "east door is not a solid Action Button event")
+    check!(commands.map(&:code) == [111, 101, 201, 411, 101, 412, 0] &&
+           commands.map(&:indent) == [0, 1, 1, 0, 1, 0, 0],
+           "east-door conditional branch is malformed")
+    check!(commands[0].parameters == [12, 'ShatteredGateStory.key_obtained?'] &&
+           commands[2].parameters == [0, 16, 14, 10, 2, 0] &&
+           commands[4].parameters ==
+             ['The eastern Route 22 door is locked. You need the key.'],
+           "east-door key check, Route22 landing or locked response changed")
+    true
+  end
+
   def audit!(map, tilesets)
     check!(map.is_a?(RPG::Map) && map.instance_variable_get(:@width) == 22 &&
            map.instance_variable_get(:@height) == 21, "not native 22x21 Map223")
@@ -62,6 +92,7 @@ module ShatteredHnSEastWalkway
       check!(event && [event.instance_variable_get(:@x), event.instance_variable_get(:@y)] == coords,
              "event #{id} source position changed")
     end
+    verify_east_door!(events)
     check!(!PATH.include?([11, 7]) && !PATH.include?([20, 9]),
            "walkway crosses a solid native event")
     PATH.each_cons(2) do |from, to|
