@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_viridian_starter_mentor_source_checkpoint",
+  "date": "2026-11-02",
+  "base_candidate": "Shattered_Essentials_HnS_Combined_Gate_Route22_Murkrow_v025_Private_Candidate.zip",
+  "private_candidate": "Shattered_Essentials_HnS_Viridian_Starter_Mentor_v026_Private_Candidate.zip",
+  "private_candidate_sha256": "958b41c55e7d20a0ddd96e63d8e9ac72fda5c072914412df07012da52076a085",
+  "private_candidate_bytes": 160872295,
+  "private_zip_entries": 7737,
+  "changed_private_entries": [
+    "Data/Map015.rxdata"
+  ],
+  "native_source": {
+    "map_id": 15,
+    "map_name": "Viridian school",
+    "source_map_sha256": "d93611107f9f0a14372604ea5f2e585e7d18e2981626b75db374689d931f6860",
+    "tilesets_sha256": "9e6310a10b0cf0510b6d4d2b58fb2d7662f9d181d809164bec6cf7b3ec2af69b",
+    "source_teacher_event_id": 1,
+    "source_teacher_position": [
+      6,
+      2
+    ],
+    "source_sprite": "trainer_AROMALADY",
+    "installed_event_id": 9,
+    "installed_position": [
+      6,
+      5
+    ],
+    "event_name": "SHATTERED_DOJO:questionnaire",
+    "event_command": "ShatteredDojo.run_quiz"
+  },
+  "offline_private_checks": {
+    "native_rmxp_map_marshal_reload": true,
+    "teacher_event_preserved": true,
+    "native_tile_table_preserved": true,
+    "installer_idempotent": true,
+    "one_zip_entry_changed": true,
+    "full_game_playthrough": false,
+    "android_playthrough": false,
+    "original_dojo_story_parity": false
+  },
+  "limitations": [
+    "Provisional Viridian school mentor, not an assertion of original dojo layout or original questionnaire dialogue.",
+    "No mkxp-z executable or Android runner available in this environment; no actual interaction, starter recruitment or save/Continue observed.",
+    "Commercial/source-game map, sprite and compiled project remain private and are not included in GitHub."
+  ]
+}
