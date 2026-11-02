@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Shattered Core v0.2.3 — Pokémon Essentials 21.1.
+# Shattered Core v0.2.4 — Pokémon Essentials 21.1.
 # Does not override Pokemon#calc_stats. Battle hooks use Essentials v21.1 APIs.
 module Shattered
   HUMAN_SPECIES = :HUMAN
@@ -136,6 +136,51 @@ module Shattered
       return true if human?(human) && cost == 0
       return false unless store && cost && can_spend_stamina?(human, move, store)
       store.instance_variable_set(:@shattered_stamina, stamina(human, store) - cost)
+      true
+    end
+
+    # Essentials v21.1 has two native full-heal entry points. Trainer#heal_party
+    # is used by scripted healing, while Interpreter#command_314 calls
+    # pbEachPokemon directly when MECHANICS_GENERATION=8 (the pinned project).
+    # Neither normally touches the HUMAN stamina stored on PokemonGlobal.
+    def restore_player_stamina_after_healing(player)
+      return false unless player && player.respond_to?(:party) &&
+        defined?($PokemonGlobal) && $PokemonGlobal
+      human = player.party.find { |pkmn| human?(pkmn) }
+      return false unless human
+      restore_stamina(human)
+      true
+    end
+
+    def install_healing_hooks
+      if defined?(Trainer) && Trainer.method_defined?(:heal_party) &&
+         !Trainer.method_defined?(:shattered_core_original_heal_party)
+        Trainer.class_eval do
+          alias_method :shattered_core_original_heal_party, :heal_party
+          def heal_party(*args)
+            result = shattered_core_original_heal_party(*args)
+            if defined?($player) && equal?($player)
+              Shattered.restore_player_stamina_after_healing(self)
+            end
+            result
+          end
+        end
+      end
+      if defined?(Interpreter) && Interpreter.method_defined?(:command_314) &&
+         !Interpreter.method_defined?(:shattered_core_original_command_314)
+        Interpreter.class_eval do
+          alias_method :shattered_core_original_command_314, :command_314
+          def command_314(*args)
+            result = shattered_core_original_command_314(*args)
+            # Parameter 0 denotes Recover All for the player's party. This
+            # includes the Gen 8 pbEachPokemon path which bypasses Trainer.
+            if @parameters && @parameters[0] == 0 && defined?($player)
+              Shattered.restore_player_stamina_after_healing($player)
+            end
+            result
+          end
+        end
+      end
       true
     end
 
@@ -277,6 +322,7 @@ module Shattered
 end
 
 Shattered.install_lifecycle_hooks
+Shattered.install_healing_hooks
 if defined?(EventHandlers)
   EventHandlers.add(:on_game_map_setup, :shattered_core_ensure_human,
     proc { |*args| Shattered.ensure_human_if_player_available })
