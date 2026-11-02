@@ -15,6 +15,8 @@ on:
       - "tests/test_viridian_map_restore.rb"
       - "scripts/verify_private_opening_convergence.rb"
       - "tests/test_private_opening_convergence.rb"
+      - "scripts/verify_private_opening_walkability.rb"
+      - "tests/test_private_opening_walkability.rb"
       - "essentials/Plugins/Shattered Viridian/**"
       - ".github/workflows/route22-ci.yml"
 
@@ -43,5 +45,7 @@ jobs:
           ruby tests/test_viridian_map_restore.rb
           ruby -c scripts/verify_private_opening_convergence.rb
           ruby tests/test_private_opening_convergence.rb
+          ruby -c scripts/verify_private_opening_walkability.rb
+          ruby tests/test_private_opening_walkability.rb
           ruby -c scripts/verify_private_route22_viridian_guard.rb
           ruby tests/test_private_route22_viridian_guard.rb
