@@ -70,6 +70,47 @@ class PrivateOpeningConvergenceTest < Minitest::Test
     assert_raises(RuntimeError) { V.verify_center_arrival!(center) }
   end
 
+  def test_transfer_requires_scatter_even_if_ambush_tile_is_bypassed
+    route = RPG::Map.allocate
+    route.width = 54
+    route.height = 34
+    route.events = {}
+    warp = RPG::Event.new(32, 17)
+    warp.id = 4
+    warp.pages.first.trigger = 1
+    warp.pages.first.list = [
+      RPG::EventCommand.new(111, 0, [12,
+        'ShatteredRoute22.cleared? || (ShatteredRoute22.scatter! && ShatteredRoute22.encounter(991, 992))']),
+      RPG::EventCommand.new(101, 1, ['Proceed to Viridian']),
+      RPG::EventCommand.new(201, 1, [0, 10, 25, 20, 2, 0]),
+      RPG::EventCommand.new(411, 0, []),
+      RPG::EventCommand.new(355, 1, ['ShatteredRoute22.return_to_entry(16, 29, 17)']),
+      RPG::EventCommand.new(412, 0, []),
+      RPG::EventCommand.new(0, 0, [])
+    ]
+    route.events[4] = warp
+    [5, 6, 7].each do |id|
+      actor = RPG::Event.new(id + 26, 17)
+      actor.id = id
+      actor.name = "SHATTERED: Rattata scatter #{id - 4}"
+      actor.pages << RPG::Event::Page.new
+      actor.pages.last.condition.switch1_valid = true
+      actor.pages.last.condition.switch1_id = 992
+      route.events[id] = actor
+    end
+    assert V.verify_route22_transfer_scatter!(route)
+    warp.pages.first.list.first.parameters[1] =
+      'ShatteredRoute22.cleared? || ShatteredRoute22.encounter(991, 992)'
+    assert_raises(RuntimeError) { V.verify_route22_transfer_scatter!(route) }
+    warp.pages.first.list.first.parameters[1] =
+      'ShatteredRoute22.cleared? || (ShatteredRoute22.scatter! && ShatteredRoute22.encounter(991, 992))'
+    warp.pages.first.list[2].indent = 0
+    assert_raises(RuntimeError) { V.verify_route22_transfer_scatter!(route) }
+    warp.pages.first.list[2].indent = 1
+    route.events.delete(7)
+    assert_raises(RuntimeError) { V.verify_route22_transfer_scatter!(route) }
+  end
+
   def test_private_compiled_opening_and_rejects_source_tampering
     source = ENV['SHATTERED_PRIVATE_PROJECT']
     skip 'Private user-held game not present in public CI' unless source && File.directory?(source)
@@ -88,6 +129,7 @@ class PrivateOpeningConvergenceTest < Minitest::Test
       report = V.verify!(dir)
       assert_equal 5, report.fetch('checked_plugins').length
       assert report.fetch('center_autorun_requires_escort_arrival')
+      assert report.fetch('route22_warp_scatter_guarded')
       assert_equal 2, report.fetch('gate_north_landings').uniq.length
       refute report.fetch('native_game_launched')
       gate_source = File.join(dir, 'Plugins/Shattered Gate Story/001_GateStory.rb')
