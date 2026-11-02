@@ -58,14 +58,41 @@ module ShatteredRaid
         current_state = state
         sync_map_state(runtime_config, current_state)
         return false if current_state["completed"] || current_state["progression"] != index
+        # Essentials v21.1 can report a skipped wild battle as decision 1 when
+        # the party has no able Pokemon. It also chooses the FIRST able party
+        # member, so an unconscious HUMAN cannot be carried by a companion.
+        return false unless able_human_leads?
+        return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
+          defined?(Input::CTRL) && Input.press?(Input::CTRL)
         $game_variables[runtime_config["outcome_variable_id"]] = 0
         self.send(:setBattleRule, "disablePokeBalls")
+        # A lost raid encounter must return to the map for a retry, not end
+        # the game before its saved progression can be reconciled.
+        self.send(:setBattleRule, "canLose")
         self.send(:setBattleRule, "outcome", runtime_config["outcome_variable_id"])
         WildBattle.start(:BEEDRILL, runtime_config["events"][index]["level"])
-        return false unless $game_variables[runtime_config["outcome_variable_id"]] == OUTCOME_WON
-        new_state = write_state(nil, current_state["progression"] + 1)
-        sync_map_state(runtime_config, new_state)
-        true
+        decision = $game_variables[runtime_config["outcome_variable_id"]]
+        if decision == OUTCOME_WON
+          new_state = write_state(nil, current_state["progression"] + 1)
+          sync_map_state(runtime_config, new_state)
+          return true
+        end
+        # Essentials heals the party after canLose defeat/draw, but HUMAN
+        # stamina is stored on PokemonGlobal and must also be restored.
+        if [2, 5].include?(decision) && defined?(Shattered) &&
+           Shattered.respond_to?(:restore_stamina)
+          $player.party.each do |member|
+            Shattered.restore_stamina(member) if Shattered.human?(member)
+          end
+        end
+        false
+      rescue StandardError
+        # Rules are queued in Game_Temp and cleared by Essentials only once
+        # battle setup reaches its normal cleanup. A failed scene/foe generator
+        # otherwise leaks canLose/outcome/disablePokeBalls to the next battle.
+        temp = defined?($game_temp) ? $game_temp : nil
+        temp.clear_battle_rules if temp && temp.respond_to?(:clear_battle_rules)
+        raise
       ensure
         BATTLE_GUARD.synchronize { @battle_active = false } if acquired
       end
@@ -83,9 +110,13 @@ module ShatteredRaid
                           defined?($game_switches) && $game_switches
       saved_state = state
       return false unless saved_state["map_id"] == map_id && saved_state["switch_ids"]
+      changed = false
       saved_state["switch_ids"].each_with_index do |switch_id, index|
-        $game_switches[switch_id] = index < saved_state["progression"]
+        expected = index < saved_state["progression"]
+        changed ||= $game_switches[switch_id] != expected
+        $game_switches[switch_id] = expected
       end
+      request_map_refresh if changed
       true
     end
 
@@ -104,6 +135,19 @@ module ShatteredRaid
     end
 
     private
+
+    def request_map_refresh
+      map = defined?($game_map) ? $game_map : nil
+      map.need_refresh = true if map && map.respond_to?(:need_refresh=)
+    end
+
+    def able_human_leads?
+      player = defined?($player) ? $player : nil
+      return false unless player && player.respond_to?(:party) &&
+        player.respond_to?(:able_pokemon_count) && player.able_pokemon_count > 0
+      first_able = player.party.find { |pkmn| pkmn.respond_to?(:able?) && pkmn.able? }
+      first_able && Shattered.human?(first_able)
+    end
 
     def write_state(store, progression)
       store ||= defined?($PokemonGlobal) ? $PokemonGlobal : nil
@@ -178,9 +222,13 @@ module ShatteredRaid
       saved_state["map_id"] = config["map_id"]
       saved_state["switch_ids"] = switch_ids
       $PokemonGlobal.instance_variable_set(:@shattered_raid_state, saved_state)
+      changed = false
       config["events"].each_with_index do |entry, index|
-        $game_switches[entry["switch_id"]] = index < saved_state["progression"]
+        expected = index < saved_state["progression"]
+        changed ||= $game_switches[entry["switch_id"]] != expected
+        $game_switches[entry["switch_id"]] = expected
       end
+      request_map_refresh if changed
     end
 
     def install_staged_map(project_root, config, passability, failure_hook)
@@ -427,4 +475,12 @@ end
 if defined?(EventHandlers)
   EventHandlers.add(:on_game_map_setup, :shattered_raid_switch_sync,
     proc { |map_id, _map, _tileset| ShatteredRaid.sync_saved_state_for_map(map_id) })
+  # Continue can restore a saved MapFactory without Game_Map#setup. Reconcile
+  # before the first spriteset frame so completed Beedrill events stay hidden.
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_raid_continue_sync,
+    proc { |*args|
+      if defined?($game_map) && $game_map && $game_map.respond_to?(:map_id)
+        ShatteredRaid.sync_saved_state_for_map($game_map.map_id)
+      end
+    })
 end
