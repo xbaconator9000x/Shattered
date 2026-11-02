@@ -13,7 +13,8 @@ module ShatteredPrivateOpeningConvergence
     'Shattered Gate Story' => ['001_GateStory.rb', '2173092bd36d5f38379c4c3ffb3fe7fcd8f0dcf0', '0.2.3'],
     'Shattered Route22' => ['001_Route22.rb', '22e9d9ae71518e28f2210a649afdb8b710ba7bc9', '0.1.5'],
     'Shattered Murkrow Rescue' => ['001_Quest.rb', '30d370ddfe30edd94860f9de654dbeb718b93fa7', '0.1.3'],
-    'Shattered Raid' => ['001_Raid.rb', '414dfddd790e80a64c5fc842d5dbfcdeeacd0a81', '0.1.3']
+    'Shattered Raid' => ['001_Raid.rb', '414dfddd790e80a64c5fc842d5dbfcdeeacd0a81', '0.1.3'],
+    'Shattered Viridian' => ['001_Entry.rb', '7932d06e61f20f8357f696a6185600b003f49622', '0.1.2']
   }.freeze
   module_function
 
@@ -47,6 +48,23 @@ module ShatteredPrivateOpeningConvergence
     true
   end
 
+  def verify_center_arrival!(center)
+    raise 'Wrong native Viridian Center map' unless center.is_a?(RPG::Map) &&
+      [center.width, center.height] == [20, 15]
+    event = center.events[11]
+    raise 'Missing native Center first-visit event' unless event &&
+      event.name == 'SHATTERED_VIRIDIAN:center_first_visit' &&
+      [event.x, event.y] == [8, 7] && event.pages.length == 3
+    autorun, finished = event.pages[1, 2]
+    raise 'Center autorun bypasses escort arrival' unless autorun.trigger == 3 &&
+      autorun.condition.switch1_valid && autorun.condition.switch1_id == 994 &&
+      autorun.list.any? { |command| command.code == 355 &&
+        command.parameters == ['ShatteredViridian.center!(995, 996)'] }
+    raise 'Center completion page missing' unless finished.condition.switch1_valid &&
+      finished.condition.switch1_id == 995
+    true
+  end
+
   def verify!(root)
     root = File.realpath(root)
     require_file!(root, 'SHATTERED_STAGING_REPORT.json')
@@ -70,6 +88,7 @@ module ShatteredPrivateOpeningConvergence
     gate = Marshal.load(File.binread(require_file!(root, 'Data/Map223.rxdata')))
     route = Marshal.load(File.binread(require_file!(root, 'Data/Map016.rxdata')))
     city = Marshal.load(File.binread(require_file!(root, 'Data/Map010.rxdata')))
+    center = Marshal.load(File.binread(require_file!(root, 'Data/Map011.rxdata')))
     raise 'Wrong native map dimensions' unless
       [gate.width, gate.height, route.width, route.height, city.width, city.height] == [22, 21, 54, 34, 50, 40]
     north = [2, 3].map do |id|
@@ -94,6 +113,7 @@ module ShatteredPrivateOpeningConvergence
     raise 'Viridian escort not installed' unless
       [25, 26, 27, 28].all? { |id| city.events[id]&.name&.start_with?('SHATTERED_VIRIDIAN:') }
     verify_raid_pages!(city)
+    verify_center_arrival!(center)
     { 'kind' => 'private_native_opening_source_and_map_convergence',
       'checked_plugins' => checked, 'gate_north_landings' => north,
       'route22_mandatory_event' => true, 'murkrow_native_event' => true,
