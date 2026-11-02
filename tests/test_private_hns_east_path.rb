@@ -28,6 +28,30 @@ class HnSEastWalkwayTest < Minitest::Test
       event = RPG::Event.allocate
       event.instance_variable_set(:@x, x)
       event.instance_variable_set(:@y, y)
+      page = RPG::Event::Page.new
+      if id == 6
+        page.trigger = 0
+        page.list = [
+          RPG::EventCommand.new(355, 0,
+            ['ShatteredGateStory.run_aipom("Cries/AIPOM", get_character(0))']),
+          RPG::EventCommand.new(0, 0, [])
+        ]
+      else
+        page.trigger = 0
+        page.through = false
+        page.graphic.character_name = 'doors1'
+        page.list = [
+          RPG::EventCommand.new(111, 0, [12, 'ShatteredGateStory.key_obtained?']),
+          RPG::EventCommand.new(101, 1, ['The eastern Kanto door unlocks.']),
+          RPG::EventCommand.new(201, 1, [0, 16, 14, 10, 2, 0]),
+          RPG::EventCommand.new(411, 0, []),
+          RPG::EventCommand.new(101, 1,
+            ['The eastern Route 22 door is locked. You need the key.']),
+          RPG::EventCommand.new(412, 0, []),
+          RPG::EventCommand.new(0, 0, [])
+        ]
+      end
+      event.instance_variable_set(:@pages, [page])
       events[id] = event
     end
     map.instance_variable_set(:@events, events)
@@ -68,6 +92,36 @@ class HnSEastWalkwayTest < Minitest::Test
   def test_moved_aipom_or_door_fails_closed
     map, tilesets = map_and_tilesets
     map.instance_variable_get(:@events)[6].instance_variable_set(:@x, 12)
+    assert_raises(RuntimeError) { V.audit!(map, tilesets) }
+  end
+
+  def test_wrong_route22_destination_or_unguarded_key_fails_closed
+    map, tilesets = map_and_tilesets
+    door = map.instance_variable_get(:@events)[7].pages.first
+    door.list[2].parameters[1] = 10
+    assert_raises(RuntimeError) { V.audit!(map, tilesets) }
+    door.list[2].parameters[1] = 16
+    door.list[0].parameters[1] = 'true'
+    assert_raises(RuntimeError) { V.audit!(map, tilesets) }
+  end
+
+  def test_east_door_must_be_solid_action_button_with_locked_response
+    map, tilesets = map_and_tilesets
+    door = map.instance_variable_get(:@events)[7].pages.first
+    door.trigger = 1
+    assert_raises(RuntimeError) { V.audit!(map, tilesets) }
+    door.trigger = 0
+    door.through = true
+    assert_raises(RuntimeError) { V.audit!(map, tilesets) }
+    door.through = false
+    door.list[4].parameters = ['Door is open.']
+    assert_raises(RuntimeError) { V.audit!(map, tilesets) }
+  end
+
+  def test_aipom_must_retain_actual_key_award_interaction
+    map, tilesets = map_and_tilesets
+    aipom = map.instance_variable_get(:@events)[6].pages.first
+    aipom.list[0].parameters = ['pbMessage("placeholder")']
     assert_raises(RuntimeError) { V.audit!(map, tilesets) }
   end
 end
