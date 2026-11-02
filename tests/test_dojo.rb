@@ -154,6 +154,52 @@ class DojoStateTest < Minitest::Test
       {:version=>99,:answers=>[],:choice=>nil,:recruited=>false})
     assert_raises(ShatteredDojo::InvalidState) { @s.state }
   end
+
+  def test_cached_choice_cannot_precede_completed_questionnaire
+    saved = {:version=>1, :answers=>[0], :choice=>:VULPIX, :recruited=>false}
+    $PokemonGlobal.instance_variable_set(:@shattered_dojo_starter, saved)
+    assert_raises(ShatteredDojo::InvalidState) { @s.state }
+    assert_equal saved, $PokemonGlobal.instance_variable_get(:@shattered_dojo_starter)
+    assert_equal 1, $player.party.length
+  end
+
+  def test_cached_choice_cannot_disagree_with_saved_answers
+    saved = {:version=>1, :answers=>[1,1,1], :choice=>:VULPIX, :recruited=>true}
+    $PokemonGlobal.instance_variable_set(:@shattered_dojo_starter, saved)
+    assert_raises(ShatteredDojo::InvalidState) { @s.recruit! }
+    assert_equal saved, $PokemonGlobal.instance_variable_get(:@shattered_dojo_starter)
+    assert_equal 1, $player.party.length
+  end
+
+  def test_completed_quest_interaction_refuses_missing_award
+    complete([0,0,0])
+    assert_equal :VULPIX, @s.recruit!.species
+    $player.party.pop
+    refute @s.run_quiz
+    assert_equal 1, $player.party.length
+    assert @s.state[:recruited]
+  end
+
+  def test_completed_quest_interaction_refuses_untagged_replacement
+    complete([1,1,1])
+    assert_equal :STARYU, @s.recruit!.species
+    $player.party.pop
+    $player.party << DojoPokemon.new(:STARYU)
+    refute @s.run_quiz
+    assert_equal 2, $player.party.length
+    assert @s.state[:recruited]
+    refute @s.starter_tagged?($player.party.last)
+  end
+
+  def test_valid_cached_choice_still_roundtrips_and_reopens
+    complete([2,2,2])
+    assert_equal :EXEGGCUTE, @s.recruit!.species
+    $PokemonGlobal = Marshal.load(Marshal.dump($PokemonGlobal))
+    $player = Marshal.load(Marshal.dump($player))
+    assert @s.run_quiz
+    assert_equal :EXEGGCUTE, @s.state[:choice]
+    assert_equal 2, $player.party.length
+  end
 end
 
 class DojoInstallerTest < Minitest::Test
