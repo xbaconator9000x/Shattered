@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "kind": "source_only_private_raid_integration_receipt_not_runtime_acceptance",
+  "component": "Shattered Raid",
+  "version": "0.1.1",
+  "branch": "fix/route22-native-encounter-20261101",
+  "source_commit": "257262927d836fa0c99937ccc4b65481e379786d",
+  "tests_commit": "7e9ad6f2468c51a29f5f162849c06f7fe708e3d8",
+  "version_commit": "1b774760dfd1d6e6bbabc85b8a2a323cd60e265f",
+  "source_git_blob": "6a6a519955c599f1d620e83be9cd0f3b4e0f6c7b",
+  "candidate_filename": "Shattered_Essentials_HnS_Beedrill_Raid_Guarded_v027_Private_Candidate.zip",
+  "candidate_bytes": 160874868,
+  "candidate_sha256": "73ee9ffeb4a964bcd0cfef622496e3162350ee7d42ca39378bb234810d96baa5",
+  "compiled_plugin_archive_sha256": "a2f5922cfcb154630381e6b5a64370bac9b53c70b18d8b9a75a772c4059c18a7",
+  "local_evidence": [
+    "Native-format PluginScripts.rxdata recompiled with byte-identical reviewed GitHub Raid Ruby source and metadata v0.1.1",
+    "Candidate ZIP integrity passed with 7738 entries",
+    "Compiled Raid script inflate bytes match loose editable Ruby source"
+  ],
+  "github_ci": {
+    "head": "1b774760dfd1d6e6bbabc85b8a2a323cd60e265f",
+    "result": "all eight distinct workflows success",
+    "combined": "https://github.com/xbaconator9000x/Shattered/actions/runs/41395690981",
+    "raid": "https://github.com/xbaconator9000x/Shattered/actions/runs/41395691003"
+  },
+  "behavior_changes": [
+    "Reject skipped-victory and companion-led Beedrill battles without an able leading HUMAN",
+    "Permit defeat/draw retries without game over; restore HUMAN stamina",
+    "Clear queued battle rules after exceptions",
+    "Reconcile saved defeated raid pages on Continue and request native map refresh"
+  ],
+  "verified": {
+    "source_tests": true,
+    "private_native_plugin_archive_coherent": true,
+    "zip_integrity": true,
+    "native_game_launched": false,
+    "beedrill_map_events_installed": false,
+    "full_raid_gameplay": false,
+    "save_continue": false,
+    "android": false
+  },
+  "blockers": [
+    "Beedrill native overworld events are not yet installed in Map010; original Raid installer assumes a 48x40 source map, while native Viridian is 50x40",
+    "Beedrill overworld sprite art and placement require rights-cleared source and reviewed native map coordinates",
+    "No working mkxp-z runtime or Android JoiPlay runner in this execution environment",
+    "PR #57 and #59 have no recorded reviews; main unchanged"
+  ]
+}
