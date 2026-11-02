@@ -234,6 +234,32 @@ class ShatteredRaidTest < Minitest::Test
     assert_empty WildBattle.calls
   end
 
+  def test_legacy_viridian_raid_save_migrates_without_touching_gate_debris
+    old = { "version" => 1, "progression" => 2, "completed" => false,
+            "map_id" => 10, "switch_ids" => [997, 998, 999] }
+    $PokemonGlobal.instance_variable_set(:@shattered_raid_state, old)
+    $game_map = Struct.new(:map_id, :need_refresh).new(10, false)
+    $game_switches[997] = true  # Johto collapse; never overwrite this flag
+    $game_switches[998] = false
+    $game_switches[999] = true
+    handler = EventHandlers.handler(:on_map_or_spriteset_change, :shattered_raid_continue_sync)
+    assert handler.call
+    assert_equal [1001, 1002, 1003], ShatteredRaid.state["switch_ids"]
+    assert_equal 2, ShatteredRaid.progression
+    assert_equal [true, true, false], [1001, 1002, 1003].map { |id| $game_switches[id] }
+    assert_equal [true, false, true], [997, 998, 999].map { |id| $game_switches[id] }
+    assert $game_map.need_refresh
+    restored = Marshal.load(Marshal.dump($PokemonGlobal))
+    assert_equal [1001, 1002, 1003], restored.instance_variable_get(:@shattered_raid_state)["switch_ids"]
+  end
+
+  def test_unrelated_raid_saves_are_not_migrated
+    other = { "version" => 1, "progression" => 1, "completed" => false,
+              "map_id" => 301, "switch_ids" => [997, 998, 999] }
+    $PokemonGlobal.instance_variable_set(:@shattered_raid_state, other)
+    assert_equal [997, 998, 999], ShatteredRaid.state["switch_ids"]
+  end
+
   def test_invalid_saved_state_is_rejected
     $PokemonGlobal.instance_variable_set(:@shattered_raid_state,
       { "version" => 99, "progression" => 3, "completed" => true })
