@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_human_stamina_healing_source_and_compiled_candidate",
+  "date": "2026-11-02",
+  "repository": "xbaconator9000x/Shattered",
+  "source_pr": 59,
+  "private_candidate": {
+    "filename": "Shattered_Essentials_HnS_HUMAN_Native_Healing_v0213_Private_Candidate.zip",
+    "bytes": 160888267,
+    "sha256": "559f67ba441903d0120574525f09e2d7db0cac70772788f508cffa76dcc550bc",
+    "zip_entries": 7746,
+    "modified_payloads": [
+      "Data/PluginScripts.rxdata",
+      "Plugins/Shattered Core/001_Core.rb",
+      "Plugins/Shattered Core/meta.txt"
+    ]
+  },
+  "plugin": {
+    "name": "Shattered Core",
+    "version": "0.2.4",
+    "editable_source_sha256": "fb12e8ab9034a99dba1504e9ca38cecdea7b8e6898572e8c44c3710540cc0ab2",
+    "compiled_archive_sha256": "735a187d51b76b63e540e45e7771d82377b2856ea398586fd5650e35dbae9d2f",
+    "compiled_source_exact_match": true,
+    "unrelated_compiled_plugins_unchanged": true
+  },
+  "issue": "Essentials 21.1 Gen8 Recover All command_314 calls pbEachPokemon instead of Trainer#heal_party; neither native path restored Shattered's PokemonGlobal HUMAN stamina.",
+  "fix": "Idempotent hooks after both native healing entry points, restoring HUMAN stamina only for the player's healed party and preserving native return values.",
+  "executable_tests": {
+    "synthetic_native_api": {
+      "tests": 6,
+      "assertions": 29,
+      "passed": true
+    },
+    "sha_pinned_actual_essentials_method_evaluation": {
+      "tests": 2,
+      "assertions": 6,
+      "passed": true
+    },
+    "native_source_scripts_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+    "candidate_zip_integrity": true
+  },
+  "not_verified": [
+    "real mkxp-z game session after new Core build",
+    "real Pokémon Center scene",
+    "stamina display/UI",
+    "normal Save/Continue",
+    "Android JoiPlay/NaviaXP",
+    "full demo parity"
+  ],
+  "distribution": {
+    "original_game_or_commercial_assets_committed": false,
+    "private_zip_only": true
+  }
+}
