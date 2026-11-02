@@ -1,0 +1,47 @@
+{
+  "kind": "private_native_viridian_center_autorun_and_arrival_guard_not_runtime_acceptance",
+  "date": "2026-11-02",
+  "branch": "fix/route22-native-encounter-20261101",
+  "source_head_before_receipt": "b14feb24bcb54a4a49074db5a35c208be3e3e6f7",
+  "candidate_name_private_only": "Shattered_Essentials_HnS_Viridian_Center_Autorun_Guard_v0214_Private_Candidate.zip",
+  "candidate_sha256": "1cd273e53b3ead954756769e8804d1d97aecb6b8867762356a4d5effe3b5bd5e",
+  "candidate_bytes": 160888934,
+  "candidate_zip_entries": 7746,
+  "original_zip_entries_preserved": 7742,
+  "changed_private_files": [
+    "Data/Map011.rxdata",
+    "Data/PluginScripts.rxdata",
+    "Plugins/Shattered Viridian/001_Entry.rb",
+    "Plugins/Shattered Viridian/meta.txt"
+  ],
+  "native_center_map_before_sha256": "d096c3244c3f7fdee749d9c5c121d6a3e91ed90fedaad0b60a1dcee1d1bea3b6",
+  "native_center_map_after_sha256": "e05a63a69e99fe1795e8c43b503d05777967d66a88171aa4f212b616b10e09e5",
+  "native_center_map_bytes_changed": 1,
+  "native_center_event_id": 11,
+  "native_center_autorun_old_switch": 993,
+  "native_center_autorun_new_switch": 994,
+  "native_center_completed_switch": 995,
+  "compiled_plugin": "Shattered Viridian",
+  "compiled_plugin_version": "0.1.2",
+  "compiled_plugin_source_git_blob": "7932d06e61f20f8357f696a6185600b003f49622",
+  "compiled_plugin_source_sha256": "7a8ecc020b47cc24932803d26c22972fdac442e1b6dafd26ece65a6f7b1fa494",
+  "compiled_plugin_archive_sha256": "2231714a077b5b1660e385880cd86f8928fb2561dc3ca1b131544eca8f25f13c",
+  "evidence": {
+    "actual_pinned_essentials_Game_Switches_setter": "Data/Scripts.rxdata Game_Switches#[]= only stores @data[switch_id]; it does not set Game_Map.need_refresh",
+    "local_ruby_regression": "4 tests / 19 assertions passed with Game_Switches-like inert switch setter",
+    "local_native_marshal_roundtrip": true,
+    "all_eight_compiled_shattered_plugin_sources_match_loose": true,
+    "native_map_event_source_and_arrival_condition_checked": true,
+    "private_candidate_zip_crc_integrity": true,
+    "source_only_github_actions": "pending at receipt creation",
+    "actual_native_game_launch": false,
+    "normal_save_continue": false,
+    "android_joiplay_naviaxp": false
+  },
+  "remaining_blockers": [
+    "No working mkxp-z game runner in this container; prior private Work Linux runtime is not available in this session",
+    "No observed Viridian escort/Center autorun/raid game playthrough",
+    "No Android device acceptance",
+    "Full HnS Gate visual fidelity and third-party plugin licenses remain open"
+  ]
+}
