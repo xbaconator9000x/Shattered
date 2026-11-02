@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_map_pinned_essentials_interpreter_offline_probe_not_gameplay",
+  "date": "2026-11-03",
+  "source_pr": 59,
+  "candidate_zip_sha256": "3cd21a46e3b1ce091177e2823d06f300353f9237e41037b30e6bd61474a20122",
+  "native_map016_sha256": "d5b7d99c6f541f6928f8667fb204567ad800d457044d8ee766f249e6efee0ad1",
+  "native_scripts_rxdata_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+  "engine_source_sha256": {
+    "Interpreter": "b2f4c542a1542a5908d1208b87eae05d8b6f6ec0d26df1835871595842ed0355",
+    "Interpreter_Commands": "ec927a007bee1889223dbc8b3de115f062a5308ab4410f87dab965eef3032561"
+  },
+  "native_event": {
+    "map_id": 16,
+    "event_id": 4,
+    "position": [
+      32,
+      17
+    ],
+    "guard": "ShatteredRoute22.cleared? || (ShatteredRoute22.scatter! && ShatteredRoute22.encounter(991, 992))",
+    "destination": {
+      "map_id": 10,
+      "x": 25,
+      "y": 20
+    }
+  },
+  "observed_offline_cases": {
+    "loss": {
+      "scatter_calls": 1,
+      "battle_calls": 1,
+      "transferred": false,
+      "safe_return": [
+        16,
+        29,
+        17
+      ]
+    },
+    "victory": {
+      "scatter_calls": 1,
+      "battle_calls": 1,
+      "transferred": true,
+      "destination": [
+        10,
+        25,
+        20
+      ]
+    },
+    "already_cleared": {
+      "scatter_calls": 0,
+      "battle_calls": 0,
+      "transferred": true,
+      "destination": [
+        10,
+        25,
+        20
+      ]
+    },
+    "scatter_failed": {
+      "scatter_calls": 1,
+      "battle_calls": 0,
+      "transferred": false,
+      "safe_return": [
+        16,
+        29,
+        17
+      ]
+    }
+  },
+  "source_fix": "scripts/verify_private_route22_viridian_guard.rb now accepts the current Map016 scatter guard, and checks short-circuit semantics; tests/test_private_route22_viridian_guard.rb rejects the older no-scatter guard and unsafe variants",
+  "evidence_level": "Executed SHA-pinned native Essentials interpreter command methods against actual private RPG Maker XP event #4 using controlled ShatteredRoute22 methods. Does not launch engine, render map, perform WildBattle, or persist a save.",
+  "native_gameplay_verified": false,
+  "save_continue_verified": false,
+  "android_verified": false,
+  "redistribution_permitted": false
+}
