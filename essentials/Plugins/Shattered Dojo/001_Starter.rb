@@ -116,25 +116,25 @@ module ShatteredDojo
   def self.run_quiz
     value = state
     if value[:recruited]
-      pbMessage(_INTL("Your companion is already travelling with you."))
+      pbMessage(_INTL("Your companion is already travelling with you.").dup)
       return true
     end
     while value[:answers].length < QUESTIONS.length
       index = value[:answers].length
       prompt, entries = QUESTIONS[index]
-      answer = pbMessage(_INTL(prompt), entries.map { |e| _INTL(e[0]) }, -1)
+      answer = pbMessage(_INTL(prompt).dup, entries.map { |e| _INTL(e[0]).dup }, -1)
       return false if answer.nil? || answer == -1
       answer!(index, answer)
     end
     species = choice
-    pbMessage(_INTL("You seem suited to {1}.", species.to_s.capitalize))
-    return false unless pbConfirmMessage(_INTL("Will you welcome this Pokemon as a friend?"))
+    pbMessage(_INTL("You seem suited to {1}.", species.to_s.capitalize).dup)
+    return false unless pbConfirmMessage(_INTL("Will you welcome this Pokemon as a friend?").dup)
     friend = recruit!
     unless friend
-      pbMessage(_INTL("You need a free party space before your companion can join."))
+      pbMessage(_INTL("You need a free party space before your companion can join.").dup)
       return false
     end
-    pbMessage(_INTL("{1} joined you through friendship!", species.to_s.capitalize))
+    pbMessage(_INTL("{1} joined you through friendship!", species.to_s.capitalize).dup)
     true
   end
 end
