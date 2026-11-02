@@ -12,11 +12,15 @@ module ShatteredPrivateViridianBeedrill
   module_function
 
   MAP_SHA = '9a30262d8f21a46259b677a78a17b51aa6f8f16cb14f0b169d54b625adda2180'
-  INSTALLED_SHA = 'dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5'
+  LEGACY_INSTALLED_SHA = 'dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5'
+  INSTALLED_SHA = '772266eab4497a950feb97a07ad0599c63fc5ee8a5a3fba69e9048e77c1a89cb'
   SPRITE_SHA = '840ebd96f47124e89a0fa68fce882969d40104ae5271a9c42523054039247a00'
   SOURCE_SPRITE_SHA = '663b93a030f303569fefd40d15736b4b6270e9d8a398d9433040c09320a0339f'
   MAP_ID = 10
-  SWITCHES = [997, 998, 999].freeze
+  # 997 is the Gate Story's permanent Johto debris switch. The original
+  # private raid prototype accidentally reused it; never reuse 992-999.
+  LEGACY_SWITCHES = [997, 998, 999].freeze
+  SWITCHES = [1001, 1002, 1003].freeze
   OUTCOME_VARIABLE = 990
   LEVELS = [5, 6, 7].freeze
   POSITIONS = [[32, 22], [32, 25], [31, 28]].freeze
@@ -24,9 +28,9 @@ module ShatteredPrivateViridianBeedrill
   PREFIX = 'ShatteredRaid:BEEDRILL:'
   STAGING = 'SHATTERED_STAGING_REPORT.json'
 
-  def script(index)
+  def script(index, switches = SWITCHES)
     entries = LEVELS.each_with_index.map do |level, i|
-      { 'index' => i, 'level' => level, 'switch_id' => SWITCHES.fetch(i) }
+      { 'index' => i, 'level' => level, 'switch_id' => switches.fetch(i) }
     end
     config = { 'map_id' => MAP_ID, 'outcome_variable_id' => OUTCOME_VARIABLE,
                'events' => entries }
@@ -48,17 +52,17 @@ module ShatteredPrivateViridianBeedrill
     p
   end
 
-  def event(index)
+  def event(index, switches = SWITCHES)
     x, y = POSITIONS.fetch(index)
     e = RPG::Event.new(x, y)
     e.id = EVENT_IDS.fetch(index)
     e.name = PREFIX + index.to_s
     hidden = page
-    active = page(sprite: 'Beedrill', switch: (index.zero? ? nil : SWITCHES[index - 1]),
+    active = page(sprite: 'Beedrill', switch: (index.zero? ? nil : switches[index - 1]),
                   through: false, trigger: 2,
-                  commands: [RPG::EventCommand.new(355, 0, [script(index)]),
+                  commands: [RPG::EventCommand.new(355, 0, [script(index, switches)]),
                              RPG::EventCommand.new(0, 0, [])])
-    cleared = page(switch: SWITCHES.fetch(index))
+    cleared = page(switch: switches.fetch(index))
     # Later encounters are invisible until the preceding encounter is won.
     e.pages = index.zero? ? [active, cleared] : [hidden, active, cleared]
     e
@@ -132,6 +136,19 @@ module ShatteredPrivateViridianBeedrill
     :installed
   end
 
+  # Upgrade only the exact known legacy native map, replacing the three raid
+  # events while leaving Gate Story's switch 997 and all other events intact.
+  # An unrecognized map SHA must never be rewritten as a supposed migration.
+  def migrate_legacy!(map)
+    raise 'Unexpected legacy Beedrill inventory' unless map.events.keys.sort == (1..31).to_a
+    EVENT_IDS.each_with_index do |id, index|
+      raise "Legacy raid event drift at #{id}" unless
+        Marshal.dump(map.events.fetch(id)) == Marshal.dump(event(index, LEGACY_SWITCHES))
+    end
+    EVENT_IDS.each_with_index { |id, index| map.events[id] = event(index) }
+    :migrated
+  end
+
   def install!(root, failure_hook: nil)
     project = Pathname.new(root).expand_path
     raise 'Only a private staged Shattered project may be modified' unless
@@ -152,13 +169,18 @@ module ShatteredPrivateViridianBeedrill
     source_bytes = map_path.binread
     map = Marshal.load(source_bytes)
     tilesets = Marshal.load(tiles_path.binread)
-    if Digest::SHA256.hexdigest(source_bytes) != MAP_SHA
-      raise 'Native Viridian map SHA changed; refusing overwrite' unless
-        Digest::SHA256.hexdigest(source_bytes) == INSTALLED_SHA &&
-        transform!(map, tilesets) == :already_installed
-      return { 'result' => 'already_installed', 'map_sha256' => Digest::SHA256.hexdigest(source_bytes) }
+    input_sha = Digest::SHA256.hexdigest(source_bytes)
+    case input_sha
+    when INSTALLED_SHA
+      raise 'Installed raid events drifted' unless transform!(map, tilesets) == :already_installed
+      return { 'result' => 'already_installed', 'map_sha256' => input_sha }
+    when LEGACY_INSTALLED_SHA
+      raise 'Legacy raid migration failed' unless migrate_legacy!(map) == :migrated
+    when MAP_SHA
+      raise 'Unexpected existing Beedrill events' unless transform!(map, tilesets) == :installed
+    else
+      raise 'Native Viridian map SHA changed; refusing overwrite'
     end
-    raise 'Unexpected existing Beedrill events' unless transform!(map, tilesets) == :installed
     result = Marshal.dump(map)
     raise 'Unexpected native Beedrill map result' unless Digest::SHA256.hexdigest(result) == INSTALLED_SHA
     raise 'Native Marshal roundtrip failed' unless Marshal.dump(Marshal.load(result)) == result
@@ -185,6 +207,7 @@ module ShatteredPrivateViridianBeedrill
     { 'result' => 'installed', 'map_sha256' => Digest::SHA256.file(map_path).hexdigest,
       'sprite_sha256' => SPRITE_SHA, 'source_sprite_sha256' => SOURCE_SPRITE_SHA,
       'events' => EVENT_IDS, 'switches' => SWITCHES,
+      'legacy_switch_collision_repaired' => input_sha == LEGACY_INSTALLED_SHA,
       'native_gameplay_verified' => false, 'android_verified' => false }
   end
 end
