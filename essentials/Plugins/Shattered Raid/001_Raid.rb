@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Shattered Raid v0.1 — Pokémon Essentials 21.1.
+# Shattered Raid v0.1.2 — Pokémon Essentials 21.1.
 # Native runtime must not load CRuby-only libraries at startup.
 # The map installer loads Digest lazily, outside gameplay.
 
