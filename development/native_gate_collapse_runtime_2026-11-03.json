@@ -25,19 +25,57 @@
     "aipom_key_flag": true,
     "aipom_aftershock": true,
     "opening_event_5_finished": true,
-    "aipom_event_6_finished": true
+    "aipom_event_6_finished": true,
+    "normal_save_menu": true,
+    "normal_save_file_created": true,
+    "continue_after_process_restart": true,
+    "continue_map_id": 223,
+    "continue_player_x": 11,
+    "continue_player_y": 8,
+    "continue_gate_impacts": 6,
+    "continue_aipom_key": true,
+    "continue_debris_switch_997": true,
+    "continue_party": [
+      "HUMAN"
+    ]
   },
   "private_screenshot_sha256": {
     "gate_after_collapse": "364aacbdc126589785f7d1086d830bcce7191a014c64cd7162eccdab1ac29599",
-    "aipom_key": "75a2313971109cae303cc51473263a4388928ef0a2318f8bb7f7fe15c3673ef8"
+    "aipom_key": "75a2313971109cae303cc51473263a4388928ef0a2318f8bb7f7fe15c3673ef8",
+    "continue_select": "pending_not_uploaded"
   },
   "native_original_scripts_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
   "local_evidence": "Native mkxp-z game scene, live event interpreter and saved PokemonGlobal state logged with private diagnostic; original compiled Scripts.rxdata restored in packaged candidate; 7,743 unchanged entry CRCs preserved and unzip CRC passed.",
   "unverified": [
-    "normal save menu/Continue",
     "native Route22 battle and transfer",
     "Gate visual parity",
-    "Android JoiPlay/NaviaXP"
+    "Android JoiPlay/NaviaXP",
+    "Route22 east door and mandatory Rattata battle; east corridor blocked by native Map223 tile collision"
   ],
-  "rights": "No game assets, screenshot, original ZIP or compiled binaries uploaded to GitHub."
+  "rights": "No game assets, screenshot, original ZIP or compiled binaries uploaded to GitHub.",
+  "private_save_sha256": "6999ae0237f9c3e7d3d07fa198d70d40709859c248706a965430438d845afe2e",
+  "private_save_bytes": 47839,
+  "native_east_corridor_blocker": {
+    "map_id": 223,
+    "from": [
+      12,
+      9
+    ],
+    "to": [
+      13,
+      9
+    ],
+    "blocked": true,
+    "source_tile_layers": [
+      387,
+      388,
+      389
+    ],
+    "middle_tile_id": 388,
+    "middle_passage": 15,
+    "route22_reached": false,
+    "workaround_verified": false,
+    "warning": "Do not change shared passage flag for tile 388; it is used by 262 void cells. Source-grounded per-map corridor correction needed."
+  },
+  "full_demo_runtime_verified": false
 }
