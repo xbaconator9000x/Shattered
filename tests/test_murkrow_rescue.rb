@@ -82,11 +82,14 @@ def save_data(data, path)
   File.binwrite(path, Marshal.dump(data))
 end
 
-def pbMessage(_message)
+def pbMessage(message)
+  # Native Essentials v21.1 pbMessageDisplay mutates its input via gsub!.
+  raise FrozenError, "frozen Murkrow dialogue" if message.frozen?
   true
 end
 
-def pbConfirmMessage(_message)
+def pbConfirmMessage(message)
+  raise FrozenError, "frozen Murkrow confirmation" if message.frozen?
   $confirm_results.empty? ? true : $confirm_results.shift
 end
 
