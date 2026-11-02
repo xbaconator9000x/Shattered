@@ -156,6 +156,9 @@ module ShatteredRoute22
 
   # Three real Route22 overworld events. A failed attempt resets their positions
   # before scattering again; the saved victory switch hides their second pages.
+  # Essentials v21.1 pbWait takes SECONDS, not frames. Twelve 20-FPS
+  # ticks of scatter animation are 0.6 seconds, not a 12-second stall.
+  SCATTER_PAUSE_SECONDS = 0.6
   SCATTER_EVENTS = {5 => [31, 17, :move_right],
                     6 => [31, 18, :move_left],
                     7 => [32, 18, :move_right]}.freeze
@@ -173,7 +176,7 @@ module ShatteredRoute22
     end
     actors.each { |actor, x, y, _direction| actor.moveto(x, y) }
     actors.each { |actor, _x, _y, direction| actor.public_send(direction) }
-    pbWait(12) if defined?(pbWait)
+    pbWait(SCATTER_PAUSE_SECONDS) if defined?(pbWait)
     true
   end
 
