@@ -27,7 +27,8 @@ module ShatteredViridian
       store.instance_variable_set(:@shattered_viridian_entry, value)
     end
     raise "Unknown Viridian save state; refusing to reset story" unless value.is_a?(Hash) &&
-      value[:version] == VERSION && [:started, :arrived, :center].all? { |k| [true, false].include?(value[k]) }
+      value[:version] == VERSION && [:started, :arrived, :center].all? { |k| [true, false].include?(value[k]) } &&
+      (!value[:arrived] || value[:started]) && (!value[:center] || value[:arrived])
     value
   end
 
