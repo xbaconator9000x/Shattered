@@ -36,6 +36,23 @@
       "private_output_sha256": "3682708f80845145656b151ec8242af621506a642a02bb6cf848c78e994c4c61",
       "source_rights_verified": false,
       "redistribution_authorised": false
+    },
+    {
+      "species": "BEEDRILL",
+      "source_path": "graphics/pokemon/beedrill/overworld.png",
+      "source_git_blob_sha": "2c840cd2780f79d7e46a3a0e57a4244602b85b44",
+      "source_sha256": "663b93a030f303569fefd40d15736b4b6270e9d8a398d9433040c09320a0339f",
+      "private_output": "Graphics/Characters/Beedrill.png",
+      "private_output_sha256": "840ebd96f47124e89a0fa68fce882969d40104ae5271a9c42523054039247a00",
+      "source_rights_verified": false,
+      "redistribution_authorised": false,
+      "native_map_id": 10,
+      "native_event_ids": [
+        29,
+        30,
+        31
+      ],
+      "native_gameplay_verified": false
     }
   ],
   "private_local_staging": {
