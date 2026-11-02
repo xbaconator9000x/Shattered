@@ -76,6 +76,31 @@ class PrivateRoute22ViridianGuardTest < Minitest::Test
     assert_raises(RuntimeError) { P.native_commands!(map) }
   end
 
+  def test_native_scatter_guard_is_required_before_mandatory_battle
+    assert_equal(
+      'ShatteredRoute22.cleared? || (ShatteredRoute22.scatter! && ShatteredRoute22.encounter(991, 992))',
+      P::EXPECTED_CONDITION
+    )
+    map = native_fixture
+    commands(map)[0].parameters[1] =
+      'ShatteredRoute22.cleared? || ShatteredRoute22.encounter(991, 992)'
+    assert_raises(RuntimeError) { P.native_commands!(map) }
+  end
+
+  def test_scatter_must_not_allow_transfer_when_actor_setup_fails
+    map = native_fixture
+    commands(map)[0].parameters[1] =
+      'ShatteredRoute22.cleared? || (ShatteredRoute22.scatter!; ShatteredRoute22.encounter(991, 992))'
+    assert_raises(RuntimeError) { P.native_commands!(map) }
+  end
+
+  def test_guard_cannot_bypass_battle_with_scatter_alone
+    map = native_fixture
+    commands(map)[0].parameters[1] =
+      'ShatteredRoute22.cleared? || ShatteredRoute22.scatter!'
+    assert_raises(RuntimeError) { P.native_commands!(map) }
+  end
+
   def test_unknown_engine_scripts_rejected_before_eval
     Dir.mktmpdir do |directory|
       path = File.join(directory, 'Scripts.rxdata')
