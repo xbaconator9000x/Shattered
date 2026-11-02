@@ -28,6 +28,16 @@ class NativeMapPreviewTest(unittest.TestCase):
         self.assertEqual(2, count)
         self.assertEqual((127, 0, 128, 255), result.getpixel((8, 8)))
 
+    def test_native_preview_keeps_unpainted_map_area_transparent(self):
+        result, count = mod.render_map(self.meta, table([0, 0, 0]), self.atlas)
+        self.assertEqual(0, count)
+        self.assertEqual((0, 0, 0, 0), result.getpixel((8, 8)))
+
+    def test_native_preview_preserves_tileset_pixel_transparency(self):
+        self.atlas.putpixel((4, 5), (0, 0, 0, 0))
+        result, _ = mod.render_map(self.meta, table([384, 0, 0]), self.atlas)
+        self.assertEqual((0, 0, 0, 0), result.getpixel((4, 5)))
+
     def test_event_overlay_does_not_mutate_clean_preview(self):
         original, _ = mod.render_map(self.meta, table([384, 0, 0]), self.atlas)
         marked = mod.overlay_events(original, [{'id': 5, 'x': 0, 'y': 0}])

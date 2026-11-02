@@ -31,7 +31,7 @@ def render_map(metadata, table_bytes, image):
     if image.width != 256 or image.height % TILE:
         raise ValueError('invalid 256px RMXP tilesheet')
     pixels = struct.unpack_from(f'<{count}H', table_bytes, 20)
-    canvas = Image.new('RGBA', (width * TILE, height * TILE), (0, 0, 0, 255))
+    canvas = Image.new('RGBA', (width * TILE, height * TILE), (0, 0, 0, 0))
     rendered = 0
     for layer in range(3):
         for y in range(height):
