@@ -151,6 +151,7 @@ class MurkrowRescueTest < Minitest::Test
     $fail_battle_rule = false
     $game_map = nil
     $game_self_switches = nil
+    $game_temp = nil
   end
 
   def test_loss_flee_and_interruption_leave_encounter_retryable
