@@ -4,6 +4,15 @@
 module ShatteredViridian
   VERSION = 1
 
+  # RPG Maker XP's Game_Switches#[]= writes the switch value but does NOT
+  # refresh the active Game_Map. Both the city arrival and Center first-visit
+  # events are native autoruns whose higher-priority pages depend on these
+  # switches. Without a refresh they can immediately restart and softlock.
+  def self.request_map_refresh
+    map = defined?($game_map) ? $game_map : nil
+    map.need_refresh = true if map && map.respond_to?(:need_refresh=)
+  end
+
   def self.valid_switch!(id)
     raise ArgumentError, "reserved switch ID required" unless id.instance_of?(Integer) && (1..9999).include?(id)
     raise "Game switches unavailable" unless defined?($game_switches) && $game_switches
@@ -28,9 +37,13 @@ module ShatteredViridian
     raise ArgumentError, "duplicate Viridian switch IDs" if started_switch == rain_switch
     value = state
     first = !value[:started]
+    new_rain = !value[:center]
+    changed = first || $game_switches[started_switch] != true ||
+      $game_switches[rain_switch] != new_rain
     value[:started] = true
     $game_switches[started_switch] = true
-    $game_switches[rain_switch] = !value[:center]
+    $game_switches[rain_switch] = new_rain
+    request_map_refresh if changed
     first
   end
 
@@ -39,8 +52,10 @@ module ShatteredViridian
     value = state
     return false unless value[:started]
     first = !value[:arrived]
+    changed = first || $game_switches[arrived_switch] != true
     value[:arrived] = true
     $game_switches[arrived_switch] = true
+    request_map_refresh if changed
     first
   end
 
@@ -49,11 +64,16 @@ module ShatteredViridian
     valid_switch!(rain_switch)
     raise ArgumentError, "duplicate Viridian switch IDs" if center_switch == rain_switch
     value = state
-    return false unless value[:started]
+    # Do not grant shelter/raid access until the guard and Nidoran actually
+    # reach the Center. The native first-visit event is gated on arrival 994.
+    return false unless value[:started] && value[:arrived]
     first = !value[:center]
+    changed = first || $game_switches[center_switch] != true ||
+      $game_switches[rain_switch] != false
     value[:center] = true
     $game_switches[center_switch] = true
     $game_switches[rain_switch] = false
+    request_map_refresh if changed
     first
   end
 
