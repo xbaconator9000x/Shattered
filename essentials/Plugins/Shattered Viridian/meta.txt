@@ -1,4 +1,4 @@
 Name = Shattered Viridian
-Version = 0.1.1
+Version = 0.1.2
 Essentials = 21.1
 Description = Native staged Viridian escort, rain and Center story events
