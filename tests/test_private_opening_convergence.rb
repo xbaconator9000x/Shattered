@@ -21,6 +21,28 @@ class PrivateOpeningConvergenceTest < Minitest::Test
     assert_raises(RuntimeError) { V.commands(nil) }
   end
 
+  def test_native_raid_pages_require_center_gate_and_unique_story_switches
+    city = RPG::Map.allocate
+    city.events = {}
+    3.times do |index|
+      city.events[29 + index] = ShatteredPrivateViridianBeedrill.event(index)
+    end
+    assert V.verify_raid_pages!(city)
+    assert_equal [1001, 1002, 1003],
+      (0..2).map { |i| city.events[29 + i].pages.last.condition.switch1_id }
+    first = city.events[29].pages.first
+    assert first.condition.switch1_valid
+    assert_equal 995, first.condition.switch1_id
+    city.events[29].pages.first.condition.switch1_id = 997
+    assert_raises(RuntimeError) { V.verify_raid_pages!(city) }
+    city.events[29] = ShatteredPrivateViridianBeedrill.event(0)
+    city.events[30].pages[1].condition.switch2_id = 997
+    assert_raises(RuntimeError) { V.verify_raid_pages!(city) }
+    city.events[30] = ShatteredPrivateViridianBeedrill.event(1)
+    city.events[31].pages[1].list[0].parameters[0] = 'ShatteredRaid.trigger(2, {})'
+    assert_raises(RuntimeError) { V.verify_raid_pages!(city) }
+  end
+
   def test_private_compiled_opening_and_rejects_source_tampering
     source = ENV['SHATTERED_PRIVATE_PROJECT']
     skip 'Private user-held game not present in public CI' unless source && File.directory?(source)
@@ -36,7 +58,7 @@ class PrivateOpeningConvergenceTest < Minitest::Test
         FileUtils.cp(File.join(source, relative), File.join(dir, relative))
       end
       report = V.verify!(dir)
-      assert_equal 3, report.fetch('checked_plugins').length
+      assert_equal 4, report.fetch('checked_plugins').length
       assert_equal 2, report.fetch('gate_north_landings').uniq.length
       refute report.fetch('native_game_launched')
       gate_source = File.join(dir, 'Plugins/Shattered Gate Story/001_GateStory.rb')
