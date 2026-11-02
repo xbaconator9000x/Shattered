@@ -443,7 +443,8 @@
       ],
       "evidence": [
         "PR #19 raid source and isolated Ruby tests rebased onto canonical main with genuine Core compatibility regression, not native engine validation",
-        "Pending source CI and native Viridian map/quest acceptance"
+        "Pending source CI and native Viridian map/quest acceptance",
+        "2026-11-02 Shattered Raid v0.1.1: fixed Essentials skipped-victory bypass with fainted/nonleading HUMAN, canLose retry and stamina restoration, queued battle-rule cleanup on exceptions, and saved raid switch/page reconciliation on Continue. PR #59 source commit 25726292; Ruby raid CI 41395691003 and combined CI 41395690981 passed. Private candidate v027 SHA256 73ee9ffeb4a964bcd0cfef622496e3162350ee7d42ca39378bb234810d96baa5 has byte-matched compiled Raid plugin. Beedrill native overworld events NOT installed in Map010; actual raid battle and Android NOT verified."
       ],
       "blocker": "Requires reviewed Viridian 48x40 map, sprites, native event installation, actual HUMAN battle, save/reload and Android execution. Source-only Ruby tests cannot close gameplay gates."
     },
@@ -596,5 +597,22 @@
     "normal_save_continue_verified": false,
     "android_verified": false,
     "rights_reviewed_for_distribution": false
+  },
+  "private_beedrill_guarded_candidate": {
+    "date": "2026-11-02",
+    "source_pr": 59,
+    "source_commit": "257262927d836fa0c99937ccc4b65481e379786d",
+    "version": "0.1.1",
+    "filename": "Shattered_Essentials_HnS_Beedrill_Raid_Guarded_v027_Private_Candidate.zip",
+    "bytes": 160874868,
+    "sha256": "73ee9ffeb4a964bcd0cfef622496e3162350ee7d42ca39378bb234810d96baa5",
+    "evidence": "development/private_raid_guarded_candidate_2026-11-02.json",
+    "github_raid_ci": 41395691003,
+    "github_combined_ci": 41395690981,
+    "native_events_installed": false,
+    "native_gameplay_verified": false,
+    "save_continue_verified": false,
+    "android_verified": false,
+    "distribution_rights_verified": false
   }
 }
