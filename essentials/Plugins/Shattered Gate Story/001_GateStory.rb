@@ -65,7 +65,7 @@ module ShatteredGateStory
     def announce_johto_blocked_once
       current = state
       return if current[:impacts] < 3 || current[:johto_blocked_message]
-      pbMessage(_INTL("The way back to Johto is blocked. Better find another way."))
+      pbMessage(_INTL("The way back to Johto is blocked. Better find another way.").dup)
       current[:johto_blocked_message] = true
     end
 
@@ -100,9 +100,9 @@ module ShatteredGateStory
 
     def blocked_johto
       if collapsed?
-        pbMessage(_INTL("Rocks and structural debris block the entrance."))
+        pbMessage(_INTL("Rocks and structural debris block the entrance.").dup)
       else
-        pbMessage(_INTL("The way back to Johto is blocked. Better find another way."))
+        pbMessage(_INTL("The way back to Johto is blocked. Better find another way.").dup)
       end
       true
     end
@@ -192,12 +192,12 @@ module ShatteredGateStory
     def run_aipom(cry, event = nil)
       raise ArgumentError, "invalid Aipom cry name" unless valid_cry_name?(cry)
       unless collapsed?
-        pbMessage(_INTL("There's something shiny up ahead."))
+        pbMessage(_INTL("There's something shiny up ahead.").dup)
         return false
       end
       if key_obtained?
         play_key_aftershock_once
-        pbMessage(_INTL("Aipom looks pleased to see you again."))
+        pbMessage(_INTL("Aipom looks pleased to see you again.").dup)
         return true
       end
       # The native RMXP event supplies get_character(0). The actual Essentials
@@ -208,8 +208,8 @@ module ShatteredGateStory
           event.respond_to?(:turn_up) && event.respond_to?(:map_id)
         raise "Essentials exclamation animation unavailable" unless defined?(pbExclaim)
       end
-      pbMessage(_INTL("There's something shiny up ahead."))
-      pbMessage(_INTL("It has something in its tail."))
+      pbMessage(_INTL("There's something shiny up ahead.").dup)
+      pbMessage(_INTL("It has something in its tail.").dup)
       if event
         event.turn_up
         pbExclaim(event)
@@ -217,11 +217,11 @@ module ShatteredGateStory
       pbSEPlay(cry)
       clue!
       if award_key!
-        pbMessage(_INTL("You received the gate key from Aipom!"))
+        pbMessage(_INTL("You received the gate key from Aipom!").dup)
         play_key_aftershock_once
         true
       else
-        pbMessage(_INTL("You need space for the gate key."))
+        pbMessage(_INTL("You need space for the gate key.").dup)
         false
       end
     end
