@@ -3,6 +3,12 @@ require 'minitest/autorun'
 require_relative '../scripts/install_private_route22_rattata_sprites'
 load File.expand_path('../essentials/Plugins/Shattered Route22/001_Route22.rb', __dir__)
 
+# The actual v21.1 pbWait API takes seconds. Capture duration rather than
+# sleeping during unit tests, so a frames-vs-seconds regression fails fast.
+def pbWait(duration)
+  ($route22_scatter_waits ||= []) << duration
+end
+
 class Route22RattataGroupTest < Minitest::Test
   class Actor
     attr_reader :moves
@@ -17,10 +23,12 @@ class Route22RattataGroupTest < Minitest::Test
   end
   def setup
     $PokemonGlobal=Object.new
+    $route22_scatter_waits=[]
     $game_map=GameMap.new(16,(5..7).to_h{|id|[id,Actor.new]})
   end
   def teardown
     $PokemonGlobal=nil
+    $route22_scatter_waits=nil
     $game_map=nil
   end
   def test_scatter_moves_three_rattata_and_resets_each_retry
@@ -30,12 +38,15 @@ class Route22RattataGroupTest < Minitest::Test
     assert_equal [[:moveto,32,18],[:right]],$game_map.events[7].moves
     assert ShatteredRoute22.scatter!
     assert_equal 4,$game_map.events[5].moves.length
+    assert_equal [0.6, 0.6], $route22_scatter_waits,
+      'pbWait accepts seconds; 12 would stall each scatter for 12 seconds'
   end
   def test_missing_actor_fails_before_moving_anyone
     $game_map.events.delete(7)
     assert_raises(RuntimeError){ShatteredRoute22.scatter!}
     assert_empty $game_map.events[5].moves
     assert_empty $game_map.events[6].moves
+    assert_empty $route22_scatter_waits
   end
   def test_wrong_map_rejected
     $game_map.map_id=10
@@ -45,6 +56,7 @@ class Route22RattataGroupTest < Minitest::Test
     ShatteredRoute22.state[:cleared]=true
     refute ShatteredRoute22.scatter!
     assert_empty $game_map.events[5].moves
+    assert_empty $route22_scatter_waits
   end
   def test_transform_creates_switch_hidden_events_without_changing_tiles
     map=fixture_map
