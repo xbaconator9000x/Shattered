@@ -5,6 +5,8 @@ on:
       - 'essentials/Plugins/Shattered Raid/**'
       - 'tests/test_shattered_raid.rb'
       - 'tests/test_raid_core_integration.rb'
+      - 'tests/test_private_viridian_beedrill.rb'
+      - 'scripts/install_private_viridian_beedrill.rb'
       - 'essentials/Plugins/Shattered Core/**'
       - 'docs/SE-019B_BEEDRILL_RAID.md'
       - '.github/workflows/shattered-raid-ci.yml'
@@ -13,6 +15,8 @@ on:
       - 'essentials/Plugins/Shattered Raid/**'
       - 'tests/test_shattered_raid.rb'
       - 'tests/test_raid_core_integration.rb'
+      - 'tests/test_private_viridian_beedrill.rb'
+      - 'scripts/install_private_viridian_beedrill.rb'
       - 'essentials/Plugins/Shattered Core/**'
       - 'docs/SE-019B_BEEDRILL_RAID.md'
       - '.github/workflows/shattered-raid-ci.yml'
@@ -31,3 +35,7 @@ jobs:
         run: ruby tests/test_shattered_raid.rb
       - name: Run real-Core raid integration regression
         run: ruby tests/test_raid_core_integration.rb
+      - name: Verify native Viridian Beedrill installer (synthetic map only)
+        run: |
+          ruby -c scripts/install_private_viridian_beedrill.rb
+          ruby tests/test_private_viridian_beedrill.rb
