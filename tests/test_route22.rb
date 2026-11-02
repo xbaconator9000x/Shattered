@@ -249,6 +249,26 @@ class Route22BattleTest < Minitest::Test
     $battle_raises=false
     assert ShatteredRoute22.encounter(91,92)
   end
+  def test_failed_battle_setup_clears_essentials_queued_rules_before_retry
+    # Pinned Essentials v21.1 Game_Temp#clear_battle_rules is normally called
+    # only after battle preparation. A failed WildBattle.start must clean up.
+    temp = Object.new
+    temp.instance_variable_set(:@clear_count, 0)
+    temp.define_singleton_method(:clear_battle_rules) do
+      @clear_count += 1
+    end
+    temp.define_singleton_method(:clear_count) { @clear_count }
+    $game_temp = temp
+    $battle_raises = true
+    assert_raises(RuntimeError) { ShatteredRoute22.encounter(91, 92) }
+    assert_equal 1, temp.clear_count
+    refute ShatteredRoute22.cleared?
+    refute $game_switches[92]
+    $battle_raises = false
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, temp.clear_count, "successful battle should retain engine-owned rule lifecycle"
+  end
+
   def test_nonvictory_returns_player_to_safe_gate_side_only_on_route22
     $game_player = Route22TestPlayer.new(31, 17)
     $game_map.map_id = 16
