@@ -65,6 +65,9 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
           ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
           ruby tests/test_viridian.rb
+          ruby tests/test_viridian_map_restore.rb
+          ruby -c scripts/repair_private_viridian_center_arrival.rb
+          ruby tests/test_private_viridian_center_arrival.rb
       - name: Native dojo starter questionnaire and map collision regression
         run: |
           ruby -c 'essentials/Plugins/Shattered Dojo/001_Starter.rb'
