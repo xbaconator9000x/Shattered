@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_hns_east_door_interpreter_contract",
+  "date": "2026-11-03",
+  "candidate_zip_sha256": "c91a8b170d1707688ea7ad862dfff2fe70561419536ab34b163c6d907f4eca2c",
+  "private_native_map223_sha256": "3004ab941e1579de3c6a6061b054850087c58815e50c3b6e2cdaaacae2dfa75c",
+  "native_map": "Data/Map223.rxdata",
+  "event_ids": [
+    6,
+    7
+  ],
+  "observed": {
+    "aipom_key_interaction": "source_verified",
+    "door_trigger": "action_button",
+    "door_solid": true,
+    "conditional_key_check": "ShatteredGateStory.key_obtained?",
+    "locked_response": "present",
+    "route22_transfer": [
+      16,
+      14,
+      10,
+      2
+    ],
+    "native_marshal_event_check": "passed_ruby_3.3.8"
+  },
+  "scope": "Actual private native Map223 event bytes were deserialized and inspected; GitHub source-only tests now reject incorrect key guards, transfers and door triggers.",
+  "limitations": [
+    "No game-engine input or warp executed this run",
+    "Route22 mandatory battle and normal save/reload still need combined candidate gameplay verification",
+    "Android JoiPlay/NaviaXP not executed",
+    "No third-party graphics or commercial assets committed"
+  ],
+  "github_branch": "feature/hgss-victory-road-warp-audit-20261031",
+  "implementation_commits": [
+    "82fd5af4c81d8b71686152f125ffe13e7f294858",
+    "cbf789b290e23d2fbbf176d4bff401faadb81987"
+  ]
+}
