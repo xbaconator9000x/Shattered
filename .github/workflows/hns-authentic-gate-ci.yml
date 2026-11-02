@@ -1,0 +1,76 @@
+name: Shattered HnS authentic gate source conversion
+on:
+  pull_request:
+    paths:
+      - 'scripts/build_authentic_hns_gate_tileset.py'
+      - 'scripts/convert_hns_reception_gate.py'
+      - 'tests/test_authentic_hns_gate_tileset.py'
+      - 'tests/test_hns_gate_conversion.py'
+      - '.github/workflows/hns-authentic-gate-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-pinned-conversion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install isolated image dependency
+        run: python -m pip install Pillow==11.3.0
+      - name: Run synthetic GBA pixel and two-door warp regressions
+        run: |
+          python -m unittest discover -s tests -p 'test_hns_gate_conversion.py' -v
+          python -m unittest discover -s tests -p 'test_authentic_hns_gate_tileset.py' -v
+      - name: Convert exact upstream source in ephemeral runner only
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import urllib.request
+          from scripts.build_authentic_hns_gate_tileset import SOURCE_SHA256, SOURCE_BLOBS
+          base = 'https://raw.githubusercontent.com/PokemonHnS-Development/pokehns-expansion/167aa6d537b109bb229c231ddce4616974c4da71/'
+          root = Path('/tmp/shattered-hns-source')
+          for path in sorted(set(SOURCE_SHA256) | set(SOURCE_BLOBS)):
+              target = root / path
+              target.parent.mkdir(parents=True, exist_ok=True)
+              with urllib.request.urlopen(base + path, timeout=30) as response:
+                  target.write_bytes(response.read())
+          destinations = {
+              'MAP_ROUTE28_HNS': {'map_id': 1, 'x': 1, 'y': 1, 'direction': 2},
+              'MAP_ROUTE22_HNS': {'map_id': 2, 'x': 1, 'y': 1, 'direction': 2},
+              'MAP_ROUTE26NORTH_HNS': {'map_id': 3, 'x': 1, 'y': 1, 'direction': 2},
+              'MAP_VICTORY_ROAD_KANTO_B2F_HNS': {'map_id': 4, 'x': 1, 'y': 1, 'direction': 8},
+              'per_warp_destinations': {
+                  '10,1': {'map_id': 4, 'x': 1, 'y': 1, 'direction': 8},
+                  '11,1': {'map_id': 4, 'x': 2, 'y': 1, 'direction': 8},
+              },
+          }
+          Path('/tmp/hns-test-destinations.json').write_text(json.dumps(destinations))
+          PY
+          python scripts/build_authentic_hns_gate_tileset.py \
+            --hns-root /tmp/shattered-hns-source \
+            --destinations /tmp/hns-test-destinations.json \
+            --output /tmp/shattered-hns-rendered
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from PIL import Image
+          root = Path('/tmp/shattered-hns-rendered')
+          receipt = json.loads((root / 'receipt.json').read_text())
+          bundle = json.loads((root / 'reception_gate.json').read_text())
+          with Image.open(root / 'ShatteredHnSAuthenticGate.png') as image:
+              assert image.width == 256 and image.height % 32 == 0
+          assert receipt['summary']['source_metatiles'] == 46
+          assert receipt['summary']['source_palette_ids'] == [0, 5, 7, 10, 12]
+          assert len(bundle['warps']) == 5
+          assert len({(w['target']['map_id'], w['target']['x'], w['target']['y'])
+                      for w in bundle['warps']}) == 5
+          assert not receipt['native_map_installed']
+          assert not receipt['visual_parity_verified']
+          print('Pinned upstream conversion succeeded; no proprietary assets uploaded.')
+          PY
+      # Do NOT upload rendered tilesheets or source archives as artifacts.
