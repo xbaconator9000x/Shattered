@@ -511,8 +511,8 @@
       "blocker": "Real HUMAN New Game, battle victory and diagnostic save/Continue now observed on Linux mkxp-z. Remaining: actual HnS reception gate map, Aipom/Route22 installed native events, stamina/type/capture verification, normal Save UI, follower/quests and Android."
     }
   ],
-  "estimated_full_demo_completion_percent": 8,
-  "full_demo_scope": "Conservative 8% for the complete Shattered Essentials remake. Private mkxp-z actually booted the corrected Map223 candidate and rendered New Game/HnS opening dialogue on 2026-11-02; native gate tileset/metatile visual parity visibly FAILS. A source-pinned east door condition repair fixes incorrect RMXP command indentation, with source CI and private native archive verification; east door interaction, Route22 battle from map, normal Save/Continue, Victory Road 1F/B1F, full Viridian rescue/dojo/followers and Android remain unverified. Original plugin infrastructure remains separately 16%. Core v0.2.4 now hooks native Gen8 healing to replenish HUMAN stamina; source-pinned native method evaluation passed, but in-game Center healing remains unverified.",
+  "estimated_full_demo_completion_percent": 12,
+  "full_demo_scope": "Conservative 12% for the full remake: PR #57 records native mkxp-z New Game/HUMAN, six Gate impacts, Aipom key, normal Save/Continue across process restart, and corrected upper-walkway preflight. PR #59 fixes the Route22 Rattata scatter 12-second wait to 0.6 seconds; private v0.2.16 compiled candidate has source SHA matches and synthetic Ruby tests only, not actual game runtime. Route22 transfer/battle, full HnS visual parity, Viridian, followers, Android remain open. Original plugin infrastructure remains 16% separately.",
   "last_verified_source_main_sha": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
   "last_verified_source_ci": [
     41327886294,
@@ -704,5 +704,30 @@
     "receipt": "development/private_viridian_center_autorun_2026-11-02.json",
     "native_runtime_verified": false,
     "android_verified": false
+  },
+  "private_opening_timing_candidate": {
+    "date": "2026-11-03",
+    "source_branch": "fix/route22-native-encounter-20261101",
+    "source_commit": "7078d174cbc18950d2fde584f41700557b9a015a",
+    "gate_source_branch": "feature/hgss-victory-road-warp-audit-20261031",
+    "gate_source_commit": "913a370956533ae1cd1ea2ad89bd7cec0460de12",
+    "private_filename": "Shattered_Essentials_HnS_Gate_Rattata_Timing_v0216_Private_Candidate.zip",
+    "base_zip_sha256": "c91a8b170d1707688ea7ad862dfff2fe70561419536ab34b163c6d907f4eca2c",
+    "candidate_sha256": "1a73daed3af2999b06efb4c4fd845258f7d0e64becf419b49492651c3d00ba73",
+    "candidate_bytes": 160889052,
+    "entries": 7746,
+    "unchanged_entry_payloads": 7745,
+    "changed_entry": "Data/PluginScripts.rxdata",
+    "compiled_plugin_archive_sha256": "6a29d16cd9ad4e955575a09f5d99b222ebe39700bab8ed4f53637229dbaa0eda",
+    "route22_version": "0.1.6",
+    "gate_story_version": "0.2.4",
+    "route22_source_sha256": "8de3741dc193d2d862932577d096c52ef54b2a9134f1b92c1736cbd7e6277f50",
+    "gate_story_source_sha256": "1e321ac88b55fbd67555384c0e6f60bacf25d3232d3155007a5eb0c49ac2aeea",
+    "local_compiled_plugin_regression": "3 tests, 19 assertions, no failures; Ruby syntax and ZIP CRC pass",
+    "source_ci": "8/8 PR #59 workflows passed at 7078d174",
+    "actual_gameplay_verified": false,
+    "android_verified": false,
+    "rights_verified_for_distribution": false,
+    "limitation": "Combined private candidate applies already-reviewed Gate Story 0.2.4 seconds fix and new Route22 0.1.6 seconds fix; native mkxp-z opening/Route22 playthrough and Android remain unverified for this candidate."
   }
 }
