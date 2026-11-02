@@ -49,7 +49,7 @@ class Route22RattataGroupTest < Minitest::Test
   def test_transform_creates_switch_hidden_events_without_changing_tiles
     map=fixture_map
     tiles=Marshal.dump(map.data)
-    unrelated=[1,2,4].to_h{|id|[id,Marshal.dump(map.events[id])]}
+    unrelated=[1,2].to_h{|id|[id,Marshal.dump(map.events[id])]}
     ShatteredRoute22Sprites.transform!(map)
     assert_equal (1..7).to_a,map.events.keys.sort
     assert_equal tiles,Marshal.dump(map.data)
@@ -63,6 +63,8 @@ class Route22RattataGroupTest < Minitest::Test
       assert_equal '',e.pages.last.graphic.character_name
     end
     assert_includes map.events[3].pages.first.list.first.parameters.first,'ShatteredRoute22.scatter!'
+    assert_equal [12, ShatteredRoute22Sprites::WARP_NEW_CONDITION], map.events[4].pages.first.list.first.parameters
+    assert_equal [0,10,25,20,2,0], map.events[4].pages.first.list[2].parameters
     assert_raises(RuntimeError){ShatteredRoute22Sprites.transform!(map)}
   end
   def test_transform_rejects_missing_encounter_without_changes
@@ -72,6 +74,22 @@ class Route22RattataGroupTest < Minitest::Test
     assert_raises(RuntimeError){ShatteredRoute22Sprites.transform!(map)}
     assert_equal before,Marshal.dump(map)
   end
+  def test_rejects_unguarded_warp_without_mutating_native_map
+    map = fixture_map
+    map.events[4].pages.first.list.first.parameters[1] = 'true'
+    before = Marshal.dump(map)
+    assert_raises(RuntimeError) { ShatteredRoute22Sprites.transform!(map) }
+    assert_equal before, Marshal.dump(map)
+  end
+
+  def test_rejects_warp_transfer_to_wrong_destination
+    map = fixture_map
+    map.events[4].pages.first.list[2].parameters[1] = 11
+    before = Marshal.dump(map)
+    assert_raises(RuntimeError) { ShatteredRoute22Sprites.transform!(map) }
+    assert_equal before, Marshal.dump(map)
+  end
+
   def fixture_map
     map=RPG::Map.allocate
     map.width=54;map.height=34;map.tileset_id=1
@@ -83,6 +101,18 @@ class Route22RattataGroupTest < Minitest::Test
       if id==3
         event.pages.first.trigger=1
         event.pages.first.list=[RPG::EventCommand.new(355,0,['ShatteredRoute22.encounter(991, 992) || ShatteredRoute22.return_to_entry(16, 29, 17)']),RPG::EventCommand.new]
+      end
+      if id==4
+        event.pages.first.trigger=1
+        event.pages.first.list=[
+          RPG::EventCommand.new(111,0,[12,ShatteredRoute22Sprites::WARP_OLD_CONDITION]),
+          RPG::EventCommand.new(101,1,['The guards wave you towards the walled city.']),
+          RPG::EventCommand.new(201,1,[0,10,25,20,2,0]),
+          RPG::EventCommand.new(411,0,[]),
+          RPG::EventCommand.new(355,1,['ShatteredRoute22.return_to_entry(16, 29, 17)']),
+          RPG::EventCommand.new(412,0,[]),
+          RPG::EventCommand.new(0,0,[])
+        ]
       end
       map.events[id]=event
     end
