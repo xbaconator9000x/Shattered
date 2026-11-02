@@ -32,6 +32,8 @@ jobs:
           python-version: '3.12'
       - name: Validate queue and plugin version manifest
         run: python3 scripts/validate_integration.py
+      - name: Install pinned image dependency for private HUMAN art staging tests
+        run: python3 -m pip install --disable-pip-version-check Pillow==12.3.0
       - name: Test safe installer and queue
         run: python3 -m unittest discover -s tests -v
       - name: Ruby syntax check
