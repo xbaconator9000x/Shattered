@@ -444,9 +444,10 @@
       "evidence": [
         "PR #19 raid source and isolated Ruby tests rebased onto canonical main with genuine Core compatibility regression, not native engine validation",
         "Pending source CI and native Viridian map/quest acceptance",
-        "2026-11-02 Shattered Raid v0.1.1: fixed Essentials skipped-victory bypass with fainted/nonleading HUMAN, canLose retry and stamina restoration, queued battle-rule cleanup on exceptions, and saved raid switch/page reconciliation on Continue. PR #59 source commit 25726292; Ruby raid CI 41395691003 and combined CI 41395690981 passed. Private candidate v027 SHA256 73ee9ffeb4a964bcd0cfef622496e3162350ee7d42ca39378bb234810d96baa5 has byte-matched compiled Raid plugin. Beedrill native overworld events NOT installed in Map010; actual raid battle and Android NOT verified."
+        "2026-11-02 Shattered Raid v0.1.1: fixed Essentials skipped-victory bypass with fainted/nonleading HUMAN, canLose retry and stamina restoration, queued battle-rule cleanup on exceptions, and saved raid switch/page reconciliation on Continue. PR #59 source commit 25726292; Ruby raid CI 41395691003 and combined CI 41395690981 passed. Private candidate v027 SHA256 73ee9ffeb4a964bcd0cfef622496e3162350ee7d42ca39378bb234810d96baa5 has byte-matched compiled Raid plugin. Beedrill native overworld events NOT installed in Map010; actual raid battle and Android NOT verified.",
+        "2026-11-02 PR #59 source-only native installer now adds Beedrill events #29-31 to the actual 50x40 private Map010 (positions 32,22; 32,25; 31,28), using switches 997-999 and level 5/6/7 player-touch encounters with progression-gated pages. Local private Marshal install/reinstall and 5 synthetic Ruby tests/86 assertions passed. v028 ZIP SHA256 5d6107756ced65d4933f49f444a5f404b3c3bb4f25150178a6524634f6cd86b3, native Map010 SHA256 dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5; receipt development/private_beedrill_native_viridian_2026-11-02.json. Source HnS Beedrill sprite converted privately with rights unverified. Actual in-game raid, normal Save/Continue and Android remain OPEN."
       ],
-      "blocker": "Requires reviewed Viridian 48x40 map, sprites, native event installation, actual HUMAN battle, save/reload and Android execution. Source-only Ruby tests cannot close gameplay gates."
+      "blocker": "Native events now installed in the private v028 candidate. Actual Beedrill encounter gameplay, quest timing, persistent state through normal Save/Continue, source-rights clearance for distribution, and Android playthrough still require direct testing. The source-only PR is not merged."
     },
     {
       "id": "SE-019C",
@@ -611,6 +612,27 @@
     "github_combined_ci": 41395690981,
     "native_events_installed": false,
     "native_gameplay_verified": false,
+    "save_continue_verified": false,
+    "android_verified": false,
+    "distribution_rights_verified": false
+  },
+  "private_beedrill_native_viridian_candidate": {
+    "date": "2026-11-02",
+    "source_pr": 59,
+    "filename": "Shattered_Essentials_HnS_Beedrill_Native_Viridian_v028_Private_Candidate.zip",
+    "bytes": 160878008,
+    "sha256": "5d6107756ced65d4933f49f444a5f404b3c3bb4f25150178a6524634f6cd86b3",
+    "native_map_id": 10,
+    "native_map_sha256": "dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5",
+    "events": [
+      29,
+      30,
+      31
+    ],
+    "local_tests": "5 Ruby tests, 86 assertions",
+    "evidence": "development/private_beedrill_native_viridian_2026-11-02.json",
+    "native_map_events_installed": true,
+    "actual_gameplay_verified": false,
     "save_continue_verified": false,
     "android_verified": false,
     "distribution_rights_verified": false
