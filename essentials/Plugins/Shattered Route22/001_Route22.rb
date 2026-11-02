@@ -122,6 +122,14 @@ module ShatteredRoute22
       # A result of 4 is an explicit violation of the no-capture acceptance gate.
       @last_capture_violation = (decision == 4)
       false
+    rescue StandardError
+      # Essentials v21.1 queues rules on Game_Temp and clears them only
+      # after the battle scene has been prepared (or on a skipped battle).
+      # A failed foe generator/scene initialization can otherwise leak
+      # canLose/disablePokeBalls/outcome into the NEXT unrelated battle.
+      temp = defined?($game_temp) ? $game_temp : nil
+      temp.clear_battle_rules if temp && temp.respond_to?(:clear_battle_rules)
+      raise
     ensure
       @running = false
     end
