@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "kind": "private_native_route22_scatter_on_warp_cutline_repair_not_runtime_acceptance",
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "input_candidate_zip_sha256": "1cd273e53b3ead954756769e8804d1d97aecb6b8867762356a4d5effe3b5bd5e",
+  "output_candidate_zip_sha256": "c91a8b170d1707688ea7ad862dfff2fe70561419536ab34b163c6d907f4eca2c",
+  "output_candidate_bytes": 160888942,
+  "output_candidate_entries": 7746,
+  "native_map": "Data/Map016.rxdata",
+  "map_before_sha256": "173b4560718fbf9d46df1ecf2bc52c181cbbeaada38f2846381114c66f02f2c3",
+  "map_after_sha256": "d5b7d99c6f541f6928f8667fb204567ad800d457044d8ee766f249e6efee0ad1",
+  "changed_zip_entries": [
+    "Shattered_Essentials_HnS_Imported/Data/Map016.rxdata"
+  ],
+  "native_source_observation": "Map016 event #3 Player Touch at (30,17) already scatters three Rattata; event #4 Viridian transfer at (32,17) guarded the battle but skipped scatter if event #3 was bypassed. Corrected event #4 conditional to scatter then battle; transfer remains indent 1 on victory-only arm.",
+  "private_executed_tests": [
+    "Real candidate Map016 Ruby Marshal roundtrip byte-identical before edit",
+    "Native event 4 guard and transfer identity verified, only event 4 changed",
+    "Exact output SHA and native Marshal roundtrip passed",
+    "Transaction failure injected after backup; original map restored",
+    "Repeat installation idempotent",
+    "ZIP CRC testzip passed; 7,745 other payloads unchanged"
+  ],
+  "github_source": [
+    "scripts/install_private_route22_rattata_sprites.rb",
+    "scripts/repair_private_route22_warp_scatter.rb",
+    "scripts/verify_private_opening_convergence.rb",
+    "tests/test_route22_rattata_group.rb",
+    "tests/test_private_route22_warp_scatter.rb",
+    "tests/test_private_opening_convergence.rb"
+  ],
+  "native_engine_gameplay_verified": false,
+  "normal_save_continue_verified": false,
+  "android_verified": false,
+  "rights": "No commercial map/sprite/ROM bytes committed. Private candidate remains user-held."
+}
