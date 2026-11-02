@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "kind": "actual_native_mkxp_z_gate_collapse_and_aipom_key_after_wait_unit_fix",
+  "pr": 57,
+  "source_parent_sha": "d03edfeff39a2ed274f45fc7f55b5ebcccc6ce6a",
+  "engine_sha256": "9a100525f7d9c40cde09f38630129802808c8df8c1d8256a96f0af3ec6c50345",
+  "engine": "official mkxp-z Linux Xvfb, llvmpipe, OpenAL null",
+  "source_native_contract": "Pinned Essentials v21.1 Overworld#pbWait(duration) compares System.uptime elapsed seconds; previous Shattered Gate Story passed 16/24 as if frames.",
+  "old_runtime": "Native Map223 intro event #5 entered run_collapse; after >10 seconds impacts remained 0; six waits total 112 seconds and key aftershock another 16 seconds.",
+  "fix": "Shattered Gate Story 0.2.4 uses 0.8/1.2 second waits; 0.8 second aftershock",
+  "private_candidate_sha256": "24a85f5c71236db27114ce890f2a34a927f8aeb5b8a84dab8fd4a268cffbe469",
+  "private_candidate_bytes": 160889874,
+  "private_candidate_entries": 7747,
+  "compiled_plugin_archive_sha256": "3e80f286558d994cf5c152c4ea8b71d450e2116ba7bc15ee5d8c3f1f5aba2861",
+  "gate_story_source_sha256": "1e321ac88b55fbd67555384c0e6f60bacf25d3232d3155007a5eb0c49ac2aeea",
+  "native_observed": {
+    "new_game_human": true,
+    "player_character_ID": 1,
+    "player_sprite_visible": true,
+    "gate_impacts": 6,
+    "gate_final_roar": true,
+    "debris_switch_997": true,
+    "aipom_clue": true,
+    "aipom_key_flag": true,
+    "aipom_aftershock": true,
+    "opening_event_5_finished": true,
+    "aipom_event_6_finished": true
+  },
+  "private_screenshot_sha256": {
+    "gate_after_collapse": "364aacbdc126589785f7d1086d830bcce7191a014c64cd7162eccdab1ac29599",
+    "aipom_key": "75a2313971109cae303cc51473263a4388928ef0a2318f8bb7f7fe15c3673ef8"
+  },
+  "native_original_scripts_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+  "local_evidence": "Native mkxp-z game scene, live event interpreter and saved PokemonGlobal state logged with private diagnostic; original compiled Scripts.rxdata restored in packaged candidate; 7,743 unchanged entry CRCs preserved and unzip CRC passed.",
+  "unverified": [
+    "normal save menu/Continue",
+    "native Route22 battle and transfer",
+    "Gate visual parity",
+    "Android JoiPlay/NaviaXP"
+  ],
+  "rights": "No game assets, screenshot, original ZIP or compiled binaries uploaded to GitHub."
+}

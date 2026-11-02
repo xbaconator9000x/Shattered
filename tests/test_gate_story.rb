@@ -67,7 +67,7 @@ def save_data(value, path); File.binwrite(path, Marshal.dump(value)); end
 def pbMessage(msg); ($messages ||= []) << msg; end
 def _INTL(msg); msg; end
 def pbSEPlay(name); ($sounds ||= []) << name; end
-def pbWait(frames); ($waits ||= []) << frames; end
+def pbWait(seconds); ($waits ||= []) << seconds; end
 def pbExclaim(event); ($exclaims ||= []) << event; end
 
 load File.expand_path("../essentials/Plugins/Shattered Gate Story/001_GateStory.rb", __dir__)
@@ -91,6 +91,18 @@ class GateStoryTest < Minitest::Test
     refute_empty $messages
     assert $messages.all? { |message| message.is_a?(String) && !message.frozen? },
       "Every message passed to Essentials must be a mutable String"
+  end
+
+  # Actual Essentials v21.1 Overworld#pbWait accepts seconds (System.uptime),
+  # not frame counts. The previous 16/24 values delayed the six-beat opening
+  # by 112 seconds and the key aftershock by another 16 seconds.
+  def test_collapse_and_key_aftershock_waits_are_short_seconds
+    ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    assert_equal [0.8, 0.8, 1.2, 0.8, 0.8, 1.2], $waits
+    assert_equal 6, ShatteredGateStory.state[:impacts]
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal 0.8, $waits.last
+    assert_operator $waits.sum, :<, 7.0
   end
 
   def test_six_impacts_resume_and_collapse_persist_in_save

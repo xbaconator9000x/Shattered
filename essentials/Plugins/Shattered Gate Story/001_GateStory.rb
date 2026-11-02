@@ -5,7 +5,8 @@ module ShatteredGateStory
   KEY_ITEM = :SHATTEREDGATEKEY
   MAX_IMPACTS = 6
   # Native Essentials v21.1 Game_Screen#start_shake duration is measured in
-  # 1/20-second units; pbWait uses frames. Keep the shake within each beat.
+  # 1/20-second units; native Essentials pbWait accepts SECONDS, not frames.
+  # Use 0.8/1.2 second intervals to avoid a 112-second opening stall.
   IMPACT_SHAKES = [[3, 5, 5], [4, 5, 5], [6, 6, 8],
                    [4, 5, 5], [5, 6, 5], [8, 7, 8]].freeze
   KEY_AFTERSHOCK = [6, 6, 8].freeze
@@ -124,7 +125,7 @@ module ShatteredGateStory
       return true if current[:post_key_impact]
       shake!(*KEY_AFTERSHOCK)
       pbSEPlay(KEY_AFTERSHOCK_SE)
-      pbWait(16)
+      pbWait(0.8)
       current[:post_key_impact] = true
       true
     end
@@ -171,7 +172,7 @@ module ShatteredGateStory
         index = state[:impacts]
         shake!(*IMPACT_SHAKES.fetch(index))
         pbSEPlay(sound_names[index])
-        pbWait(index == 2 || index == 5 ? 24 : 16)
+        pbWait(index == 2 || index == 5 ? 1.2 : 0.8)
         impact!
         announce_johto_blocked_once
       end
