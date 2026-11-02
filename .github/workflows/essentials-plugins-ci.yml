@@ -66,6 +66,10 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Dojo/001_Starter.rb'
           ruby -c 'essentials/Plugins/Shattered Dojo/002_Install.rb'
           ruby tests/test_dojo.rb
+      - name: Provisional Viridian starter mentor native-map installer regression
+        run: |
+          ruby -c scripts/install_private_viridian_mentor.rb
+          ruby tests/test_private_viridian_mentor.rb
       - name: World-link native installer syntax and unit tests
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'
