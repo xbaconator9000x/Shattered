@@ -21,9 +21,24 @@
       10,
       2
     ],
-    "native_marshal_event_check": "passed_ruby_3.3.8"
+    "native_marshal_event_check": "passed_ruby_3.3.8",
+    "route22_landing": [
+      14,
+      10
+    ],
+    "route22_return_door": [
+      14,
+      9
+    ],
+    "route22_return_transfer": [
+      223,
+      19,
+      9,
+      4
+    ],
+    "route22_native_landing_and_return": "passed_ruby_3.3.8"
   },
-  "scope": "Actual private native Map223 event bytes were deserialized and inspected; GitHub source-only tests now reject incorrect key guards, transfers and door triggers.",
+  "scope": "Actual private native Map223 event bytes were deserialized and inspected; GitHub source-only tests now reject incorrect key guards, transfers and door triggers. Reciprocal native Route22 landing and player-touch return-door event were also checked against the actual private Map016/Tilesets data.",
   "limitations": [
     "No game-engine input or warp executed this run",
     "Route22 mandatory battle and normal save/reload still need combined candidate gameplay verification",
@@ -33,6 +48,10 @@
   "github_branch": "feature/hgss-victory-road-warp-audit-20261031",
   "implementation_commits": [
     "82fd5af4c81d8b71686152f125ffe13e7f294858",
-    "cbf789b290e23d2fbbf176d4bff401faadb81987"
-  ]
+    "cbf789b290e23d2fbbf176d4bff401faadb81987",
+    "6a4b793e600d734502607776055c1448a7c8a9d3",
+    "2096774503d0d49aea6b4555169faa3fb76e76a4"
+  ],
+  "private_native_map016_sha256": "d5b7d99c6f541f6928f8667fb204567ad800d457044d8ee766f249e6efee0ad1",
+  "private_native_tilesets_sha256": "9e6310a10b0cf0510b6d4d2b58fb2d7662f9d181d809164bec6cf7b3ec2af69b"
 }
