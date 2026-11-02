@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_map_and_compiled_raid_switch_collision_repair_not_runtime_acceptance",
+  "date": "2026-11-02",
+  "source_pr": 59,
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "source_commits": [
+    "19a706640d36a33c3f7894558b5cefd78d320703",
+    "724184621712a5e09468d172617447a6c65add9e",
+    "546df77a868012d6c64ed599d2e0f84fbba93e99",
+    "44e23cff6f3ae06d487e654ed146f4ab2933d0ad",
+    "bec7818d029559b8acfbaa6bc0e5985aeda86711",
+    "41ee624988b3f44b86a56366e33f848b0596560f",
+    "ee242e7f7f2789263848e5a2f8b5a08a5f6f27b3"
+  ],
+  "root_cause": "Private Map010 Beedrill raid switches 997-999 collided with Map223 Gate Story's Johto debris switch 997. Gate debris reconciliation could alter raid event state; raid synchronization could alter gate debris state.",
+  "before": {
+    "raid_switches": [
+      997,
+      998,
+      999
+    ],
+    "johto_debris_switch": 997,
+    "source_map010_sha256": "dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5"
+  },
+  "after": {
+    "raid_switches": [
+      1001,
+      1002,
+      1003
+    ],
+    "johto_debris_switch": 997,
+    "native_map010_sha256": "772266eab4497a950feb97a07ad0599c63fc5ee8a5a3fba69e9048e77c1a89cb",
+    "compiled_archive_sha256": "b8cf773277908a4812f0137a4f4a85ad061e2173202ed2a93207bd01a5221dea",
+    "raid_plugin_version": "0.1.2",
+    "raid_source_git_blob_sha1": "094c1f86d47b48be08e87ab48fd546da21564c92"
+  },
+  "private_candidate": {
+    "filename": "Shattered_Essentials_HnS_Raid_Switch_Isolation_v029_Private_Candidate.zip",
+    "sha256": "9521a86d13ef3e1c09e1582b59376bf36aed9230e3e306b4ef55061e9f975008",
+    "bytes": 160879245,
+    "zip_entries": 7741,
+    "unchanged_prior_entries": 7736,
+    "changed_prior_entries": 4,
+    "added_private_receipts": 1
+  },
+  "evidence": [
+    "Real private v0.2.8 Map010 Marshal roundtrip byte-identical; only Beedrill events 29-31 updated; native v0.2.9 map SHA verified",
+    "Native Map223 debris page condition remains switch 997; Map010 raid pages now reference only 1001-1003",
+    "Source-only tests include legacy Map010 save migration and refusal to rewrite unrelated 997 switch",
+    "Native v0.2.9 PluginScripts.rxdata Shattered Raid v0.1.2 compiled script inflates byte-identical to GitHub source; eight other plugin entries retained",
+    "Private ZIP CRC integrity and all 7,736 unrelated entry payloads verified unchanged"
+  ],
+  "ci": {
+    "beedrill": "https://github.com/xbaconator9000x/Shattered/actions/runs/41415420474",
+    "combined": "https://github.com/xbaconator9000x/Shattered/actions/runs/41415420531",
+    "head": "ee242e7f7f2789263848e5a2f8b5a08a5f6f27b3",
+    "status": "eight of eight workflows succeeded on cited head"
+  },
+  "gates": {
+    "source_implemented": true,
+    "compiled_private_candidate": true,
+    "native_gameplay_verified": false,
+    "save_continue_runtime_verified": false,
+    "android_verified": false,
+    "rights_verified_for_distribution": false,
+    "main_merged": false
+  },
+  "blockers": [
+    "Actual mkxp-z runtime unavailable in this container; no game launch/observed save-reload",
+    "Main source still at be0a4a33; PRs #57 and #59 have no recorded human reviews",
+    "Gate rendering/visual parity and full gameplay remain unverified"
+  ]
+}
