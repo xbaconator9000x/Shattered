@@ -9,6 +9,11 @@ module ShatteredRaid
   OUTCOME_WON = 1
   DIRECTIONS = [2, 4, 6, 8].freeze
   EVENT_PREFIX = "ShatteredRaid:BEEDRILL:"
+  # The original private v0.2.8 candidate reused Gate Story switch 997.
+  # Persisted raid progression, never the shared switch value, is authoritative.
+  LEGACY_VIRIDIAN_SWITCHES = [997, 998, 999].freeze
+  VIRIDIAN_SWITCHES = [1001, 1002, 1003].freeze
+  VIRIDIAN_MAP_ID = 10
   SOURCE_MAP_WIDTH = 48
   SOURCE_MAP_HEIGHT = 40
   BATTLE_GUARD = Mutex.new
@@ -35,6 +40,12 @@ module ShatteredRaid
                 value["switch_ids"].all? { |id| id.is_a?(Integer) && id > 0 } &&
                 value["switch_ids"].uniq.length == ENCOUNTER_COUNT))
         raise ConfigurationError, "invalid or unsupported saved raid state"
+      end
+      if value["map_id"] == VIRIDIAN_MAP_ID &&
+         value["switch_ids"] == LEGACY_VIRIDIAN_SWITCHES
+        value = value.dup
+        value["switch_ids"] = VIRIDIAN_SWITCHES.dup
+        store.instance_variable_set(:@shattered_raid_state, value)
       end
       value
     end
