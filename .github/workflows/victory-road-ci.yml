@@ -8,6 +8,8 @@ on:
       - 'scripts/preview_hns_native_maps.py'
       - 'tests/test_preview_hns_native_maps.py'
       - 'scripts/install_hns_gate_victory_road.rb'
+      - 'scripts/repair_private_hns_north_warps.rb'
+      - 'tests/test_private_hns_north_warps.rb'
       - 'scripts/convert_hns_reception_gate.py'
       - 'scripts/resolve_hns_gate_warps.py'
       - 'essentials/Plugins/Shattered HnS Gate/001_Import.rb'
@@ -28,6 +30,8 @@ on:
       - 'scripts/preview_hns_native_maps.py'
       - 'tests/test_preview_hns_native_maps.py'
       - 'scripts/install_hns_gate_victory_road.rb'
+      - 'scripts/repair_private_hns_north_warps.rb'
+      - 'tests/test_private_hns_north_warps.rb'
       - 'scripts/convert_hns_reception_gate.py'
       - 'scripts/resolve_hns_gate_warps.py'
       - 'essentials/Plugins/Shattered HnS Gate/001_Import.rb'
@@ -82,3 +86,7 @@ jobs:
           ruby -c scripts/install_hns_gate_victory_road.rb
           ruby tests/test_hns_victory_road_install.rb
           ruby tests/test_hns_world_install.rb
+      - name: Native Gate twin north landing repair regression tests
+        run: |
+          ruby -c scripts/repair_private_hns_north_warps.rb
+          ruby tests/test_private_hns_north_warps.rb
