@@ -47,7 +47,7 @@ module ShatteredNativeRoute22GuardProbe
   EXPECTED_INDENTS = [0, 1, 1, 0, 1, 0, 0].freeze
   EXPECTED_TRANSFER = [0, 10, 25, 20, 2, 0].freeze
   EXPECTED_RETURN = 'ShatteredRoute22.return_to_entry(16, 29, 17)'
-  EXPECTED_CONDITION = 'ShatteredRoute22.cleared? || ShatteredRoute22.encounter(991, 992)'
+  EXPECTED_CONDITION = 'ShatteredRoute22.cleared? || (ShatteredRoute22.scatter! && ShatteredRoute22.encounter(991, 992))'
   module_function
 
   def regular!(path)
@@ -106,6 +106,10 @@ module ShatteredNativeRoute22GuardProbe
     Graphics.define_singleton_method(:freeze) {}
     Object.const_set(:ShatteredRoute22, Module.new) unless defined?(ShatteredRoute22)
     ShatteredRoute22.define_singleton_method(:cleared?) { $route22_probe_cleared }
+    ShatteredRoute22.define_singleton_method(:scatter!) do
+      ($route22_probe_scatters ||= []) << :scatter
+      $route22_probe_scatter_result
+    end
     ShatteredRoute22.define_singleton_method(:encounter) do |*args|
       ($route22_probe_encounters ||= []) << args
       $route22_probe_battle_result
@@ -123,9 +127,11 @@ module ShatteredNativeRoute22GuardProbe
     end
   end
 
-  def run_case(commands, cleared:, battle_result:)
+  def run_case(commands, cleared:, battle_result:, scatter_result: true)
     $route22_probe_cleared = cleared
     $route22_probe_battle_result = battle_result
+    $route22_probe_scatter_result = scatter_result
+    $route22_probe_scatters = []
     $route22_probe_encounters = []
     $route22_probe_returns = []
     $route22_probe_messages = []
@@ -143,6 +149,7 @@ module ShatteredNativeRoute22GuardProbe
       interpreter.instance_variable_set(:@index, interpreter.instance_variable_get(:@index) + 1)
     end
     { 'cleared' => cleared, 'battle_result' => battle_result,
+      'scatter_result' => scatter_result, 'scatters' => $route22_probe_scatters,
       'transferred' => !!$game_temp.player_transferring,
       'destination' => [$game_temp.player_new_map_id, $game_temp.player_new_x, $game_temp.player_new_y],
       'encounters' => $route22_probe_encounters, 'returns' => $route22_probe_returns,
@@ -163,7 +170,14 @@ module ShatteredNativeRoute22GuardProbe
     denied = run_case(commands, cleared: false, battle_result: false)
     victory = run_case(commands, cleared: false, battle_result: true)
     already = run_case(commands, cleared: true, battle_result: false)
+    missing_actor = run_case(commands, cleared: false, battle_result: true, scatter_result: false)
     raise 'Defeat/escape transferred into Viridian' if denied['transferred']
+    raise 'Defeat skipped the three-Rattata scatter' unless denied['scatters'] == [:scatter]
+    raise 'Victory skipped the three-Rattata scatter' unless victory['scatters'] == [:scatter]
+    raise 'Completed encounter replayed scatter' unless already['scatters'].empty?
+    raise 'Missing scatter actors allowed a battle/transfer' if
+      missing_actor['transferred'] || !missing_actor['encounters'].empty? ||
+      missing_actor['scatters'] != [:scatter] || missing_actor['returns'] != [[16, 29, 17]]
     raise 'Missing safe return after failed encounter' unless denied['returns'] == [[16, 29, 17]]
     raise 'Mandatory battle was skipped' unless denied['encounters'] == [[991, 992]]
     raise 'Victory did not transfer' unless victory.values_at('transferred', 'destination') == [true, [10, 25, 20]]
@@ -171,6 +185,7 @@ module ShatteredNativeRoute22GuardProbe
     { 'kind' => 'actual_pinned_essentials_interpreter_offline_route22_probe',
       'map_sha256' => sha, 'engine_script_sha256' => SCRIPT_SHA256,
       'failed_battle' => denied, 'victory' => victory, 'already_cleared' => already,
+      'missing_scatter_actor' => missing_actor,
       'native_gameplay_verified' => false, 'save_reload_verified' => false, 'android_verified' => false }
   end
 end
