@@ -1,0 +1,55 @@
+{
+  "date": "2026-11-02",
+  "kind": "source_only_essentials_v21_1_battle_rule_exception_recovery",
+  "source_pr": 59,
+  "branch_head_after_source_and_test_edits": "71f767dd26c796661716ada02adc8760901a4ee2",
+  "engine_script_name": "Overworld_BattleStarting",
+  "engine_script_sha256": "7a0e305aad2f7939254b9e322bb86ee592e2da338b114cdec2a74e4cb1ff4b04",
+  "private_input_candidate_sha256": "b3d12fe6e953a9459ae3db11d52c506011e3d84c3b92261cd2ce432b914c127f",
+  "baseline_plugin_source_sha256": {
+    "Route22": "cdbae6e04887f3e15cbda92b5fc0c23cd9d184f931e420f8018b50cef594a72d",
+    "Murkrow": "8b3a1e2b36203d6ffa4d9b714bf6b79c804fc50e72576c30517878472b3d4002"
+  },
+  "defect": "Essentials Game_Temp#battle_rules is normally cleared only after battle setup. If wild encounter creation raises, queued disablePokeBalls/canLose/outcome rules leak into a subsequent unrelated battle.",
+  "before_fix": "Offline reproduction with original private Route22 v0.1.5 source raised 'Route22 leaked battle rules' after injected WildBattle.start exception.",
+  "after_fix": "Offline reproduction using equivalent patched private sources and the actual SHA-pinned Essentials v21.1 Game_Temp/setBattleRule methods: Route22 and Murkrow injected battle-setup exceptions both left Game_Temp#battle_rules empty; Route22 saved cleared flag remained false.",
+  "source_test_workflows": [
+    {
+      "name": "Route22",
+      "run_id": 41368682272,
+      "conclusion": "success"
+    },
+    {
+      "name": "Murkrow",
+      "run_id": 41368682237,
+      "conclusion": "success"
+    },
+    {
+      "name": "Combined",
+      "run_id": 41368682241,
+      "conclusion": "success"
+    },
+    {
+      "name": "Viridian",
+      "run_id": 41368682268,
+      "conclusion": "success"
+    },
+    {
+      "name": "Gate",
+      "run_id": 41368682264,
+      "conclusion": "success"
+    },
+    {
+      "name": "Source handoff",
+      "run_id": 41368682235,
+      "conclusion": "success"
+    }
+  ],
+  "limitations": {
+    "actual_gameplay": false,
+    "native_recompiled_candidate": false,
+    "normal_save_continue": false,
+    "android": false,
+    "licensed_assets_distribution": false
+  }
+}
