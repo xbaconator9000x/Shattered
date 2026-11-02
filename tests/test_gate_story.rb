@@ -81,6 +81,18 @@ class GateStoryTest < Minitest::Test
     $exclaims = []
     $game_screen = GateScreenStub.new
   end
+  def test_native_essentials_message_text_is_mutable
+    # The actual v21.1 pbMessageDisplay calls gsub! on its input.
+    # Frozen literals in this plugin caused a native mkxp-z FrozenError
+    # at Map223 event #5 during the third collapse impact.
+    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6], "roar")
+    ShatteredGateStory.blocked_johto
+    assert ShatteredGateStory.run_aipom("cry")
+    refute_empty $messages
+    assert $messages.all? { |message| message.is_a?(String) && !message.frozen? },
+      "Every message passed to Essentials must be a mutable String"
+  end
+
   def test_six_impacts_resume_and_collapse_persist_in_save
     assert_equal false, ShatteredGateStory.collapsed?
     2.times { ShatteredGateStory.impact! }
