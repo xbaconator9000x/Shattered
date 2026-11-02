@@ -6,12 +6,14 @@ require 'digest'
 require 'json'
 require 'zlib'
 require_relative 'private_rgss_writer'
+require_relative 'install_private_viridian_beedrill'
 
 module ShatteredPrivateOpeningConvergence
   SOURCES = {
     'Shattered Gate Story' => ['001_GateStory.rb', '2173092bd36d5f38379c4c3ffb3fe7fcd8f0dcf0', '0.2.3'],
     'Shattered Route22' => ['001_Route22.rb', '22e9d9ae71518e28f2210a649afdb8b710ba7bc9', '0.1.5'],
-    'Shattered Murkrow Rescue' => ['001_Quest.rb', '30d370ddfe30edd94860f9de654dbeb718b93fa7', '0.1.3']
+    'Shattered Murkrow Rescue' => ['001_Quest.rb', '30d370ddfe30edd94860f9de654dbeb718b93fa7', '0.1.3'],
+    'Shattered Raid' => ['001_Raid.rb', '414dfddd790e80a64c5fc842d5dbfcdeeacd0a81', '0.1.3']
   }.freeze
   module_function
 
@@ -28,6 +30,21 @@ module ShatteredPrivateOpeningConvergence
   def commands(event)
     raise 'Missing native event' unless event && event.respond_to?(:pages)
     event.pages.flat_map { |page| page.instance_variable_get(:@list) || [] }
+  end
+
+  # Compare the exact native event source, including Center page gating,
+  # progression switches, trigger kind and battle script. This catches an
+  # older v0.2.9 raid map even when the compiled plugin has been updated.
+  def verify_raid_pages!(city)
+    raise 'Missing native Viridian event inventory' unless city.events.is_a?(Hash) &&
+      (29..31).all? { |id| city.events.key?(id) }
+    3.times do |index|
+      actual = city.events[29 + index]
+      expected = ShatteredPrivateViridianBeedrill.event(index)
+      raise "Viridian raid event #{29 + index} differs from reviewed Center-gated source" unless
+        Marshal.dump(actual) == Marshal.dump(expected)
+    end
+    true
   end
 
   def verify!(root)
@@ -76,10 +93,12 @@ module ShatteredPrivateOpeningConvergence
       route.events[8]&.name&.start_with?('SHATTERED_MURKROW_RESCUE:')
     raise 'Viridian escort not installed' unless
       [25, 26, 27, 28].all? { |id| city.events[id]&.name&.start_with?('SHATTERED_VIRIDIAN:') }
+    verify_raid_pages!(city)
     { 'kind' => 'private_native_opening_source_and_map_convergence',
       'checked_plugins' => checked, 'gate_north_landings' => north,
       'route22_mandatory_event' => true, 'murkrow_native_event' => true,
-      'viridian_native_escort' => true, 'gate_key_branch_guarded' => true,
+      'viridian_native_escort' => true, 'beedrill_center_gated' => true,
+      'gate_key_branch_guarded' => true,
       'native_game_launched' => false, 'save_continue_verified' => false,
       'android_verified' => false }
   end
