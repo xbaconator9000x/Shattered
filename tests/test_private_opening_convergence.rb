@@ -43,12 +43,40 @@ class PrivateOpeningConvergenceTest < Minitest::Test
     assert_raises(RuntimeError) { V.verify_raid_pages!(city) }
   end
 
+  def test_center_autorun_cannot_start_before_completed_escort
+    center = RPG::Map.allocate
+    center.width = 20
+    center.height = 15
+    center.events = {}
+    event = RPG::Event.new(8, 7)
+    event.id = 11
+    event.name = 'SHATTERED_VIRIDIAN:center_first_visit'
+    start_page = RPG::Event::Page.new
+    start_page.trigger = 3
+    start_page.condition.switch1_valid = true
+    start_page.condition.switch1_id = 994
+    start_page.list = [RPG::EventCommand.new(355, 0,
+      ['ShatteredViridian.center!(995, 996)'])]
+    done = RPG::Event::Page.new
+    done.condition.switch1_valid = true
+    done.condition.switch1_id = 995
+    event.pages = [RPG::Event::Page.new, start_page, done]
+    center.events[11] = event
+    assert V.verify_center_arrival!(center)
+    start_page.condition.switch1_id = 993
+    assert_raises(RuntimeError) { V.verify_center_arrival!(center) }
+    start_page.condition.switch1_id = 994
+    done.condition.switch1_id = 997
+    assert_raises(RuntimeError) { V.verify_center_arrival!(center) }
+  end
+
   def test_private_compiled_opening_and_rejects_source_tampering
     source = ENV['SHATTERED_PRIVATE_PROJECT']
     skip 'Private user-held game not present in public CI' unless source && File.directory?(source)
     Dir.mktmpdir do |dir|
       files = ['SHATTERED_STAGING_REPORT.json', 'Data/PluginScripts.rxdata',
-               'Data/Map223.rxdata', 'Data/Map016.rxdata', 'Data/Map010.rxdata']
+               'Data/Map223.rxdata', 'Data/Map016.rxdata', 'Data/Map010.rxdata',
+               'Data/Map011.rxdata']
       V::SOURCES.each do |name, (script, _pin, _version)|
         files << "Plugins/#{name}/#{script}"
         files << "Plugins/#{name}/meta.txt"
@@ -58,7 +86,8 @@ class PrivateOpeningConvergenceTest < Minitest::Test
         FileUtils.cp(File.join(source, relative), File.join(dir, relative))
       end
       report = V.verify!(dir)
-      assert_equal 4, report.fetch('checked_plugins').length
+      assert_equal 5, report.fetch('checked_plugins').length
+      assert report.fetch('center_autorun_requires_escort_arrival')
       assert_equal 2, report.fetch('gate_north_landings').uniq.length
       refute report.fetch('native_game_launched')
       gate_source = File.join(dir, 'Plugins/Shattered Gate Story/001_GateStory.rb')
