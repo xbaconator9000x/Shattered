@@ -302,9 +302,10 @@
       ],
       "evidence": [
         "Draft PR #17 (SE-019 dojo slice): native Essentials v21.1 starter questionnaire, no-ball recruitment, saved one-time award and guarded RMXP installer. Commit c8e3b72b passed 17 Ruby tests/47 assertions (dojo CI run 40961007164) and general integration CI run 40961007188; real native Essentials/Android gameplay and source dialogue/NPC roles still OPEN.",
-        "2026-10-31 PR #17 native dojo source fix: source-ROM NPC anchor (10x9 reference) is no longer assumed to equal an RMXP map position; reviewed native dimensions and tileset passages are now required, with blocked-tile and source/native geometry regression tests. Native installation, questionnaire parity, save/reload and Android remain unverified."
+        "2026-10-31 PR #17 native dojo source fix: source-ROM NPC anchor (10x9 reference) is no longer assumed to equal an RMXP map position; reviewed native dimensions and tileset passages are now required, with blocked-tile and source/native geometry regression tests. Native installation, questionnaire parity, save/reload and Android remain unverified.",
+        "2026-11-02 PR #59 provisional native Viridian trainer-school mentor: private candidate v0.2.6 adds one real RMXP Map015 action-button event (ID 9 at 6,5), invoking ShatteredDojo.run_quiz, reusing existing Teacher graphic. Map015/tileset source hashes pinned; original teacher and map tiles preserved; private Marshal reload/idempotency and ZIP single-entry delta checked. Exact private candidate SHA256 958b41c55e7d20a0ddd96e63d8e9ac72fda5c072914412df07012da52076a085. Receipt development/private_viridian_mentor_2026-11-02.json. This is provisional placement; original dojo dialogue/location, actual game interaction, recruitment and save/reload remain OPEN."
       ],
-      "blocker": "Actual dojo native map, source NPC identity, licensed instructor art, original questionnaire parity, follower/quest integration and engine/runtime acceptance are not verified."
+      "blocker": "Native Viridian school mentor event is staged privately, but original dojo placement/dialogue and quest timing are unreviewed; actual mkxp-z interaction, starter recruitment, follower and save/Continue, and Android runtime are unverified."
     },
     {
       "id": "SE-020",
