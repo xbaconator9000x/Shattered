@@ -22,6 +22,8 @@ on:
       - "tests/test_private_route22_viridian_guard.rb"
       - "tests/test_private_opening_walkability.rb"
       - "essentials/Plugins/Shattered Viridian/**"
+      - "scripts/repair_private_v0216_runtime_sources.rb"
+      - "tests/test_private_v0216_runtime_coherence.rb"
       - ".github/workflows/route22-ci.yml"
 
 permissions:
@@ -55,3 +57,5 @@ jobs:
           ruby tests/test_private_opening_walkability.rb
           ruby -c scripts/verify_private_route22_viridian_guard.rb
           ruby tests/test_private_route22_viridian_guard.rb
+          ruby -c scripts/repair_private_v0216_runtime_sources.rb
+          ruby tests/test_private_v0216_runtime_coherence.rb
