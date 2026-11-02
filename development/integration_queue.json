@@ -162,8 +162,10 @@
         "Copilot PR #10 adds HnS 22x21 rights-aware conversion/import pipeline and fixture tests; actual art mapping, native Essentials import and all 5 warp playtests remain OPEN.",
         "PR #10 merged on main at 563a9b97; HnS conversion/importer source is integrated, but licensed graphics, metatile mapping, collision and native map execution remain unverified.",
         "2026-10-31 authorised v0.4 native RXData inspection: Crystal fallback gate is Map222, 20x18, SHA256 53111505b21f422574a4b41e02ca62d618cd35c816040cabebb1865024e8cef6; New Game currently starts at 222:(10,14). Map223 appears unoccupied, but is a candidate only, NOT a reviewed HnS allocation. No HnS native map installed.",
-        "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance."
-      ]
+        "2026-10-31 private v0.4 actual Data/Tilesets.rxdata SHA256 d3755e19b6c38d8bf643833afea83538edecdd9820fec0f9411a6fc87daeea3c: native Marshal class Array. HnS importer expects Array. PR #55 fixes Gate Story's erroneous Hash requirement and removes temporary tileset database replacement; pending CI/review, not native HnS runtime acceptance.",
+        "2026-11-03 draft PR #60 adds source-pinned HnS Johto Building/Pokemon Center White indexed metatile/palette -> RMXP tilesheet conversion and fixes duplicate north-door native landings (10,1 -> Map224 29,47; 11,1 -> Map224 30,46). Seven equivalent local synthetic pixel tests passed; exact committed CI and real upstream conversion pending. No private Map223/tileset replacement, native gameplay, visual parity or Android acceptance."
+      ],
+      "blocker": "Authentic metatile renderer is source-implemented in draft PR #60; must pass pinned upstream conversion CI, generate reviewed private tilesheet, replace existing Map223 layers/tileset without touching story events, verify source permissions, native visual/collision/gameplay/save and Android."
     },
     {
       "id": "SE-014",
