@@ -6,6 +6,8 @@ on:
       - 'tests/test_shattered_raid.rb'
       - 'tests/test_raid_core_integration.rb'
       - 'tests/test_private_viridian_beedrill.rb'
+      - 'tests/test_private_opening_convergence.rb'
+      - 'scripts/verify_private_opening_convergence.rb'
       - 'scripts/install_private_viridian_beedrill.rb'
       - 'essentials/Plugins/Shattered Core/**'
       - 'docs/SE-019B_BEEDRILL_RAID.md'
@@ -16,6 +18,8 @@ on:
       - 'tests/test_shattered_raid.rb'
       - 'tests/test_raid_core_integration.rb'
       - 'tests/test_private_viridian_beedrill.rb'
+      - 'tests/test_private_opening_convergence.rb'
+      - 'scripts/verify_private_opening_convergence.rb'
       - 'scripts/install_private_viridian_beedrill.rb'
       - 'essentials/Plugins/Shattered Core/**'
       - 'docs/SE-019B_BEEDRILL_RAID.md'
@@ -39,3 +43,7 @@ jobs:
         run: |
           ruby -c scripts/install_private_viridian_beedrill.rb
           ruby tests/test_private_viridian_beedrill.rb
+      - name: Verify compiled opening and Center-gated native raid source contract
+        run: |
+          ruby -c scripts/verify_private_opening_convergence.rb
+          ruby tests/test_private_opening_convergence.rb
