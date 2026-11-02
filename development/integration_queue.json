@@ -447,7 +447,8 @@
         "PR #19 raid source and isolated Ruby tests rebased onto canonical main with genuine Core compatibility regression, not native engine validation",
         "Pending source CI and native Viridian map/quest acceptance",
         "2026-11-02 Shattered Raid v0.1.1: fixed Essentials skipped-victory bypass with fainted/nonleading HUMAN, canLose retry and stamina restoration, queued battle-rule cleanup on exceptions, and saved raid switch/page reconciliation on Continue. PR #59 source commit 25726292; Ruby raid CI 41395691003 and combined CI 41395690981 passed. Private candidate v027 SHA256 73ee9ffeb4a964bcd0cfef622496e3162350ee7d42ca39378bb234810d96baa5 has byte-matched compiled Raid plugin. Beedrill native overworld events NOT installed in Map010; actual raid battle and Android NOT verified.",
-        "2026-11-02 PR #59 source-only native installer now adds Beedrill events #29-31 to the actual 50x40 private Map010 (positions 32,22; 32,25; 31,28), using switches 997-999 and level 5/6/7 player-touch encounters with progression-gated pages. Local private Marshal install/reinstall and 5 synthetic Ruby tests/86 assertions passed. v028 ZIP SHA256 5d6107756ced65d4933f49f444a5f404b3c3bb4f25150178a6524634f6cd86b3, native Map010 SHA256 dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5; receipt development/private_beedrill_native_viridian_2026-11-02.json. Source HnS Beedrill sprite converted privately with rights unverified. Actual in-game raid, normal Save/Continue and Android remain OPEN."
+        "2026-11-02 PR #59 source-only native installer now adds Beedrill events #29-31 to the actual 50x40 private Map010 (positions 32,22; 32,25; 31,28), using switches 997-999 and level 5/6/7 player-touch encounters with progression-gated pages. Local private Marshal install/reinstall and 5 synthetic Ruby tests/86 assertions passed. v028 ZIP SHA256 5d6107756ced65d4933f49f444a5f404b3c3bb4f25150178a6524634f6cd86b3, native Map010 SHA256 dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5; receipt development/private_beedrill_native_viridian_2026-11-02.json. Source HnS Beedrill sprite converted privately with rights unverified. Actual in-game raid, normal Save/Continue and Android remain OPEN.",
+        "2026-11-02 PR #59 native Viridian Beedrill sequencing fix: v0.2.9 placed all three raid events before the first Center visit; private v0.2.10 Map010 now requires Center switch 995 before encounter #1, plus prior raid switch for #2/#3. Existing raid switches 1001-1003 preserved. Exact native Marshal page-condition scenarios (pre-Center none; Center first only; successive victories next only; all cleared none), original 28 events and tile payloads preserved; ZIP 7741 entries, only Map010 changed. SHA256 1f2a79bc2df1da62a9c119d387bdb4eb9733e75829d50463c2ea7071a0ee2531; receipt development/private_raid_center_gate_2026-11-02.json. In-game battle, Save/Continue and Android remain UNVERIFIED."
       ],
       "blocker": "Native events now installed in the private v028 candidate. Actual Beedrill encounter gameplay, quest timing, persistent state through normal Save/Continue, source-rights clearance for distribution, and Android playthrough still require direct testing. The source-only PR is not merged."
     },
@@ -653,6 +654,24 @@
     "gate_debris_switch": 997,
     "receipt": "development/private_raid_switch_collision_2026-11-02.json",
     "native_runtime_verified": false,
+    "android_verified": false
+  },
+  "private_raid_center_gate_candidate": {
+    "date": "2026-11-02",
+    "source_pr": 59,
+    "candidate_sha256": "1f2a79bc2df1da62a9c119d387bdb4eb9733e75829d50463c2ea7071a0ee2531",
+    "candidate_bytes": 160879252,
+    "map010_sha256": "e8c6de9a324e514425180bc07ae631a43a5de6f7b4b0d74086749713141a5740",
+    "center_switch": 995,
+    "raid_switches": [
+      1001,
+      1002,
+      1003
+    ],
+    "receipt": "development/private_raid_center_gate_2026-11-02.json",
+    "native_page_conditions_verified": true,
+    "native_gameplay_verified": false,
+    "save_continue_verified": false,
     "android_verified": false
   }
 }
