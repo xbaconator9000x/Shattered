@@ -287,19 +287,27 @@ module ShatteredMurkrowRescue
       $player.respond_to?(:able_pokemon_count) && $player.able_pokemon_count > 0
     return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
       defined?(Input::CTRL) && Input.press?(Input::CTRL)
-    if battle["hook"] == "WildBattle.start_core"
-      rules = Object.new
-      raise "Essentials no-capture battle rule unavailable" unless
-        rules.respond_to?(:setBattleRule, true)
-      rules.send(:setBattleRule, "disablePokeBalls")
-      # A failed rescue must return to the overworld for a retry rather than
-      # ending the run at Game Over. This also lets Essentials restore HP.
-      rules.send(:setBattleRule, "canLose")
+    begin
+      if battle["hook"] == "WildBattle.start_core"
+        rules = Object.new
+        raise "Essentials no-capture battle rule unavailable" unless
+          rules.respond_to?(:setBattleRule, true)
+        rules.send(:setBattleRule, "disablePokeBalls")
+        # A failed rescue must return to the overworld for a retry rather than
+        # ending the run at Game Over. This also lets Essentials restore HP.
+        rules.send(:setBattleRule, "canLose")
+      end
+      # start_core returns the actual Essentials decision (1 victory, 2 loss,
+      # 3 escape, 4 capture, 5 draw). WildBattle.start returns true for escape
+      # and capture as well as victory, so never use its boolean for quest flags.
+      decision = receiver.start_core(*arguments)
+    rescue StandardError
+      # In Essentials v21.1 Game_Temp#battle_rules is cleared only once the
+      # battle is prepared. Failed setup must not poison the next encounter.
+      temp = defined?($game_temp) ? $game_temp : nil
+      temp.clear_battle_rules if temp && temp.respond_to?(:clear_battle_rules)
+      raise
     end
-    # start_core returns the actual Essentials decision (1 victory, 2 loss,
-    # 3 escape, 4 capture, 5 draw). WildBattle.start returns true for escape
-    # and capture as well as victory, so never use its boolean for quest flags.
-    decision = receiver.start_core(*arguments)
     # Essentials restores HP on canLose loss/draw, but HUMAN stamina is saved
     # separately. Mirror the mandatory Route 22 retry recovery contract.
     if battle["hook"] == "WildBattle.start_core" && [2, 5].include?(decision) &&
