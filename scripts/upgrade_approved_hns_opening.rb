@@ -39,7 +39,10 @@ module ShatteredApprovedHNSOpening
       1 => [cmd(355, "ShatteredGateStory.blocked_johto"), cmd(0)],
       5 => [cmd(101, "Twenty Years Later..."),
             cmd(101, "The old Johto League Reception Gate is deserted."),
-            cmd(355, "Shattered.ensure_human"),
+            # Essentials Player starts with character_ID=0; without native
+            # pbChangePlayer, Game_Player#character_name remains empty.
+            # Respect an existing character selection on Continue.
+            cmd(355, "pbChangePlayer(1) if $player.character_ID < 1; Shattered.ensure_human"),
             cmd(355, "ShatteredGateStory.run_collapse(#{IMPACTS.inspect}, #{ROAR.inspect})"),
             cmd(123, "A", 0), cmd(0)],
       6 => [cmd(355, aipom_script), cmd(0)],

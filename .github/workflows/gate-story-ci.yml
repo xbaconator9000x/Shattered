@@ -13,6 +13,8 @@ on:
       - "tests/test_private_plugin_coherence.rb"
       - "tests/test_upgrade_approved_hns_opening.rb"
       - "scripts/upgrade_approved_hns_opening.rb"
+      - "scripts/repair_private_hns_player_avatar.rb"
+      - "tests/test_private_hns_player_avatar.rb"
       - "scripts/install_private_hns_debris.rb"
       - "tests/test_hns_south_debris.rb"
       - "tests/test_hns_debris_state.rb"
@@ -39,6 +41,8 @@ jobs:
           ruby tests/test_private_plugin_coherence.rb
           ruby -c scripts/upgrade_approved_hns_opening.rb
           ruby tests/test_upgrade_approved_hns_opening.rb
+          ruby -c scripts/repair_private_hns_player_avatar.rb
+          ruby tests/test_private_hns_player_avatar.rb
           ruby -c scripts/install_private_hns_debris.rb
           ruby tests/test_hns_south_debris.rb
           ruby tests/test_hns_debris_state.rb

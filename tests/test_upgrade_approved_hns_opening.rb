@@ -96,6 +96,8 @@ class ApprovedHNSOpeningUpgradeTest < Minitest::Test
     assert_equal 1, map.events[1].pages.first.trigger
     refute map.events[1].pages.first.through
     assert_equal 3, map.events[5].pages.first.trigger
+    assert_equal ["pbChangePlayer(1) if $player.character_ID < 1; Shattered.ensure_human"],
+                 map.events[5].pages.first.list[2].parameters
     assert_includes map.events[5].pages.first.list.map(&:parameters).flatten.join(" "),
                     "ShatteredGateStory.run_collapse"
     assert_equal "Aipom", map.events[6].pages.first.graphic.character_name
