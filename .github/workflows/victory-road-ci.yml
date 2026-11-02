@@ -9,7 +9,9 @@ on:
       - 'tests/test_preview_hns_native_maps.py'
       - 'scripts/install_hns_gate_victory_road.rb'
       - 'scripts/repair_private_hns_north_warps.rb'
+      - 'scripts/verify_private_hns_east_path.rb'
       - 'tests/test_private_hns_north_warps.rb'
+      - 'tests/test_private_hns_east_path.rb'
       - 'scripts/convert_hns_reception_gate.py'
       - 'scripts/resolve_hns_gate_warps.py'
       - 'essentials/Plugins/Shattered HnS Gate/001_Import.rb'
@@ -31,7 +33,9 @@ on:
       - 'tests/test_preview_hns_native_maps.py'
       - 'scripts/install_hns_gate_victory_road.rb'
       - 'scripts/repair_private_hns_north_warps.rb'
+      - 'scripts/verify_private_hns_east_path.rb'
       - 'tests/test_private_hns_north_warps.rb'
+      - 'tests/test_private_hns_east_path.rb'
       - 'scripts/convert_hns_reception_gate.py'
       - 'scripts/resolve_hns_gate_warps.py'
       - 'essentials/Plugins/Shattered HnS Gate/001_Import.rb'
@@ -90,3 +94,7 @@ jobs:
         run: |
           ruby -c scripts/repair_private_hns_north_warps.rb
           ruby tests/test_private_hns_north_warps.rb
+      - name: HnS Gate east upper-walkway native directional preflight
+        run: |
+          ruby -c scripts/verify_private_hns_east_path.rb
+          ruby tests/test_private_hns_east_path.rb
