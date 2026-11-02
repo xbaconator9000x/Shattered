@@ -94,16 +94,30 @@ def setBattleRule(*args)
   $raid_outcome_id = args[1] if args[0] == "outcome"
 end
 
+RaidPokemon = Struct.new(:species, :hp) do
+  def able?
+    hp.to_i > 0
+  end
+end
+
 load File.expand_path("../essentials/Plugins/Shattered Raid/001_Raid.rb", __dir__)
 
 class ShatteredRaidTest < Minitest::Test
   def setup
     $PokemonGlobal = Object.new
-    $player = Struct.new(:party).new([Struct.new(:species).new(:HUMAN)])
+    $player = Struct.new(:party) do
+      def able_pokemon_count
+        party.count { |pkmn| pkmn.respond_to?(:able?) && pkmn.able? }
+      end
+    end.new([RaidPokemon.new(:HUMAN, 10)])
     $game_variables = Hash.new(0)
     $game_switches = Hash.new(false)
     $game_map = Struct.new(:map_id).new(301)
     $battle_rules = []
+    $game_temp = Object.new
+    def $game_temp.clear_battle_rules
+      $battle_rules.clear
+    end
     WildBattle.calls = []
     WildBattle.callback = nil
     WildBattle.outcome = 1
@@ -115,9 +129,46 @@ class ShatteredRaidTest < Minitest::Test
     assert_equal 1, ShatteredRaid.progression
     assert_equal [true, false, false], switch_values
     assert_equal [[:BEEDRILL, 5]], WildBattle.calls
-    assert_equal [["disablePokeBalls"], ["outcome", 7]], $battle_rules
+    assert_equal [["disablePokeBalls"], ["canLose"], ["outcome", 7]], $battle_rules
     refute ShatteredRaid.trigger(0, runtime_config)
     assert_equal 1, WildBattle.calls.length
+  end
+
+  def test_fainted_human_or_companion_lead_cannot_skip_mandatory_raid
+    human = $player.party.first
+    human.hp = 0
+    $player.party << RaidPokemon.new(:RATTATA, 10)
+    refute ShatteredRaid.trigger(0, runtime_config)
+    assert_empty WildBattle.calls
+    assert_equal 0, ShatteredRaid.progression
+    human.hp = 10
+    $player.party.reverse!
+    refute ShatteredRaid.trigger(0, runtime_config)
+    assert_empty WildBattle.calls
+    $player.party.reverse!
+    assert ShatteredRaid.trigger(0, runtime_config)
+    assert_equal 1, ShatteredRaid.progression
+  end
+
+  def test_battle_setup_exception_clears_queued_rules_before_retry
+    WildBattle.callback = proc { raise "native battle setup failed" }
+    assert_raises(RuntimeError) { ShatteredRaid.trigger(0, runtime_config) }
+    assert_empty $battle_rules
+    assert_equal 0, ShatteredRaid.progression
+    WildBattle.callback = nil
+    assert ShatteredRaid.trigger(0, runtime_config)
+    assert_equal [["disablePokeBalls"], ["canLose"], ["outcome", 7]], $battle_rules
+  end
+
+  def test_continue_hook_reconciles_saved_raid_pages
+    assert ShatteredRaid.trigger(0, runtime_config)
+    $game_switches[21] = false
+    $game_switches[22] = true
+    $game_map = Struct.new(:map_id, :need_refresh).new(301, false)
+    handler = EventHandlers.handler(:on_map_or_spriteset_change, :shattered_raid_continue_sync)
+    assert handler.call
+    assert_equal [true, false, false], switch_values
+    assert $game_map.need_refresh
   end
 
   def test_flee_blackout_and_undecided_outcomes_remain_retryable
