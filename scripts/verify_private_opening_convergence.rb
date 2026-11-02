@@ -48,6 +48,35 @@ module ShatteredPrivateOpeningConvergence
     true
   end
 
+  # An entry from the HnS gate can walk around the separate Rattata ambush
+  # tile and reach the Viridian transfer directly. The transfer must invoke
+  # the scatter sequence before the mandatory battle, with the native transfer
+  # command confined to the successful conditional branch.
+  def verify_route22_transfer_scatter!(route)
+    raise 'Wrong native Route22 map' unless route.is_a?(RPG::Map) &&
+      [route.width, route.height] == [54, 34]
+    warp = route.events[4]
+    raise 'Missing native Route22 transfer' unless warp &&
+      [warp.x, warp.y] == [32, 17] && warp.pages.length == 1 &&
+      warp.pages.first.trigger == 1
+    commands = warp.pages.first.list
+    expected = 'ShatteredRoute22.cleared? || (ShatteredRoute22.scatter! && ShatteredRoute22.encounter(991, 992))'
+    raise 'Route22 warp bypasses Rattata scatter or battle' unless
+      commands.map(&:code) == [111, 101, 201, 411, 355, 412, 0] &&
+      commands.map(&:indent) == [0, 1, 1, 0, 1, 0, 0] &&
+      commands.first.parameters == [12, expected] &&
+      commands[2].parameters == [0, 10, 25, 20, 2, 0] &&
+      commands[4].parameters == ['ShatteredRoute22.return_to_entry(16, 29, 17)']
+    [5, 6, 7].each do |id|
+      event = route.events[id]
+      raise "Missing native Rattata scatter actor #{id}" unless event &&
+        event.name == "SHATTERED: Rattata scatter #{id - 4}" &&
+        event.pages.length == 2 && event.pages.last.condition.switch1_valid &&
+        event.pages.last.condition.switch1_id == 992
+    end
+    true
+  end
+
   def verify_center_arrival!(center)
     raise 'Wrong native Viridian Center map' unless center.is_a?(RPG::Map) &&
       [center.width, center.height] == [20, 15]
@@ -112,11 +141,13 @@ module ShatteredPrivateOpeningConvergence
       route.events[8]&.name&.start_with?('SHATTERED_MURKROW_RESCUE:')
     raise 'Viridian escort not installed' unless
       [25, 26, 27, 28].all? { |id| city.events[id]&.name&.start_with?('SHATTERED_VIRIDIAN:') }
+    verify_route22_transfer_scatter!(route)
     verify_raid_pages!(city)
     verify_center_arrival!(center)
     { 'kind' => 'private_native_opening_source_and_map_convergence',
       'checked_plugins' => checked, 'gate_north_landings' => north,
-      'route22_mandatory_event' => true, 'murkrow_native_event' => true,
+      'route22_mandatory_event' => true, 'route22_warp_scatter_guarded' => true,
+      'center_autorun_requires_escort_arrival' => true, 'murkrow_native_event' => true,
       'viridian_native_escort' => true, 'beedrill_center_gated' => true,
       'gate_key_branch_guarded' => true,
       'native_game_launched' => false, 'save_continue_verified' => false,
