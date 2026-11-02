@@ -1,0 +1,61 @@
+{
+  "date": "2026-11-02",
+  "source_pr": 59,
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "change": "Gate three native Beedrill encounters behind Viridian Center first visit; preserve 1001-1003 sequential wins",
+  "private_candidate": "Shattered_Essentials_HnS_Raid_Center_Gate_v0210_Private_Candidate.zip",
+  "parent_candidate_sha256": "9521a86d13ef3e1c09e1582b59376bf36aed9230e3e306b4ef55061e9f975008",
+  "candidate_sha256": "1f2a79bc2df1da62a9c119d387bdb4eb9733e75829d50463c2ea7071a0ee2531",
+  "candidate_bytes": 160879252,
+  "zip_entries": 7741,
+  "changed_entries": [
+    "Data/Map010.rxdata"
+  ],
+  "old_map_sha256": "772266eab4497a950feb97a07ad0599c63fc5ee8a5a3fba69e9048e77c1a89cb",
+  "new_map_sha256": "e8c6de9a324e514425180bc07ae631a43a5de6f7b4b0d74086749713141a5740",
+  "center_switch": 995,
+  "raid_switches": [
+    1001,
+    1002,
+    1003
+  ],
+  "native_page_condition_scenarios": {
+    "before_center": [
+      false,
+      false,
+      false
+    ],
+    "center_entered": [
+      true,
+      false,
+      false
+    ],
+    "first_won": [
+      false,
+      true,
+      false
+    ],
+    "second_won": [
+      false,
+      false,
+      true
+    ],
+    "raid_completed": [
+      false,
+      false,
+      false
+    ]
+  },
+  "validation": {
+    "native_marshal_roundtrip": true,
+    "original_28_events_byte_preserved": true,
+    "tiles_byte_preserved": true,
+    "zip_integrity": true,
+    "other_7740_zip_payloads_preserved": true,
+    "ruby_source_ci": "pending at receipt creation",
+    "gameplay_playthrough": false,
+    "save_continue": false,
+    "android": false
+  },
+  "rights": "private-only candidate; no third-party commercial assets committed; upstream asset redistribution permissions unverified"
+}
