@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_viridian_beedrill_integration_not_gameplay_acceptance",
+  "date": "2026-11-02",
+  "source_pr": 59,
+  "installer_commits": [
+    "dc9c5cf91b27fba2b0cddf867ccd6c2f8ef68d68",
+    "07176170cdbfb6e0370bb48f3a7c6c1bf65cd06c"
+  ],
+  "tests_commit": "6220eaadbfc22c10ee22e7b8bac3fe1fa1c6ab86",
+  "ci_commit": "d260963f645c34d8c6933275c83e45f88793850d",
+  "candidate": "Shattered_Essentials_HnS_Beedrill_Native_Viridian_v028_Private_Candidate.zip",
+  "candidate_bytes": 160878008,
+  "candidate_sha256": "5d6107756ced65d4933f49f444a5f404b3c3bb4f25150178a6524634f6cd86b3",
+  "prior_candidate_sha256": "73ee9ffeb4a964bcd0cfef622496e3162350ee7d42ca39378bb234810d96baa5",
+  "zip_entries": 7740,
+  "prior_entries_preserved": 7737,
+  "changed_existing_paths": [
+    "Data/Map010.rxdata"
+  ],
+  "added_private_paths": [
+    "Graphics/Characters/Beedrill.png",
+    "SHATTERED_PRIVATE_BEEDRILL_MAP_v012_RECEIPT.json"
+  ],
+  "native_map_id": 10,
+  "source_map_sha256": "9a30262d8f21a46259b677a78a17b51aa6f8f16cb14f0b169d54b625adda2180",
+  "installed_map_sha256": "dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5",
+  "event_ids": [
+    29,
+    30,
+    31
+  ],
+  "event_positions": [
+    [
+      32,
+      22
+    ],
+    [
+      32,
+      25
+    ],
+    [
+      31,
+      28
+    ]
+  ],
+  "levels": [
+    5,
+    6,
+    7
+  ],
+  "switches": [
+    997,
+    998,
+    999
+  ],
+  "outcome_variable": 990,
+  "beedrill_source_blob": "2c840cd2780f79d7e46a3a0e57a4244602b85b44",
+  "beedrill_source_sha256": "663b93a030f303569fefd40d15736b4b6270e9d8a398d9433040c09320a0339f",
+  "converted_sprite_sha256": "840ebd96f47124e89a0fa68fce882969d40104ae5271a9c42523054039247a00",
+  "local_tests": "5 tests, 86 assertions, 0 failures",
+  "source_ci": "https://github.com/xbaconator9000x/Shattered/actions/runs/41402642258",
+  "combined_ci": "https://github.com/xbaconator9000x/Shattered/actions/runs/41402642277",
+  "native_map_marshal_roundtrip": true,
+  "actual_native_gameplay_verified": false,
+  "save_continue_verified": false,
+  "android_verified": false,
+  "rights_verified_for_distribution": false,
+  "blockers": [
+    "Native game runner not available in this container; full observed Beedrill battle and save/reload remain open",
+    "HnS source has no verified redistribution licence; private staging only",
+    "Main not merged; PR #59 and #57 have no recorded reviews",
+    "Reception Gate visual parity and full opening playthrough remain open"
+  ]
+}
