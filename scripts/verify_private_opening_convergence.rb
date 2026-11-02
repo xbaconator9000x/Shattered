@@ -10,11 +10,11 @@ require_relative 'install_private_viridian_beedrill'
 
 module ShatteredPrivateOpeningConvergence
   SOURCES = {
-    'Shattered Gate Story' => ['001_GateStory.rb', '2173092bd36d5f38379c4c3ffb3fe7fcd8f0dcf0', '0.2.3'],
-    'Shattered Route22' => ['001_Route22.rb', '22e9d9ae71518e28f2210a649afdb8b710ba7bc9', '0.1.5'],
+    'Shattered Gate Story' => ['001_GateStory.rb', '3eccf46f9e7b32dcfcde1ab59ee204c9cd74bc3c', '0.2.4'],
+    'Shattered Route22' => ['001_Route22.rb', '57819f23ee4a397b78a5ca5c983c18a87d3e9f67', '0.1.6'],
     'Shattered Murkrow Rescue' => ['001_Quest.rb', '30d370ddfe30edd94860f9de654dbeb718b93fa7', '0.1.3'],
     'Shattered Raid' => ['001_Raid.rb', '414dfddd790e80a64c5fc842d5dbfcdeeacd0a81', '0.1.3'],
-    'Shattered Viridian' => ['001_Entry.rb', '7932d06e61f20f8357f696a6185600b003f49622', '0.1.2']
+    'Shattered Viridian' => ['001_Entry.rb', '7c1574f0dfee5dd6d5c52145c21c8b8d7f14f779', '0.1.3']
   }.freeze
   module_function
 
@@ -94,6 +94,70 @@ module ShatteredPrivateOpeningConvergence
     true
   end
 
+  # Verify the *native* Viridian arrival autorun has two awaited movement
+  # routes, checks their actual endpoints, and only sets the Center unlock
+  # switch after both NPCs arrive. This is source/geometry evidence, not
+  # proof that a graphical Essentials engine executed the escort.
+  def verify_viridian_escort!(city)
+    raise 'Wrong native Viridian city map' unless city.is_a?(RPG::Map) &&
+      [city.width, city.height] == [50, 40] && city.events.is_a?(Hash)
+    arrival = city.events[23]
+    raise 'Missing native Viridian arrival autorun' unless arrival &&
+      arrival.name == 'SHATTERED: Viridian arrival' &&
+      [arrival.x, arrival.y] == [25, 20] && arrival.pages.length == 2
+    first, finished = arrival.pages
+    raise 'Arrival event is not an autorun' unless first.trigger == 3
+    raise 'Escort completion page is not switch 994' unless
+      finished.condition.switch1_valid && finished.condition.switch1_id == 994
+    list = first.list
+    expected_codes = [355, 236, 101, 209, 210, 209, 210, 111, 355,
+                      101, 411, 101, 116, 412, 0]
+    raise 'Native escort command sequence changed' unless list.map(&:code) == expected_codes
+    raise 'Escort does not start rain before moving' unless
+      list[0].parameters == ['ShatteredViridian.start!(993, 996)'] &&
+      list[1].parameters == [1, 6, 20]
+    raise 'Escort must wait for each movement route' unless
+      list[4].indent == 0 && list[6].indent == 0
+    expected_moves = {
+      25 => [[24, 20], [25, 27], [1, 1, 2, 1, 1, 1, 1, 1, 3, 3, 0]],
+      26 => [[23, 20], [24, 27], [1, 1, 1, 1, 1, 1, 1, 3, 0]]
+    }
+    expected_moves.each_with_index do |(id, (start, finish, moves)), index|
+      npc = city.events[id]
+      raise "Missing native escort NPC #{id}" unless npc &&
+        [npc.x, npc.y] == start && npc.pages.length == 2 &&
+        npc.pages.first.through && npc.pages.last.through &&
+        npc.pages.last.condition.switch1_valid &&
+        npc.pages.last.condition.switch1_id == 994
+      command = list[index == 0 ? 3 : 5]
+      raise "Wrong native move-route target #{id}" unless command.parameters[0] == id
+      route = command.parameters[1]
+      raise "Unreviewed native move route #{id}" unless route.is_a?(RPG::MoveRoute) &&
+        !route.repeat && route.list.map(&:code) == moves
+      x, y = start
+      route.list.each do |step|
+        case step.code
+        when 1 then y += 1
+        when 2 then x -= 1
+        when 3 then x += 1
+        when 0 then next
+        else raise "Unreviewed movement command for NPC #{id}"
+        end
+        raise "Escort NPC #{id} walks outside map" unless
+          x.between?(0, city.width - 1) && y.between?(0, city.height - 1)
+      end
+      raise "Escort NPC #{id} misses Center endpoint" unless [x, y] == finish
+    end
+    raise 'Escort arrival flag not guarded by both NPC endpoints' unless
+      list[7].parameters == [12,
+        'ShatteredViridian.complete_route!(25, 26, [24, 20], [23, 20], [25, 27], [24, 27], 993, 996)'] &&
+      list[8].indent == 1 &&
+      list[8].parameters == ['ShatteredViridian.arrive!(994)'] &&
+      list[12].code == 116 && list[12].indent == 1
+    { 'escort_npcs' => [25, 26], 'endpoints' => [[25, 27], [24, 27]],
+      'arrival_requires_both_routes' => true }
+  end
+
   def verify!(root)
     root = File.realpath(root)
     require_file!(root, 'SHATTERED_STAGING_REPORT.json')
@@ -142,13 +206,15 @@ module ShatteredPrivateOpeningConvergence
     raise 'Viridian escort not installed' unless
       [25, 26, 27, 28].all? { |id| city.events[id]&.name&.start_with?('SHATTERED_VIRIDIAN:') }
     verify_route22_transfer_scatter!(route)
+    escort = verify_viridian_escort!(city)
     verify_raid_pages!(city)
     verify_center_arrival!(center)
     { 'kind' => 'private_native_opening_source_and_map_convergence',
       'checked_plugins' => checked, 'gate_north_landings' => north,
       'route22_mandatory_event' => true, 'route22_warp_scatter_guarded' => true,
       'center_autorun_requires_escort_arrival' => true, 'murkrow_native_event' => true,
-      'viridian_native_escort' => true, 'beedrill_center_gated' => true,
+      'viridian_native_escort' => true, 'viridian_escort_route_guarded' => escort,
+      'beedrill_center_gated' => true,
       'gate_key_branch_guarded' => true,
       'native_game_launched' => false, 'save_continue_verified' => false,
       'android_verified' => false }
