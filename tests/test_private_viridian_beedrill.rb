@@ -31,6 +31,39 @@ class PrivateViridianBeedrillTest < Minitest::Test
     end
   end
 
+  def test_raid_switches_do_not_reuse_gate_or_other_opening_switches
+    assert_equal [1001, 1002, 1003], B::SWITCHES
+    assert_equal [997, 998, 999], B::LEGACY_SWITCHES
+    assert_empty B::SWITCHES & (992..999).to_a
+    B::EVENT_IDS.each_with_index do |id, index|
+      active = B.event(index).pages[-2]
+      assert_includes active.list.first.parameters.first, "\\\"switch_id\\\"=>#{B::SWITCHES[index]}"
+    end
+  end
+
+  def test_exact_legacy_events_upgrade_without_touching_unrelated_map_content
+    map, tilesets = fixture
+    3.times { |index| map.events[B::EVENT_IDS[index]] = B.event(index, B::LEGACY_SWITCHES) }
+    old_tiles = Marshal.dump(map.data)
+    old_events = (1..28).to_h { |id| [id, Marshal.dump(map.events.fetch(id))] }
+    assert_equal :migrated, B.migrate_legacy!(map)
+    assert_equal old_tiles, Marshal.dump(map.data)
+    old_events.each { |id, bytes| assert_equal bytes, Marshal.dump(map.events.fetch(id)) }
+    assert_equal :already_installed, B.transform!(map, tilesets)
+    B::EVENT_IDS.each_with_index do |id, index|
+      assert_equal Marshal.dump(B.event(index)), Marshal.dump(map.events.fetch(id))
+    end
+  end
+
+  def test_partial_legacy_event_migration_is_rejected
+    map, _tilesets = fixture
+    3.times { |index| map.events[B::EVENT_IDS[index]] = B.event(index, B::LEGACY_SWITCHES) }
+    map.events[30].pages[-2].list.first.parameters[0] = 'tampered'
+    before = Marshal.dump(map)
+    assert_raises(RuntimeError) { B.migrate_legacy!(map) }
+    assert_equal before, Marshal.dump(map)
+  end
+
   def test_map_install_preserves_all_unrelated_events_and_tiles
     map, tilesets = fixture
     original_events = map.events.transform_values { |e| Marshal.dump(e) }
