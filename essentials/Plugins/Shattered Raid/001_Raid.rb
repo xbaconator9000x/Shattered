@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Shattered Raid v0.1.2 — Pokémon Essentials 21.1.
+# Shattered Raid v0.1.3 — Pokémon Essentials 21.1.
 # Native runtime must not load CRuby-only libraries at startup.
 # The map installer loads Digest lazily, outside gameplay.
 
@@ -67,6 +67,14 @@ module ShatteredRaid
       begin
         validate_runtime_dependencies!
         current_state = state
+        # The native Beedrill event page is gated by Center switch 995, but
+        # scripts can invoke this API directly and saved switches may be stale.
+        # Require the authoritative saved escort state, not a switch alone.
+        if runtime_config["map_id"] == VIRIDIAN_MAP_ID
+          return false unless defined?(ShatteredViridian) &&
+            ShatteredViridian.respond_to?(:state) &&
+            ShatteredViridian.state[:center] == true
+        end
         sync_map_state(runtime_config, current_state)
         return false if current_state["completed"] || current_state["progression"] != index
         # Essentials v21.1 can report a skipped wild battle as decision 1 when
@@ -217,6 +225,15 @@ module ShatteredRaid
         end
         raise ConfigurationError, "duplicate encounter switch" if seen_switches.include?(entry["switch_id"])
         seen_switches << entry["switch_id"]
+      end
+      # The original private candidate accidentally reused Gate debris switch
+      # 997. Fail closed on any stale/foreign native event rather than letting
+      # an event-script regression mutate unrelated Johto story switches.
+      if config["map_id"] == VIRIDIAN_MAP_ID &&
+         (seen_switches != VIRIDIAN_SWITCHES ||
+          config["outcome_variable_id"] != 990 ||
+          config["events"].map { |entry| entry["level"] } != [5, 6, 7])
+        raise ConfigurationError, "Viridian raid runtime IDs or levels differ from reviewed native Map010"
       end
       config
     end
