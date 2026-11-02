@@ -209,6 +209,56 @@ class MurkrowRescueTest < Minitest::Test
     end
   end
 
+  def test_save_stage_cannot_jump_ahead_of_authoritative_rescue_flags
+    # A stale/malformed stage alone must not hide the native event, skip the
+    # battle, recruit an unrelated Murkrow or claim the rescue reward.
+    requirements = {
+      :discovered => :discovered,
+      :battle_pending => :discovered,
+      :befriending => :battle_won,
+      :recruited => :murkrow_recruited,
+      :complete => :reward_claimed
+    }
+    requirements.each do |stage, missing|
+      store = SaveStub.new
+      value = ShatteredMurkrowRescue.state(store)
+      value[:flags].keys.each { |flag| value[:flags][flag] = true }
+      value[:flags][missing] = false
+      value[:stage] = stage
+      restored = Marshal.load(Marshal.dump(store))
+      saved = restored.instance_variable_get(ShatteredMurkrowRescue::STATE_IVAR)
+      assert_raises(ShatteredMurkrowRescue::InvalidState, "#{stage} without #{missing}") do
+        ShatteredMurkrowRescue.state(restored)
+      end
+      assert_equal stage, saved[:stage]
+      refute saved[:flags][missing]
+    end
+
+    store = SaveStub.new
+    value = ShatteredMurkrowRescue.state(store)
+    value[:stage] = :complete
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.state(Marshal.load(Marshal.dump(store)))
+    end
+    assert_equal 0, $reward_count
+  end
+
+  def test_undiscovered_stage_rejects_progress_flags_but_valid_retry_recovers
+    store = SaveStub.new
+    value = ShatteredMurkrowRescue.state(store)
+    value[:flags][:discovered] = true
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.state(store)
+    end
+
+    store = SaveStub.new
+    ShatteredMurkrowRescue.discover!(store)
+    assert ShatteredMurkrowRescue.begin_battle!(store)
+    restored = Marshal.load(Marshal.dump(store))
+    assert_equal :discovered, ShatteredMurkrowRescue.state(restored)[:stage]
+    assert ShatteredMurkrowRescue.begin_battle!(restored)
+  end
+
   def test_recruitment_is_non_ball_and_idempotent
     ready_to_befriend
     friend = ShatteredMurkrowRescue.recruit!(@player, @store)
