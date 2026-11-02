@@ -13,7 +13,8 @@ module ShatteredPrivateViridianBeedrill
 
   MAP_SHA = '9a30262d8f21a46259b677a78a17b51aa6f8f16cb14f0b169d54b625adda2180'
   LEGACY_INSTALLED_SHA = 'dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5'
-  INSTALLED_SHA = '772266eab4497a950feb97a07ad0599c63fc5ee8a5a3fba69e9048e77c1a89cb'
+  PRE_CENTER_GATE_SHA = '772266eab4497a950feb97a07ad0599c63fc5ee8a5a3fba69e9048e77c1a89cb'
+  INSTALLED_SHA = 'e8c6de9a324e514425180bc07ae631a43a5de6f7b4b0d74086749713141a5740'
   SPRITE_SHA = '840ebd96f47124e89a0fa68fce882969d40104ae5271a9c42523054039247a00'
   SOURCE_SPRITE_SHA = '663b93a030f303569fefd40d15736b4b6270e9d8a398d9433040c09320a0339f'
   MAP_ID = 10
@@ -21,6 +22,7 @@ module ShatteredPrivateViridianBeedrill
   # private raid prototype accidentally reused it; never reuse 992-999.
   LEGACY_SWITCHES = [997, 998, 999].freeze
   SWITCHES = [1001, 1002, 1003].freeze
+  CENTER_SWITCH = 995 # ShatteredViridian.center!; the raid starts after shelter
   OUTCOME_VARIABLE = 990
   LEVELS = [5, 6, 7].freeze
   POSITIONS = [[32, 22], [32, 25], [31, 28]].freeze
@@ -37,7 +39,7 @@ module ShatteredPrivateViridianBeedrill
     "ShatteredRaid.trigger(#{index}, #{config.inspect})"
   end
 
-  def page(sprite: '', switch: nil, through: true, trigger: 0, commands: nil)
+  def page(sprite: '', switch: nil, second_switch: nil, through: true, trigger: 0, commands: nil)
     p = RPG::Event::Page.new
     p.graphic.character_name = sprite
     p.graphic.character_hue = 0
@@ -48,17 +50,25 @@ module ShatteredPrivateViridianBeedrill
       p.condition.switch1_valid = true
       p.condition.switch1_id = switch
     end
+    if second_switch
+      p.condition.switch2_valid = true
+      p.condition.switch2_id = second_switch
+    end
     p.list = commands || [RPG::EventCommand.new(0, 0, [])]
     p
   end
 
-  def event(index, switches = SWITCHES)
+  def event(index, switches = SWITCHES, center_gate: true)
     x, y = POSITIONS.fetch(index)
     e = RPG::Event.new(x, y)
     e.id = EVENT_IDS.fetch(index)
     e.name = PREFIX + index.to_s
     hidden = page
-    active = page(sprite: 'Beedrill', switch: (index.zero? ? nil : switches[index - 1]),
+    # The raid must not be visible during the rain/guard escort. Native RMXP
+    # page conditions require Center visited (995), then previous victory.
+    active = page(sprite: 'Beedrill',
+                  switch: (index.zero? ? (center_gate ? CENTER_SWITCH : nil) : switches[index - 1]),
+                  second_switch: (center_gate && index > 0 ? CENTER_SWITCH : nil),
                   through: false, trigger: 2,
                   commands: [RPG::EventCommand.new(355, 0, [script(index, switches)]),
                              RPG::EventCommand.new(0, 0, [])])
@@ -143,7 +153,19 @@ module ShatteredPrivateViridianBeedrill
     raise 'Unexpected legacy Beedrill inventory' unless map.events.keys.sort == (1..31).to_a
     EVENT_IDS.each_with_index do |id, index|
       raise "Legacy raid event drift at #{id}" unless
-        Marshal.dump(map.events.fetch(id)) == Marshal.dump(event(index, LEGACY_SWITCHES))
+        Marshal.dump(map.events.fetch(id)) == Marshal.dump(event(index, LEGACY_SWITCHES, center_gate: false))
+    end
+    EVENT_IDS.each_with_index { |id, index| map.events[id] = event(index) }
+    :migrated
+  end
+
+  # Upgrade the exact v0.2.9 private candidate, which has independent raid
+  # switches but prematurely shows Beedrill before the Center visit.
+  def migrate_pre_center_gate!(map)
+    raise 'Unexpected pre-center Beedrill inventory' unless map.events.keys.sort == (1..31).to_a
+    EVENT_IDS.each_with_index do |id, index|
+      raise "Pre-center raid event drift at #{id}" unless
+        Marshal.dump(map.events.fetch(id)) == Marshal.dump(event(index, SWITCHES, center_gate: false))
     end
     EVENT_IDS.each_with_index { |id, index| map.events[id] = event(index) }
     :migrated
@@ -174,6 +196,8 @@ module ShatteredPrivateViridianBeedrill
     when INSTALLED_SHA
       raise 'Installed raid events drifted' unless transform!(map, tilesets) == :already_installed
       return { 'result' => 'already_installed', 'map_sha256' => input_sha }
+    when PRE_CENTER_GATE_SHA
+      raise 'Pre-center raid migration failed' unless migrate_pre_center_gate!(map) == :migrated
     when LEGACY_INSTALLED_SHA
       raise 'Legacy raid migration failed' unless migrate_legacy!(map) == :migrated
     when MAP_SHA
@@ -208,6 +232,7 @@ module ShatteredPrivateViridianBeedrill
       'sprite_sha256' => SPRITE_SHA, 'source_sprite_sha256' => SOURCE_SPRITE_SHA,
       'events' => EVENT_IDS, 'switches' => SWITCHES,
       'legacy_switch_collision_repaired' => input_sha == LEGACY_INSTALLED_SHA,
+      'center_visit_gate_added' => input_sha != INSTALLED_SHA,
       'native_gameplay_verified' => false, 'android_verified' => false }
   end
 end
