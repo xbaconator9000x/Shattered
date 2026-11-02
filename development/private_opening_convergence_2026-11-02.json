@@ -1,0 +1,44 @@
+{
+  "kind": "private_native_opening_compiled_convergence_checkpoint",
+  "date": "2026-11-02",
+  "candidate": "Shattered_Essentials_HnS_Combined_Gate_Route22_Murkrow_v025_Private_Candidate.zip",
+  "candidate_sha256": "aa51def0c54f2cfee8a553731c84cbb4f7bcd5e7458e994198d6739d43bc5b21",
+  "candidate_bytes": 160872194,
+  "source_candidate_sha256": "dd94ec938e7b87e2b12d26748714d8006add5353e6108593cf7e48f2b8c4aa28",
+  "compiled_archive_sha256": "748206d2184559c64f38534b652c6f6eb1aa5598b10a128a7ce8eee58186c406",
+  "zip_entries": 7737,
+  "changed_entries": 6,
+  "unchanged_entry_payloads_crc_preserved": 7731,
+  "compiled_shattered_plugin_count": 8,
+  "source_git_blobs": {
+    "Shattered Gate Story": "2173092bd36d5f38379c4c3ffb3fe7fcd8f0dcf0",
+    "Shattered Route22": "22e9d9ae71518e28f2210a649afdb8b710ba7bc9",
+    "Shattered Murkrow Rescue": "30d370ddfe30edd94860f9de654dbeb718b93fa7"
+  },
+  "verified_private_native_maps": {
+    "Map223": "Heart & Soul Gate distinct north landings 30,46 and 29,47, guarded Route22 east transfer, three debris events",
+    "Map016": "Route22 mandatory Rattata, guarded Viridian cutline, Murkrow native rescue event",
+    "Map010": "Viridian native Guard/Nidoran escort events 25-28"
+  },
+  "local_checks": [
+    "3 updated runtime scripts Ruby syntax OK",
+    "8 compiled Shattered scripts byte-identical to editable sources",
+    "GitHub source Git blob identity matched exactly for all three",
+    "Private native map/plugin convergence verifier succeeded",
+    "4 verifier tests 9 assertions passed on real private input; 3 assertions and one intentionally skipped private case without it",
+    "ZIP CRC integrity passed; unchanged entries preserved"
+  ],
+  "github_source_prs": [
+    57,
+    59
+  ],
+  "source_only_script": "scripts/verify_private_opening_convergence.rb",
+  "native_game_launched": false,
+  "real_battle_observed_in_this_candidate": false,
+  "normal_save_continue_verified": false,
+  "android_joiplay_verified": false,
+  "visual_parity_verified": false,
+  "main_sha_at_build": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
+  "redistribution_rights_verified": false,
+  "private_game_assets_committed_to_github": false
+}
