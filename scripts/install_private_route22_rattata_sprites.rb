@@ -15,6 +15,8 @@ module ShatteredRoute22Sprites
   POSITIONS = [[31, 17], [31, 18], [32, 18]].freeze
   SCRIPT_FROM = 'ShatteredRoute22.encounter(991, 992) || ShatteredRoute22.return_to_entry(16, 29, 17)'
   SCRIPT_TO = 'ShatteredRoute22.scatter!; ' + SCRIPT_FROM
+  WARP_OLD_CONDITION = 'ShatteredRoute22.cleared? || ShatteredRoute22.encounter(991, 992)'
+  WARP_NEW_CONDITION = 'ShatteredRoute22.cleared? || (ShatteredRoute22.scatter! && ShatteredRoute22.encounter(991, 992))'
 
   def self.transform!(map)
     raise 'Unexpected native Route22 dimensions or tile table' unless
@@ -27,9 +29,22 @@ module ShatteredRoute22Sprites
     raise 'Unreviewed Rattata script' unless script && script.parameters.length == 1 &&
       script.parameters.first.scan(SCRIPT_FROM).length == 1 &&
       !script.parameters.first.include?('scatter!')
+    # The transfer at (32,17) is reachable without stepping on the ambush
+    # tile at (30,17). Preserve the mandatory battle AND the scatter cinematic
+    # for that bypass route. Do not patch a foreign or unguarded transfer.
+    warp = map.events.fetch(4)
+    commands = warp.pages.first.list
+    raise 'Unreviewed Route22 Viridian transfer' unless warp.pages.length == 1 &&
+      warp.pages.first.trigger == 1 &&
+      commands.map(&:code) == [111, 101, 201, 411, 355, 412, 0] &&
+      commands.map(&:indent) == [0, 1, 1, 0, 1, 0, 0] &&
+      commands.first.parameters == [12, WARP_OLD_CONDITION] &&
+      commands[2].parameters == [0, 10, 25, 20, 2, 0] &&
+      commands[4].parameters == ['ShatteredRoute22.return_to_entry(16, 29, 17)']
     before_tiles = Marshal.dump(map.data)
     before_events = map.events.transform_values { |event| Marshal.dump(event) }
     script.parameters[0] = script.parameters.first.sub(SCRIPT_FROM, SCRIPT_TO)
+    commands.first.parameters[1] = WARP_NEW_CONDITION
     POSITIONS.each_with_index do |(x, y), i|
       id = EVENT_IDS.fetch(i)
       event = RPG::Event.new(x, y)
@@ -51,7 +66,8 @@ module ShatteredRoute22Sprites
       map.events[id] = event
     end
     raise 'Native Route22 tiles mutated' unless Marshal.dump(map.data) == before_tiles
-    raise 'Unrelated Route22 events mutated' unless [1, 2, 4].all? { |id| Marshal.dump(map.events.fetch(id)) == before_events.fetch(id) }
+    raise 'Unrelated Route22 events mutated' unless [1, 2].all? { |id| Marshal.dump(map.events.fetch(id)) == before_events.fetch(id) }
+    raise 'Route22 transfer lost scatter/battle guard' unless commands.first.parameters == [12, WARP_NEW_CONDITION]
     raise 'Only the ambush script may change' unless map.events.fetch(3).pages.first.list.find { |c| c.code == 355 }.parameters.first.include?(SCRIPT_TO)
     map
   end
