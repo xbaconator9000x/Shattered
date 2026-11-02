@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "kind": "private_compiled_viridian_v013_source_coherence_not_gameplay_acceptance",
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "source_main_sha_at_start": "ccbfe54997063e661d278424dad07d693dc3303e",
+  "input_candidate": "Shattered_Essentials_HnS_Runtime_Source_Coherent_v0217_Private_Candidate.zip",
+  "input_sha256": "229554f7babdf385091fa4c6d5289299a31ad9d34532e3b2700092f27cc78a2e",
+  "output_candidate": "Shattered_Essentials_HnS_Viridian_Save_Validation_v0218_Private_Candidate.zip",
+  "output_sha256": "df79374bf65bc9efbef4efcb587d6d3d1f3c20f3dec08769cbedecbf024d668c",
+  "output_bytes": 160889251,
+  "output_zip_entries": 7746,
+  "changed_private_entries": [
+    "Data/PluginScripts.rxdata",
+    "Plugins/Shattered Viridian/001_Entry.rb",
+    "Plugins/Shattered Viridian/meta.txt"
+  ],
+  "compiled_archive_sha256": "ecb95008bc3f8a1c5fa8d53f8bb27dd97400583809bfec61488a15499f7dcb06",
+  "viridian_version": "0.1.3",
+  "source_sha256": "d42520b60fa77affe226b7aed3c11072a67e2550b8cd290a01b3382311ab6e67",
+  "source_git_blob": "7c1574f0dfee5dd6d5c52145c21c8b8d7f14f779",
+  "tests": {
+    "local_ruby": "5 tests, 21 assertions, 0 failures, 0 errors",
+    "transaction_idempotent": true,
+    "partial_or_tampered_input_rejected": true,
+    "compiled_archive_roundtrip": true,
+    "source_matches_compiled": true,
+    "unrelated_entries_unchanged": 7743,
+    "zip_crc": true,
+    "github_actions": "pending at receipt creation"
+  },
+  "runtime": {
+    "mkxp_z_game_launch": false,
+    "normal_save_continue": false,
+    "viridian_escort_and_center": false,
+    "android_joiplay_naviaxp": false
+  },
+  "rights": "Only source-only migration, tests and hash receipt committed; original private assets stay out of GitHub."
+}
