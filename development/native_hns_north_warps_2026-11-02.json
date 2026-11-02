@@ -1,0 +1,66 @@
+{
+  "kind": "private_native_hns_gate_north_warp_repair_source_only_evidence",
+  "date": "2026-11-02",
+  "repository": "xbaconator9000x/Shattered",
+  "branch": "feature/hgss-victory-road-warp-audit-20261031",
+  "source_script": "scripts/repair_private_hns_north_warps.rb",
+  "source_test": "tests/test_private_hns_north_warps.rb",
+  "reviewed_private_input_map223_sha256": "eb6a12f51b324d727f95890b79948db261ac71b047c993d71f6582c1e4f3833f",
+  "reviewed_private_map224_sha256": "6e198527e9dfd1d2acf9251bab4192a6964fe2b368ddccb44fa88cb0a550dea4",
+  "repaired_private_map223_sha256": "3004ab941e1579de3c6a6061b054850087c58815e50c3b6e2cdaaacae2dfa75c",
+  "previous_north_landings": [
+    [
+      30,
+      46
+    ],
+    [
+      30,
+      46
+    ]
+  ],
+  "repaired_north_landings": [
+    [
+      30,
+      46
+    ],
+    [
+      29,
+      47
+    ]
+  ],
+  "reciprocal_return": {
+    "source_map": 224,
+    "source_event": 1,
+    "source_position": [
+      30,
+      47
+    ],
+    "target_map": 223,
+    "target_position": [
+      10,
+      2
+    ]
+  },
+  "private_candidate_zip_sha256": "dd94ec938e7b87e2b12d26748714d8006add5353e6108593cf7e48f2b8c4aa28",
+  "private_candidate_zip_size_bytes": 160870841,
+  "private_candidate_zip_entries": 7737,
+  "changed_zip_entries": [
+    "Shattered_Essentials_HnS_Imported/Data/Map223.rxdata"
+  ],
+  "local_source_tests": {
+    "tests": 5,
+    "assertions": 9,
+    "failures": 0
+  },
+  "private_actual_map_execution": {
+    "native_rmxp_marshal_decoded": true,
+    "native_tileset_passages_checked": true,
+    "atomic_repair": true,
+    "idempotent_rerun": true,
+    "engine_launched": false
+  },
+  "normal_save_continue_verified": false,
+  "android_verified": false,
+  "licensed_game_assets_committed": false,
+  "notes": "This fixes a genuine compiled-map mismatch against the source converter's distinct north landing contract. It is not evidence of a rendered in-engine transfer or a complete playable demo."
+}
