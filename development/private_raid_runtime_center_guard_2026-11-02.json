@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "kind": "private_native_rmxp_compiled_source_guard_not_gameplay",
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "source_pr": 59,
+  "source_raid_commit": "d919182c3197b0a0b6df2623bd30cfb5b9125483",
+  "source_raid_blob_sha1": "414dfddd790e80a64c5fc842d5dbfcdeeacd0a81",
+  "source_verification_commit": "c04cb41c8452da504bf80e1054aabbe7baa5a1f9",
+  "candidate": {
+    "filename": "Shattered_Essentials_HnS_Raid_Runtime_Center_Guard_v0211_Private_Candidate.zip",
+    "bytes": 160880802,
+    "sha256": "e040304016a1ddbdab1ecf45dcaeabb75af1644811641e39dd7db9b21ba3e7bf",
+    "parent_sha256": "1f2a79bc2df1da62a9c119d387bdb4eb9733e75829d50463c2ea7071a0ee2531",
+    "zip_entries": 7742,
+    "preserved_entry_payloads": 7738,
+    "changed_entries": [
+      "Data/PluginScripts.rxdata",
+      "Plugins/Shattered Raid/001_Raid.rb",
+      "Plugins/Shattered Raid/meta.txt"
+    ],
+    "added_private_receipt": true,
+    "compiled_archive_sha256": "a9e07968c55ba1361b408dd685dbc12326fe24f2d84cd061167545ce9e56860f",
+    "raid_version": "0.1.3",
+    "native_map010_sha256": "e8c6de9a324e514425180bc07ae631a43a5de6f7b4b0d74086749713141a5740"
+  },
+  "checks": {
+    "ruby_syntax": true,
+    "compiled_source_equals_github_blob": true,
+    "other_eight_compiled_plugins_byte_preserved": true,
+    "zip_crc_and_payload_comparison": true,
+    "native_map010_event_ids": [
+      29,
+      30,
+      31
+    ],
+    "native_center_switch": 995,
+    "native_raid_switches": [
+      1001,
+      1002,
+      1003
+    ],
+    "gate_debris_switch": 997,
+    "github_source_ci_8_of_8_success": true,
+    "github_ci_run_ids": [
+      41431673872,
+      41431673496,
+      41431673506,
+      41431673615,
+      41431673874,
+      41431673841,
+      41431673613,
+      41431673586
+    ]
+  },
+  "acceptance": {
+    "actual_game_launch": false,
+    "full_opening_playthrough": false,
+    "beedrill_battle_runtime": false,
+    "save_close_continue": false,
+    "android_joiplay_naviaxp": false,
+    "rights_cleared_for_distribution": false
+  },
+  "blocker": "No mkxp-z or compatible Android game runtime is installed in this execution container; native map serialization and Ruby/CI checks do not prove gameplay. Source PRs #57/#59 remain unmerged pending recorded human review."
+}
