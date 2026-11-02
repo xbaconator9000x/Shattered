@@ -355,40 +355,40 @@ module ShatteredMurkrowRescue
     unless defined?(Shattered) && Shattered.respond_to?(:befriend) &&
            Object.new.respond_to?(:pbReceiveItem, true) &&
            battle_receiver(plan["battle"])
-      Object.new.send(:pbMessage, "The rescue cannot continue until its game integrations are available.")
+      Object.new.send(:pbMessage, "The rescue cannot continue until its game integrations are available.".dup)
       return false
     end
     stage = state[:stage]
     message = stage == :discovered ? "A Murkrow needs help!" : "Murkrow is safe now."
-    Object.new.send(:pbMessage, message)
+    Object.new.send(:pbMessage, message.dup)
     if state[:stage] == :discovered
-      return false unless Object.new.send(:pbConfirmMessage, "Will you step in?")
+      return false unless Object.new.send(:pbConfirmMessage, "Will you step in?".dup)
       begin_battle!
       begin
         won = run_battle!(plan["battle"])
         finish_battle!(won)
       rescue StandardError
         interrupt!
-        Object.new.send(:pbMessage, "The rescue was interrupted. You can try again.")
+        Object.new.send(:pbMessage, "The rescue was interrupted. You can try again.".dup)
         return false
       end
       unless won
-        Object.new.send(:pbMessage, "The rescue can be attempted again.")
+        Object.new.send(:pbMessage, "The rescue can be attempted again.".dup)
         return false
       end
     end
     if state[:stage] == :befriending
-      return false unless Object.new.send(:pbConfirmMessage, "Will you befriend Murkrow?")
+      return false unless Object.new.send(:pbConfirmMessage, "Will you befriend Murkrow?".dup)
       friend = recruit!
       unless friend
-        Object.new.send(:pbMessage, "Make room in your party and return to Murkrow.")
+        Object.new.send(:pbMessage, "Make room in your party and return to Murkrow.".dup)
         return false
       end
-      Object.new.send(:pbMessage, "Murkrow joined you through friendship!")
+      Object.new.send(:pbMessage, "Murkrow joined you through friendship!".dup)
     end
     if state[:stage] == :recruited
       unless claim_reward!(plan["reward"])
-        Object.new.send(:pbMessage, "There is no room for the rescue reward yet.")
+        Object.new.send(:pbMessage, "There is no room for the rescue reward yet.".dup)
         return false
       end
     end
