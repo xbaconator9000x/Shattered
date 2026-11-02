@@ -150,9 +150,19 @@ def convert(map_json, layouts_json, map_bin, mapping_json):
         raise ValueError("tileset_image must be the PNG named by tileset_name")
 
     destinations = mapping.get("destinations", {})
+    per_warp = mapping.get("per_warp_destinations", {})
+    if not isinstance(per_warp, dict):
+        raise ValueError("per_warp_destinations must be a mapping")
+    valid_warp_keys = {f'{warp["x"]},{warp["y"]}' for warp in source["warps"]}
+    if set(per_warp) - valid_warp_keys:
+        raise ValueError("per_warp_destinations contains an unknown source coordinate")
     output_warps = []
     for warp in source["warps"]:
-        destination = destinations.get(warp["source_destination"])
+        # Two north doors share dest_map and dest_warp_id=0 in the HnS source.
+        # A destination keyed only by map would silently send both doors to
+        # the same native landing. Coordinate overrides preserve both paths.
+        key = f'{warp["x"]},{warp["y"]}'
+        destination = per_warp.get(key, destinations.get(warp["source_destination"]))
         if not isinstance(destination, dict):
             raise ValueError(f"missing target destination for {warp['source_destination']}")
         for field in ("map_id", "x", "y"):
@@ -172,6 +182,12 @@ def convert(map_json, layouts_json, map_bin, mapping_json):
                 "fade": destination.get("fade", 0),
             },
         })
+
+    if mapping.get("require_distinct_warp_landings", False):
+        landings = [(warp["target"]["map_id"], warp["target"]["x"],
+                     warp["target"]["y"]) for warp in output_warps]
+        if len(set(landings)) != len(landings):
+            raise ValueError("source doors must have distinct native landing tiles")
 
     width = source["layout"]["width"]
     height = source["layout"]["height"]
