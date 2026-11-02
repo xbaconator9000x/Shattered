@@ -18,6 +18,8 @@ on:
       - "scripts/verify_private_opening_convergence.rb"
       - "tests/test_private_opening_convergence.rb"
       - "scripts/verify_private_opening_walkability.rb"
+      - "scripts/verify_private_route22_viridian_guard.rb"
+      - "tests/test_private_route22_viridian_guard.rb"
       - "tests/test_private_opening_walkability.rb"
       - "essentials/Plugins/Shattered Viridian/**"
       - ".github/workflows/route22-ci.yml"
