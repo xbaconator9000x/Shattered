@@ -713,11 +713,10 @@
     "gate_source_commit": "913a370956533ae1cd1ea2ad89bd7cec0460de12",
     "private_filename": "Shattered_Essentials_HnS_Gate_Rattata_Timing_v0216_Private_Candidate.zip",
     "base_zip_sha256": "c91a8b170d1707688ea7ad862dfff2fe70561419536ab34b163c6d907f4eca2c",
-    "candidate_sha256": "1a73daed3af2999b06efb4c4fd845258f7d0e64becf419b49492651c3d00ba73",
-    "candidate_bytes": 160889052,
+    "candidate_sha256": "3cd21a46e3b1ce091177e2823d06f300353f9237e41037b30e6bd61474a20122",
+    "candidate_bytes": 160889084,
     "entries": 7746,
-    "unchanged_entry_payloads": 7745,
-    "changed_entry": "Data/PluginScripts.rxdata",
+    "unchanged_entry_payloads": 7744,
     "compiled_plugin_archive_sha256": "6a29d16cd9ad4e955575a09f5d99b222ebe39700bab8ed4f53637229dbaa0eda",
     "route22_version": "0.1.6",
     "gate_story_version": "0.2.4",
@@ -728,6 +727,11 @@
     "actual_gameplay_verified": false,
     "android_verified": false,
     "rights_verified_for_distribution": false,
-    "limitation": "Combined private candidate applies already-reviewed Gate Story 0.2.4 seconds fix and new Route22 0.1.6 seconds fix; native mkxp-z opening/Route22 playthrough and Android remain unverified for this candidate."
+    "limitation": "Private combined candidate applies PR #57 native player avatar Map223 repair and Gate Story 0.2.4 seconds fix plus PR #59 Route22 0.1.6 seconds fix; Ruby native format, source hash and ZIP CRC tests pass, but this candidate has not been launched in mkxp-z or Android.",
+    "changed_entries": [
+      "Data/Map223.rxdata",
+      "Data/PluginScripts.rxdata"
+    ],
+    "native_map223_sha256": "ec21eecaca1653672040c35fd9d3429c2bfbd3e04a3215e3bba545ea3dfb653d"
   }
 }
