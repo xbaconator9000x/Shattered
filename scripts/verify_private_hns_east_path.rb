@@ -56,25 +56,40 @@ module ShatteredHnSEastWalkway
   # walkway-only preflight and be mistaken for opening-route acceptance.
   def verify_east_door!(events)
     aipom = events[6]
-    check!(aipom && aipom.pages.length == 1 &&
-           aipom.pages.first.trigger == 0 &&
-           aipom.pages.first.list.any? { |c|
-             c.code == 355 &&
-             c.parameters == ['ShatteredGateStory.run_aipom("Cries/AIPOM", get_character(0))']
-           }, "Aipom interaction missing or no longer grants the gate key")
+    aipom_pages = aipom&.instance_variable_get(:@pages)
+    check!(aipom_pages.is_a?(Array) && aipom_pages.length == 1,
+           "Aipom interaction missing")
+    aipom_page = aipom_pages.first
+    aipom_commands = aipom_page.instance_variable_get(:@list)
+    check!(aipom_page.instance_variable_get(:@trigger) == 0 &&
+           aipom_commands.is_a?(Array) &&
+           aipom_commands.any? { |c|
+             c.instance_variable_get(:@code) == 355 &&
+             c.instance_variable_get(:@parameters) ==
+               ['ShatteredGateStory.run_aipom("Cries/AIPOM", get_character(0))']
+           }, "Aipom no longer grants the gate key")
     door = events[7]
-    check!(door && door.pages.length == 1, "missing or ambiguous east-door event")
-    page = door.pages.first
-    commands = page.list
-    check!(page.trigger == 0 && page.through == false &&
-           page.graphic.character_name == 'doors1',
+    door_pages = door&.instance_variable_get(:@pages)
+    check!(door_pages.is_a?(Array) && door_pages.length == 1,
+           "missing or ambiguous east-door event")
+    page = door_pages.first
+    commands = page.instance_variable_get(:@list)
+    graphic = page.instance_variable_get(:@graphic)
+    check!(page.instance_variable_get(:@trigger) == 0 &&
+           page.instance_variable_get(:@through) == false &&
+           graphic && graphic.instance_variable_get(:@character_name) == 'doors1',
            "east door is not a solid Action Button event")
-    check!(commands.map(&:code) == [111, 101, 201, 411, 101, 412, 0] &&
-           commands.map(&:indent) == [0, 1, 1, 0, 1, 0, 0],
+    check!(commands.is_a?(Array) &&
+           commands.map { |c| c.instance_variable_get(:@code) } ==
+             [111, 101, 201, 411, 101, 412, 0] &&
+           commands.map { |c| c.instance_variable_get(:@indent) } ==
+             [0, 1, 1, 0, 1, 0, 0],
            "east-door conditional branch is malformed")
-    check!(commands[0].parameters == [12, 'ShatteredGateStory.key_obtained?'] &&
-           commands[2].parameters == [0, 16, 14, 10, 2, 0] &&
-           commands[4].parameters ==
+    check!(commands[0].instance_variable_get(:@parameters) ==
+             [12, 'ShatteredGateStory.key_obtained?'] &&
+           commands[2].instance_variable_get(:@parameters) ==
+             [0, 16, 14, 10, 2, 0] &&
+           commands[4].instance_variable_get(:@parameters) ==
              ['The eastern Route 22 door is locked. You need the key.'],
            "east-door key check, Route22 landing or locked response changed")
     true
@@ -123,11 +138,14 @@ module ShatteredHnSEastWalkway
            [door.instance_variable_get(:@x), door.instance_variable_get(:@y)] == [14, 9],
            "Route22 return door missing or displaced")
     pages = door.instance_variable_get(:@pages)
-    check!(pages && pages.first && pages.first.trigger == 1,
+    check!(pages.is_a?(Array) && pages.first &&
+           pages.first.instance_variable_get(:@trigger) == 1,
            "Route22 return door no longer activates on player touch")
-    transfers = pages.first.list.select { |cmd| cmd.code == 201 }
+    commands = pages.first.instance_variable_get(:@list)
+    check!(commands.is_a?(Array), "Route22 return-door commands missing")
+    transfers = commands.select { |cmd| cmd.instance_variable_get(:@code) == 201 }
     check!(transfers.length == 1 &&
-           transfers.first.parameters == [0, 223, 19, 9, 4, 0],
+           transfers.first.instance_variable_get(:@parameters) == [0, 223, 19, 9, 4, 0],
            "Route22 return door does not lead to the reviewed Gate landing")
     tileset = tilesets[route.instance_variable_get(:@tileset_id)]
     check!(tileset.is_a?(RPG::Tileset), "Route22 native tileset missing")
