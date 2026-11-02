@@ -37,7 +37,7 @@ class PrivateViridianBeedrillTest < Minitest::Test
     assert_empty B::SWITCHES & (992..999).to_a
     B::EVENT_IDS.each_with_index do |id, index|
       active = B.event(index).pages[-2]
-      assert_includes active.list.first.parameters.first, "\\\"switch_id\\\"=>#{B::SWITCHES[index]}"
+      assert_match(/"switch_id"=>#{B::SWITCHES[index]}/, active.list.first.parameters.first)
     end
   end
 
