@@ -16,6 +16,14 @@ class PrivateViridianBeedrillTest < Minitest::Test
       assert_equal 2, active.trigger
       refute active.through
       assert active.step_anime
+      # All three encounters stay hidden until the first Center visit.
+      if i.zero?
+        assert_equal B::CENTER_SWITCH, active.condition.switch1_id
+        assert active.condition.switch1_valid
+      else
+        assert_equal B::CENTER_SWITCH, active.condition.switch2_id
+        assert active.condition.switch2_valid
+      end
       assert_equal 355, active.list.first.code
       assert_includes active.list.first.parameters.first, "ShatteredRaid.trigger(#{i}, "
       assert_includes active.list.first.parameters.first, "\"switch_id\"=>#{B::SWITCHES[i]}"
@@ -35,6 +43,8 @@ class PrivateViridianBeedrillTest < Minitest::Test
     assert_equal [1001, 1002, 1003], B::SWITCHES
     assert_equal [997, 998, 999], B::LEGACY_SWITCHES
     assert_empty B::SWITCHES & (992..999).to_a
+    assert_equal 995, B::CENTER_SWITCH
+    refute_includes B::SWITCHES, B::CENTER_SWITCH
     B::EVENT_IDS.each_with_index do |id, index|
       active = B.event(index).pages[-2]
       assert_match(/"switch_id"=>#{B::SWITCHES[index]}/, active.list.first.parameters.first)
@@ -43,7 +53,7 @@ class PrivateViridianBeedrillTest < Minitest::Test
 
   def test_exact_legacy_events_upgrade_without_touching_unrelated_map_content
     map, tilesets = fixture
-    3.times { |index| map.events[B::EVENT_IDS[index]] = B.event(index, B::LEGACY_SWITCHES) }
+    3.times { |index| map.events[B::EVENT_IDS[index]] = B.event(index, B::LEGACY_SWITCHES, center_gate: false) }
     old_tiles = Marshal.dump(map.data)
     old_events = (1..28).to_h { |id| [id, Marshal.dump(map.events.fetch(id))] }
     assert_equal :migrated, B.migrate_legacy!(map)
@@ -53,6 +63,29 @@ class PrivateViridianBeedrillTest < Minitest::Test
     B::EVENT_IDS.each_with_index do |id, index|
       assert_equal Marshal.dump(B.event(index)), Marshal.dump(map.events.fetch(id))
     end
+  end
+
+  def test_pinned_pre_center_candidate_upgrades_without_modifying_original_events
+    map, tilesets = fixture
+    3.times { |index| map.events[B::EVENT_IDS[index]] = B.event(index, B::SWITCHES, center_gate: false) }
+    old_tiles = Marshal.dump(map.data)
+    old_events = (1..28).to_h { |id| [id, Marshal.dump(map.events.fetch(id))] }
+    assert_equal :migrated, B.migrate_pre_center_gate!(map)
+    assert_equal old_tiles, Marshal.dump(map.data)
+    old_events.each { |id, bytes| assert_equal bytes, Marshal.dump(map.events.fetch(id)) }
+    assert_equal :already_installed, B.transform!(map, tilesets)
+    B::EVENT_IDS.each_with_index do |id, index|
+      assert_equal Marshal.dump(B.event(index)), Marshal.dump(map.events.fetch(id))
+    end
+  end
+
+  def test_pre_center_upgrade_rejects_tampered_events_without_mutating_map
+    map, _tilesets = fixture
+    3.times { |index| map.events[B::EVENT_IDS[index]] = B.event(index, B::SWITCHES, center_gate: false) }
+    map.events[31].pages[-2].list.first.parameters[0] = 'unsafe'
+    before = Marshal.dump(map)
+    assert_raises(RuntimeError) { B.migrate_pre_center_gate!(map) }
+    assert_equal before, Marshal.dump(map)
   end
 
   def test_partial_legacy_event_migration_is_rejected
