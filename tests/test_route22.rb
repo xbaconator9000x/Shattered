@@ -90,6 +90,7 @@ class Route22BattleTest < Minitest::Test
     $human_able=true
     $game_map=OpenStruct.new(:need_refresh=>false)
     $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false; $stamina_restores=[]
+    $game_temp=nil
   end
   def test_win_sets_both_persistent_state_and_switch
     assert ShatteredRoute22.encounter(91,92)
