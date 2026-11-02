@@ -101,6 +101,7 @@ RaidPokemon = Struct.new(:species, :hp) do
 end
 
 load File.expand_path("../essentials/Plugins/Shattered Raid/001_Raid.rb", __dir__)
+load File.expand_path("../essentials/Plugins/Shattered Viridian/001_Entry.rb", __dir__)
 
 class ShatteredRaidTest < Minitest::Test
   def setup
@@ -419,7 +420,61 @@ class ShatteredRaidTest < Minitest::Test
     end
   end
 
+  def test_viridian_raid_cannot_start_before_authoritative_center_visit
+    $game_map = Struct.new(:map_id).new(10)
+    $game_switches[995] = true # Tampered native page switch is NOT proof.
+    refute ShatteredRaid.trigger(0, viridian_config)
+    assert_empty WildBattle.calls
+    assert_equal 0, ShatteredRaid.progression
+    assert_equal false, ShatteredViridian.state[:center]
+    ShatteredViridian.start!(993, 996)
+    ShatteredViridian.arrive!(994)
+    refute ShatteredRaid.trigger(0, viridian_config)
+    ShatteredViridian.center!(995, 996)
+    assert ShatteredRaid.trigger(0, viridian_config)
+    assert_equal [[:BEEDRILL, 5]], WildBattle.calls
+    assert_equal 1, ShatteredRaid.progression
+    assert_equal [true, false, false], [1001, 1002, 1003].map { |id| $game_switches[id] }
+    refute $game_switches[997], "Johto debris switch must not be changed by the raid"
+  end
+
+  def test_viridian_raid_rejects_legacy_debris_switches_and_foreign_event_ids
+    $game_map = Struct.new(:map_id).new(10)
+    ShatteredViridian.start!(993, 996)
+    ShatteredViridian.center!(995, 996)
+    $game_switches[997] = true
+    old = viridian_config
+    old["events"].each_with_index { |event, i| event["switch_id"] = 997 + i }
+    assert_raises(ShatteredRaid::ConfigurationError) { ShatteredRaid.trigger(0, old) }
+    wrong_outcome = viridian_config
+    wrong_outcome["outcome_variable_id"] = 991
+    assert_raises(ShatteredRaid::ConfigurationError) { ShatteredRaid.trigger(0, wrong_outcome) }
+    wrong_level = viridian_config
+    wrong_level["events"][1]["level"] = 99
+    assert_raises(ShatteredRaid::ConfigurationError) { ShatteredRaid.trigger(0, wrong_level) }
+    assert_empty WildBattle.calls
+    assert_equal [true, false, false], [997, 998, 999].map { |id| $game_switches[id] }
+    assert_equal 0, ShatteredRaid.progression
+  end
+
+  def test_viridian_raid_refuses_corrupt_center_save_even_with_center_switch
+    $game_map = Struct.new(:map_id).new(10)
+    $game_switches[995] = true
+    $PokemonGlobal.instance_variable_set(:@shattered_viridian_entry,
+      { :version => 999, :started => true, :arrived => true, :center => true })
+    assert_raises(RuntimeError) { ShatteredRaid.trigger(0, viridian_config) }
+    assert_empty WildBattle.calls
+    assert_equal 0, ShatteredRaid.progression
+  end
+
   private
+
+  def viridian_config
+    { "map_id" => 10, "outcome_variable_id" => 990,
+      "events" => 3.times.map { |i|
+        { "index" => i, "level" => 5 + i, "switch_id" => 1001 + i }
+      } }
+  end
 
   def runtime_config
     {
