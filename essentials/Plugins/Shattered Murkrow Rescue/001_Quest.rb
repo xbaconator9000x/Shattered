@@ -117,6 +117,20 @@ module ShatteredMurkrowRescue
       (!flags[:reward_claimed] || flags[:murkrow_recruited]) &&
       (!flags[:complete] || flags[:reward_claimed])
     raise InvalidState, "Inconsistent Murkrow rescue progress" unless consistent
+    # A stage cannot be ahead of its authoritative saved flags. A malformed
+    # :complete stage with reward flags false would otherwise hide Murkrow
+    # without a battle or friendship. Preserve existing flags-ahead recovery.
+    required = case value[:stage]
+               when :undiscovered then []
+               when :discovered, :battle_pending then [:discovered]
+               when :befriending then [:discovered, :battle_won]
+               when :recruited then [:discovered, :battle_won, :murkrow_recruited]
+               when :complete then [:discovered, :battle_won, :murkrow_recruited,
+                                    :reward_claimed, :complete]
+               end
+    raise InvalidState, "Murkrow rescue stage exceeds saved flags" unless
+      required.all? { |key| flags[key] } &&
+      (value[:stage] != :undiscovered || flags.values.none?)
     if recover_interrupted && value[:stage] == :battle_pending
       value[:stage] = :discovered
     elsif flags[:reward_claimed]
