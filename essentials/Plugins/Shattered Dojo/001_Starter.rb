@@ -37,6 +37,13 @@ module ShatteredDojo
       [true, false].include?(value[:recruited]) &&
       (!value[:recruited] || !value[:choice].nil?)
     raise InvalidState, "Unknown dojo save data; refusing to reset a player's choice" unless valid
+    # A cached species cannot precede or contradict the saved questionnaire.
+    # Otherwise an imported/corrupted save could grant a starter without
+    # answering the questions, or silently change the selected companion.
+    if value[:choice] && (value[:answers].length != QUESTIONS.length ||
+                          value[:choice] != selection_for(value[:answers]))
+      raise InvalidState, "Dojo choice disagrees with saved questionnaire"
+    end
     value
   end
 
@@ -54,19 +61,25 @@ module ShatteredDojo
     true
   end
 
-  def self.choice(store = (defined?($PokemonGlobal) ? $PokemonGlobal : nil))
-    value = state(store)
-    return value[:choice] if value[:choice]
-    return nil unless value[:answers].length == QUESTIONS.length
+  # Pure deterministic result, reused to validate a persisted choice before
+  # accepting it. Never rewrite a conflicting saved choice to make it pass.
+  def self.selection_for(answers)
     scores = Hash.new(0)
-    value[:answers].each_with_index do |answer, index|
+    answers.each_with_index do |answer, index|
       scores[QUESTIONS[index][1][answer][1]] += 1
     end
     highest = scores.values.max
     tied = STARTERS.select { |species| scores[species] == highest }
     # Stable tie-break from the first answer, not randomness or question order.
-    first = QUESTIONS[0][1][value[:answers][0]][1]
-    value[:choice] = tied.include?(first) ? first : tied.first
+    first = QUESTIONS[0][1][answers[0]][1]
+    tied.include?(first) ? first : tied.first
+  end
+
+  def self.choice(store = (defined?($PokemonGlobal) ? $PokemonGlobal : nil))
+    value = state(store)
+    return value[:choice] if value[:choice]
+    return nil unless value[:answers].length == QUESTIONS.length
+    value[:choice] = selection_for(value[:answers])
   end
 
   def self.starter_tagged?(pokemon)
@@ -116,6 +129,15 @@ module ShatteredDojo
   def self.run_quiz
     value = state
     if value[:recruited]
+      # The persistent reward flag alone does not prove the awarded Pokémon
+      # survived a party edit/save reload. Never report success or silently
+      # grant a duplicate when its provenance-tagged party member is missing.
+      begin
+        recruit!
+      rescue MissingStarter, InvalidState
+        pbMessage(_INTL("Your chosen companion is missing or mismatched. Restore your saved party before continuing.").dup)
+        return false
+      end
       pbMessage(_INTL("Your companion is already travelling with you.").dup)
       return true
     end
