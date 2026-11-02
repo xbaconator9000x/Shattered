@@ -258,7 +258,8 @@
         "2026-11-02 PR #59: native Essentials v21.1 Overworld_BattleStarting::BattleCreationHelperMethods.skip_battle? returns a skipped wild victory when no able party member; Route22 v0.1.4 now refuses battle entry in that state (and Debug Ctrl skip), preserving mandatory encounter flags. Added regression, 5/5 GitHub workflows passed at 698165b179e5599b566e8125898b6851770663da. Private compiled candidate staged; actual gameplay not executed.",
         "2026-11-02 PR #59 Route22 v0.1.5: actual private Essentials v21.1 Pokemon#able? inspected in Scripts.rxdata (SHA256 38d9b59f); source guard now refuses to start mandatory first HUMAN Rattata battle when HUMAN is fainted but a companion is able, or a companion leads the able party. Commits f4edf0a7, 9e8f7938, 788cfb04; all six workflows passed at 788cfb04 (Route22 41359025886; combined 41359025892). Compiled private candidate ZIP SHA256 b3d12fe6e953a9459ae3db11d52c506011e3d84c3b92261cd2ce432b914c127f, 7737 entries/7734 preserved; 3 offline compiled-plugin scenarios passed using actual engine Pokemon#able? source. Actual map-trigger battle, normal Save/Continue and Android NOT executed. Receipt development/private_route22_able_human_2026-11-02.json.",
         "2026-11-02 PR #59 pinned native interpreter branch probe: actual v21.1 Interpreter/Interpreter_Commands source SHA-verified and executed against native private Map016 event #4 SHA256 173b4560718fbf9d46df1ecf2bc52c181cbbeaada38f2846381114c66f02f2c3. Defeat/escape stub outcome refused Viridian transfer and invoked safe return (16,29,17); victory transferred to Map010 (25,20); previously cleared flag transferred without repeating battle. Local 7/7 regression assertions passed. Evidence development/native_route22_interpreter_guard_2026-11-02.json; source probe scripts/verify_private_route22_viridian_guard.rb. Actual WildBattle, overworld walk, normal Save/Continue and Android remain UNVERIFIED.",
-        "2026-11-02 PR #59: pinned v21.1 Game_Temp#battle_rules source exposed an exception leak: failed WildBattle.start before battle preparation left canLose/disablePokeBalls/outcome rules queued for the next encounter. Added StandardError cleanup, retry regression, and offline execution of actual v21.1 Game_Temp/setBattleRule; before-fix leak reproduced, after-fix rules empty and mandatory flag still false. CI Route22 41368682272 and combined 41368682241 passed at 71f767dd. No native gameplay or new compiled candidate. See development/native_battle_rule_cleanup_2026-11-02.json."
+        "2026-11-02 PR #59: pinned v21.1 Game_Temp#battle_rules source exposed an exception leak: failed WildBattle.start before battle preparation left canLose/disablePokeBalls/outcome rules queued for the next encounter. Added StandardError cleanup, retry regression, and offline execution of actual v21.1 Game_Temp/setBattleRule; before-fix leak reproduced, after-fix rules empty and mandatory flag still false. CI Route22 41368682272 and combined 41368682241 passed at 71f767dd. No native gameplay or new compiled candidate. See development/native_battle_rule_cleanup_2026-11-02.json.",
+        "2026-11-02 private compiled-candidate integration: source-pinned PR #59 Route22 0.1.5 and Murkrow 0.1.3 sources compiled into the existing private v21.1 PluginScripts.rxdata; 9 plugin entries, 7,733 unrelated ZIP entries preserved, 7,737 total CRC-verified. Candidate SHA256 c71b00dc9692652ccb0975a2f60326d681acb11f2e57b2bb704c73d04f54e0b9 (160872182 bytes); compiled archive SHA256 adb1f288b4afe3d0c253918f6293a0fb5a35a60b9c0dd82c32348a2d208c5c63. This is compiled-source coherence, NOT gameplay/Android acceptance."
       ],
       "blocker": "Native Route22 0.1.3 compiled in private candidate, but normal Continue switch reconciliation and Gate -> Rattata scatter -> defeat/retry -> Viridian still require executed Essentials engine gameplay; Victory Road 1F/B1F, Android and licensed distribution remain open."
     },
@@ -466,7 +467,8 @@
         "2026-11-02 PR #59 native private Murkrow scene installed on real staged Map016 (54x34), event #8 at 20,17, source parity anchor 28.5:npc:1 (51,16). Pinned HnS 192x32 Murkrow source converted privately to 128x128 RMXP sheet; SHA256 3682708f80845145656b151ec8242af621506a642a02bb6cf848c78e994c4c61. Native Map016 original SHA256 56151d32 -> installed 173b4560, event count 7->8; tiles and all 7 preexisting events Marshal-identical; two pages with quest-completion self-switch A and Continue reconciliation. Exact source 001_Quest.rb Git blob 46a9faf2 and installer a92125fd. Private plugin v0.1.1 compiled archive SHA256 2c5be244; other 8 entries preserved. ZIP SHA256 f51adcdbed3b06523757d3c36ad39ac73d55c3879df87722923b9baec0595488, CRC passed. Provisional target location and POTION reward need original scene parity review; no actual battle, normal save/Continue or Android acceptance. Copyright clearance for redistribution unverified.",
         "2026-11-02 PR #59 head 95ebf7c35a3ef61424c42f19a72029c9764545af passed 5/5 GitHub workflows: Murkrow 41323517773 (34 Ruby tests, 188 assertions), Viridian 41323517758, combined plugins 41323517752, Route22 41323517749, source handoff 41323517742. These are source/structural CI, not native engine playthrough.",
         "2026-11-02 PR #59: Murkrow Rescue v0.1.2 guards against Essentials skipped wild victory (no able party or Debug Ctrl) before battle entry; test confirms no recruitment/reward and retry remains possible. 5/5 CI at 698165b179e5599b566e8125898b6851770663da; private native archive compiled, engine and Android not run.",
-        "2026-11-02 PR #59: Murkrow rescue's WildBattle.start_core setup can raise before v21.1 clears Game_Temp battle rules, poisoning later fights. Scoped exception cleanup added; isolated Murkrow CI 41368682237 passed at 71f767dd. Actual pinned engine Game_Temp/setBattleRule executed offline with injected failure, leaving rules empty. Native Murkrow battle/recruitment and Android still unverified. See development/native_battle_rule_cleanup_2026-11-02.json."
+        "2026-11-02 PR #59: Murkrow rescue's WildBattle.start_core setup can raise before v21.1 clears Game_Temp battle rules, poisoning later fights. Scoped exception cleanup added; isolated Murkrow CI 41368682237 passed at 71f767dd. Actual pinned engine Game_Temp/setBattleRule executed offline with injected failure, leaving rules empty. Native Murkrow battle/recruitment and Android still unverified. See development/native_battle_rule_cleanup_2026-11-02.json.",
+        "2026-11-02 PR #59 Murkrow Rescue v0.1.3: fail-closed stage/flag validation prevents a saved :complete stage with absent battle/recruitment/reward flags from hiding the native rescue. Added Marshal save/reload and interrupted-retry regressions; GitHub Murkrow CI 41374006960 and combined plugin CI 41374007289 passed at 5942010c. Native engine Murkrow battle/Save/Continue/Android remain unverified."
       ],
       "blocker": "No approved private Murkrow map/event role/warp placement or licensed sprite installation; actual battle, save/reload, Android remain unverified."
     },
@@ -574,5 +576,22 @@
     "native_gameplay_verified": false,
     "normal_save_continue_verified": false,
     "android_verified": false
+  },
+  "private_route22_murkrow_integrated_candidate": {
+    "date": "2026-11-02",
+    "source_pr": 59,
+    "source_head_at_build": "5942010c665655ba1f081d9179994eefaaaf14a1",
+    "private_zip_sha256": "c71b00dc9692652ccb0975a2f60326d681acb11f2e57b2bb704c73d04f54e0b9",
+    "private_zip_bytes": 160872182,
+    "plugin_archive_sha256": "adb1f288b4afe3d0c253918f6293a0fb5a35a60b9c0dd82c32348a2d208c5c63",
+    "zip_entries": 7737,
+    "preserved_unrelated_entries": 7733,
+    "local_regression": "4 tests, 10 assertions",
+    "github_murkrow_ci_run": 41374006960,
+    "github_combined_ci_run": 41374007289,
+    "runtime_verified": false,
+    "normal_save_continue_verified": false,
+    "android_verified": false,
+    "rights_reviewed_for_distribution": false
   }
 }
