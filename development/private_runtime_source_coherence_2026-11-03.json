@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "scope": "private v0.2.16 compiled/filesystem runtime source reconciliation",
+  "input_candidate_sha256": "3cd21a46e3b1ce091177e2823d06f300353f9237e41037b30e6bd61474a20122",
+  "output_candidate_sha256": "229554f7babdf385091fa4c6d5289299a31ad9d34532e3b2700092f27cc78a2e",
+  "output_size_bytes": 160889199,
+  "archive_sha256": "6a29d16cd9ad4e955575a09f5d99b222ebe39700bab8ed4f53637229dbaa0eda",
+  "archive_unchanged": true,
+  "zip_entries": 7746,
+  "changed_paths": [
+    "Plugins/Shattered Gate Story/001_GateStory.rb",
+    "Plugins/Shattered Gate Story/meta.txt",
+    "Plugins/Shattered Route22/001_Route22.rb",
+    "Plugins/Shattered Route22/meta.txt"
+  ],
+  "compiled_source_github_blobs": {
+    "Shattered Gate Story/001_GateStory.rb": "3eccf46f9e7b32dcfcde1ab59ee204c9cd74bc3c",
+    "Shattered Route22/001_Route22.rb": "57819f23ee4a397b78a5ca5c983c18a87d3e9f67"
+  },
+  "test_evidence": [
+    "Actual private ZIP inspected: compiled 0.2.4 Gate Story vs on-disk 0.2.3; compiled 0.1.6 Route22 vs on-disk 0.1.5",
+    "Exact compiled SHA and old source/meta pins checked before writing",
+    "Offline transactional repair changed only four source/meta paths",
+    "Second run repaired zero paths (idempotent)",
+    "Tampered runtime source rejected before mutation",
+    "All eight compiled Shattered runtime scripts and metadata now match on-disk source",
+    "ZIP CRC check passed for 7,746 entries; all other entries preserved"
+  ],
+  "native_gameplay_verified": false,
+  "save_reload_verified": false,
+  "android_verified": false,
+  "source_rights": "Only hash evidence and offline source code committed. Private game archive, licensed sprites and audio remain local."
+}
