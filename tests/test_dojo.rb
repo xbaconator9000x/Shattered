@@ -51,6 +51,22 @@ module Shattered
 end
 def load_data(path); Marshal.load(File.binread(path)); end
 def save_data(value,path); File.binwrite(path,Marshal.dump(value)); end
+# Essentials v21.1 mutates pbMessageDisplay's input with gsub!. These
+# fixture entry points deliberately reject frozen text and choice labels.
+def _INTL(message, *_args); message; end
+def pbMessage(message, choices = nil, *_args)
+  raise FrozenError, "frozen native dojo message" if message.frozen?
+  if choices
+    raise FrozenError, "frozen native dojo choice" if choices.any?(&:frozen?)
+    return 0
+  end
+  nil
+end
+def pbConfirmMessage(message)
+  raise FrozenError, "frozen native dojo confirmation" if message.frozen?
+  true
+end
+
 load File.expand_path("../essentials/Plugins/Shattered Dojo/001_Starter.rb",__dir__)
 load File.expand_path("../essentials/Plugins/Shattered Dojo/002_Install.rb",__dir__)
 
@@ -63,6 +79,13 @@ class DojoStateTest < Minitest::Test
   def complete(answers=[0,1,2])
     answers.each_with_index { |answer,index| @s.answer!(index,answer) }
   end
+  def test_native_quiz_dialogue_and_choices_are_mutable
+    assert @s.run_quiz
+    assert_equal 3, @s.state[:answers].length
+    assert_equal 2, $player.party.length
+    assert @s.run_quiz # already recruited dialogue must also be mutable
+  end
+
   def test_append_only_and_save_restore
     assert @s.answer!(0,0)
     assert @s.answer!(0,0)
