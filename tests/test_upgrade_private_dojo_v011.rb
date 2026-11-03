@@ -7,7 +7,7 @@ require_relative '../scripts/upgrade_private_dojo_v011'
 
 class UpgradePrivateDojo011Test < Minitest::Test
   SRC = File.expand_path('../essentials/Plugins/Shattered Dojo', __dir__)
-  OLD_META = "Name = Shattered Dojo\nVersion = 0.1.0\nEssentials = 21.1\nDescription = Saved dojo questionnaire and native no-ball starter recruitment event\n"
+  OLD_META = "Name = Shattered Dojo\nVersion = 0.1.0\nEssentials = 21.1\nDescription = Saved dojo questionnaire and native no-ball starter recruitment event\n\n"
 
   def setup
     @dir = Dir.mktmpdir('shattered-dojo-test')
