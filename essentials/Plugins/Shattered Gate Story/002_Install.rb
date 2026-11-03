@@ -23,13 +23,22 @@ module ShatteredGateStory
     raise "Gate map tile data missing" unless data &&
       data.respond_to?(:xsize) && data.respond_to?(:ysize) && data.respond_to?(:zsize) &&
       data.xsize == map.width && data.ysize == map.height && data.zsize > 0
+    # A decorative upper layer must not conceal blocked ground. Require a
+    # real base tile and validate every non-star layer before placing a story
+    # event or approving the approach to the collapsed Johto exit.
+    ground = data[x, y, 0]
+    return false unless ground.instance_of?(Integer) && ground > 0
     (data.zsize - 1).downto(0) do |z|
       tile_id = data[x, y, z]
       next if tile_id == 0
+      raise "Gate map contains invalid tile ID" unless tile_id.instance_of?(Integer) && tile_id >= 0
       passage = tileset.passages[tile_id]
-      raise "Gate tileset passage data missing" unless passage.instance_of?(Integer)
-      next if (passage & 0x10) != 0
-      return (passage & 0x0F) == 0
+      raise "Gate tileset passage data missing" unless passage.instance_of?(Integer) && passage.between?(0, 31)
+      # Star-priority decoration may be ignored above the floor, but a
+      # star-priority BASE tile cannot establish a walkable story trigger.
+      next if z > 0 && (passage & 0x10) != 0
+      return false if (passage & 0x10) != 0
+      return false unless (passage & 0x0F) == 0
     end
     true
   end
@@ -138,7 +147,7 @@ module ShatteredGateStory
     end
     scripts = {
       "collapse" => "ShatteredGateStory.run_collapse(#{config['collapse_sounds'][0, MAX_IMPACTS].inspect}, #{config['final_roar_sound'].inspect})",
-      "aipom" => "ShatteredGateStory.run_aipom(#{config['aipom_cry'].inspect})",
+      "aipom" => "ShatteredGateStory.run_aipom(#{config['aipom_cry'].inspect}, get_character(0))",
       "johto_block" => "ShatteredGateStory.blocked_johto"
     }
     expected = {}

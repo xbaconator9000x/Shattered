@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "kind": "private_native_aipom_animation_source_and_candidate_checkpoint_not_gameplay",
+  "source_branch": "feature/hgss-victory-road-warp-audit-20261031",
+  "base_main_sha": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
+  "candidate_source_zip_sha256": "3bd21c0c9e43b2536e52383d975828cf25c2833252b20f88b9e137134d1283fa",
+  "candidate_updated_zip_sha256": "59a41f21662000361b833e5f9092deb3bc9ecc30dcd7e1ed0f006d3ce4b3065a",
+  "candidate_updated_zip_bytes": 160866066,
+  "candidate_entries": 7735,
+  "modified_private_entries": [
+    "Data/Map223.rxdata",
+    "Data/PluginScripts.rxdata"
+  ],
+  "map223_original_sha256": "1b46bc347b2094d81c9bcde64dc40b1f6ef3a368a43312a5ef22f742da3bbb6a",
+  "map223_updated_sha256": "a972e7963d7c0ed4ab773e90dd054021e7e3a76801d79731fdd4eb669f1656cf",
+  "compiled_plugin_scripts_sha256": "397b68ad549daeb1a6b159d8b87dafb37de433d416d02f9b7e1fc48ca1b9f470",
+  "gate_story_plugin_version": "0.2.1",
+  "native_source_contracts": {
+    "interpreter_get_character_zero": "Essentials v21.1 Interpreter#get_character(0) returns current event",
+    "event_turn_north": "Essentials v21.1 Game_Character#turn_up",
+    "exclamation": "Essentials v21.1 pbExclaim(event)",
+    "aipom_initial_direction": "RMXP native event starts facing south (direction 2); event turns north (direction 8) before exclamation"
+  },
+  "tests": {
+    "gate_story_workflow": "https://github.com/xbaconator9000x/Shattered/actions/runs/41343286024",
+    "gate_story": "35 tests 154 assertions pass",
+    "native_opening_upgrade": "11 tests 59 assertions pass",
+    "victory_road_ci": "https://github.com/xbaconator9000x/Shattered/actions/runs/41343112992",
+    "combined_ci": "https://github.com/xbaconator9000x/Shattered/actions/runs/41343112959",
+    "private_zip_integrity": "7735 ZIP entries, no CRC errors",
+    "unrelated_compiled_plugins": "8 entries byte-for-byte unchanged",
+    "private_offline_compiled_event": "PASS: actual native Map223 Aipom script evaluated through extracted Essentials v21.1 Interpreter#get_character(0) against compiled Shattered Gate Story 0.2.1; first key award, repeat idempotence and Marshal state/bag reload passed. Graphics pbExclaim and character turn were stubbed; NOT mkxp-z gameplay or real Game.save."
+  },
+  "acceptance": {
+    "source_implemented": true,
+    "private_native_map_and_compiled_plugin_integrated": true,
+    "exclamation_rendered_in_engine": false,
+    "actual_gameplay_verified": false,
+    "normal_save_continue_verified": false,
+    "android_verified": false
+  },
+  "limitations": [
+    "The private candidate includes commercial game assets and cannot be uploaded to GitHub",
+    "No mkxp-z binary available in this execution environment; native gameplay and exclamation animation were not observed",
+    "HnS redistribution permissions and final reception-gate visual parity remain unverified"
+  ]
+}

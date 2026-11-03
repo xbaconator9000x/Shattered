@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import struct
 
+from resolve_hns_gate_warps import resolve_warp_targets
+
 
 SOURCE_REPOSITORY = "https://github.com/PokemonHnS-Development/pokehns-expansion"
 SOURCE_REVISION = "167aa6d537b109bb229c231ddce4616974c4da71"
@@ -17,6 +19,13 @@ LAYOUT_ID = "LAYOUT_RECEPTION_GATE_HNS"
 MAP_ID = "MAP_RECEPTION_GATE_HNS"
 EXPECTED_WIDTH = 22
 EXPECTED_HEIGHT = 21
+# Git blob IDs from development/hns_source_asset_pins.json at SOURCE_REVISION.
+# Reject lookalike/reconstructed map files even when dimensions and exits match.
+PINNED_GATE_BLOBS = {
+    "map": "8651cb350a508181bfd7b69fc216696cb67c6829",
+    "layouts": "a3c3be1b411b1dca5a81494c7e2d4ef100b1e75d",
+    "blockdata": "bb1affeda8bedc75358a7c72813a7e7c6db0c660",
+}
 DIRECTION_BY_DESTINATION = {
     "MAP_ROUTE28_HNS": "west",
     "MAP_ROUTE22_HNS": "east",
@@ -51,7 +60,24 @@ def _classify_warp(warp):
     return DIRECTION_BY_DESTINATION[destination]
 
 
-def inspect_source(map_json, layouts_json, map_bin):
+def git_blob_sha1(path):
+    """Git blob identity, not the ordinary SHA-1 of file contents."""
+    data = Path(path).read_bytes()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\x00" + data).hexdigest()
+
+
+def verify_pinned_gate_source(map_json, layouts_json, map_bin):
+    """Require exact reviewed HnS source files before production conversion."""
+    for label, path in (("map", map_json), ("layouts", layouts_json),
+                        ("blockdata", map_bin)):
+        if git_blob_sha1(path) != PINNED_GATE_BLOBS[label]:
+            raise ValueError(f"{label}: not the pinned HnS source Git blob")
+    return True
+
+
+def inspect_source(map_json, layouts_json, map_bin, *, verify_source=True):
+    if verify_source:
+        verify_pinned_gate_source(map_json, layouts_json, map_bin)
     map_data = _read_json(map_json)
     layouts_data = _read_json(layouts_json)
     binary = Path(map_bin).read_bytes()
@@ -107,7 +133,7 @@ def _mapping_entry(mapping, metatile, collision, elevation):
             not isinstance(tables, list) or len(tables) != 3):
         raise ValueError(f"{key} must define three XP layers and three table records")
     for tile_id in layers:
-        if not isinstance(tile_id, int) or not 0 <= tile_id <= 8191:
+        if type(tile_id) is not int or not 0 <= tile_id <= 8191:
             raise ValueError(f"{key} contains an invalid XP tile ID")
         if tile_id != 0 and tile_id < 384:
             raise ValueError(f"{key} uses an autotile ID without an autotile mapping")
@@ -118,11 +144,11 @@ def _mapping_entry(mapping, metatile, collision, elevation):
         passage = values.get("passage")
         priority = values.get("priority")
         terrain = values.get("terrain")
-        if not isinstance(passage, int) or not 0 <= passage <= 31:
+        if type(passage) is not int or not 0 <= passage <= 31:
             raise ValueError(f"{key} passage must be an XP passage bitmask (0..31)")
-        if not isinstance(priority, int) or not 0 <= priority <= 5:
+        if type(priority) is not int or not 0 <= priority <= 5:
             raise ValueError(f"{key} priority must be between 0 and 5")
-        if not isinstance(terrain, int) or not 0 <= terrain <= 255:
+        if type(terrain) is not int or not 0 <= terrain <= 255:
             raise ValueError(f"{key} terrain tag must be between 0 and 255")
         normalized_tables.append({
             "passage": passage,
@@ -134,44 +160,32 @@ def _mapping_entry(mapping, metatile, collision, elevation):
     return layers, normalized_tables
 
 
-def convert(map_json, layouts_json, map_bin, mapping_json):
-    source = inspect_source(map_json, layouts_json, map_bin)
+def convert(map_json, layouts_json, map_bin, mapping_json, *, verify_source=True):
+    source = inspect_source(map_json, layouts_json, map_bin, verify_source=verify_source)
     mapping = _read_json(mapping_json)
     target = mapping.get("target", {})
     for field in ("map_id", "tileset_template_id", "tileset_name", "tileset_image"):
         if field not in target:
             raise ValueError(f"mapping target is missing {field}")
     for field in ("map_id", "tileset_template_id"):
-        if not isinstance(target[field], int) or target[field] <= 0:
+        if type(target[field]) is not int or target[field] <= 0:
             raise ValueError(f"mapping target {field} must be a positive integer")
     if not re.fullmatch(r"[A-Za-z0-9_-]+", target["tileset_name"]):
         raise ValueError("tileset_name must be a simple filename stem")
     if target["tileset_image"] != target["tileset_name"] + ".png":
         raise ValueError("tileset_image must be the PNG named by tileset_name")
+    image_sha = target.get("tileset_sha256")
+    if not isinstance(image_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", image_sha):
+        raise ValueError("generated gate tileset requires a SHA-256 from the private renderer")
 
-    destinations = mapping.get("destinations", {})
-    output_warps = []
-    for warp in source["warps"]:
-        destination = destinations.get(warp["source_destination"])
-        if not isinstance(destination, dict):
-            raise ValueError(f"missing target destination for {warp['source_destination']}")
-        for field in ("map_id", "x", "y"):
-            minimum = 1 if field == "map_id" else 0
-            if not isinstance(destination.get(field), int) or destination[field] < minimum:
-                raise ValueError(f"target warp destination requires nonnegative {field}")
-        direction = destination.get("direction", 0)
-        if direction not in (0, 2, 4, 6, 8):
-            raise ValueError("target warp direction must be 0, 2, 4, 6, or 8")
-        output_warps.append({
-            **warp,
-            "target": {
-                "map_id": destination["map_id"],
-                "x": destination["x"],
-                "y": destination["y"],
-                "direction": direction,
-                "fade": destination.get("fade", 0),
-            },
-        })
+    # Destination-only mappings cannot distinguish the two northern exits,
+    # which lead to the same source map but must have distinct native landings.
+    # The pinned map.json warp_events order is the stable source index.
+    targets = resolve_warp_targets(source["warps"], mapping)
+    output_warps = [
+        {**warp, "source_warp_index": index, "target": target}
+        for index, (warp, target) in enumerate(zip(source["warps"], targets))
+    ]
 
     width = source["layout"]["width"]
     height = source["layout"]["height"]
@@ -206,6 +220,7 @@ def convert(map_json, layouts_json, map_bin, mapping_json):
             "tileset_template_id": target["tileset_template_id"],
             "tileset_name": target["tileset_name"],
             "tileset_image": target["tileset_image"],
+            "tileset_sha256": image_sha,
         },
         "source": {
             "repository": SOURCE_REPOSITORY,

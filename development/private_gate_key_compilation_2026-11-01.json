@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_compiled_gate_key_checkpoint_not_runtime_acceptance",
+  "date": "2026-11-01",
+  "source_candidate_sha256": "479a3ced72855535c4daf3946ddbcd37e7f5ca4b031c0a65e802b22a12d459f9",
+  "private_candidate_sha256": "a31aae2c06765f0b17f51c7895cfb95c48ebaed4071da6bdf7ec2329e29181f1",
+  "private_candidate_bytes": 160846050,
+  "native_items_before_sha256": "47e985fe70263d80f70bb0ef5d596297280b33571229f189b9c08c04b8467906",
+  "native_items_after_sha256": "7c0e930f73e62d408b6891a1f54669f1535b62ef76d21bb69fa4773d870ca906",
+  "changed_zip_entries": [
+    "Shattered_Essentials_HnS_Imported/Data/items.dat"
+  ],
+  "original_compiled_item_count": 653,
+  "compiled_item_count": 654,
+  "new_item": "SHATTEREDGATEKEY",
+  "source_validation": "Actual private v21.1 Scripts.rxdata GameData::Item schema inspected; compiled PBS item present in text but absent from native items.dat before repair.",
+  "tests": {
+    "ruby_test_compile_private_gate_key": {
+      "passed": 5,
+      "assertions": 677,
+      "failed": 0
+    },
+    "native_candidate": {
+      "pbs_matches": true,
+      "marshal_roundtrip": true,
+      "original_items_preserved": 653,
+      "second_run_idempotent": true,
+      "zip_crc": true,
+      "zip_entries": 7723
+    }
+  },
+  "not_verified": [
+    "actual Essentials PBS debug compiler execution",
+    "actual GameData::Item.exists? in launched game",
+    "Aipom key event and bag acquisition",
+    "gate to Route22 playthrough",
+    "normal Save/Continue",
+    "Android JoiPlay/NaviaXP"
+  ],
+  "permissions": "No proprietary assets or private native data uploaded to GitHub. This JSON contains hashes and evidence only."
+}

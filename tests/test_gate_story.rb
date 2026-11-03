@@ -12,9 +12,16 @@ class BagStub
   attr_reader :added
   def initialize; @added = 0; @items = {}; @can_add = true; end
   def reject!; @can_add = false; end
+  def remove!(id); @items.delete(id); end
   def has?(id); !!@items[id]; end
   def add(id, qty); return false unless @can_add; @items[id] = true; @added += qty; true; end
 end
+class GateScreenStub
+  attr_reader :shakes
+  def initialize; @shakes = []; end
+  def start_shake(*args); @shakes << args; end
+end
+
 module RPG
   class Event
     attr_accessor :id, :name, :x, :y, :pages
@@ -60,7 +67,8 @@ def save_data(value, path); File.binwrite(path, Marshal.dump(value)); end
 def pbMessage(msg); ($messages ||= []) << msg; end
 def _INTL(msg); msg; end
 def pbSEPlay(name); ($sounds ||= []) << name; end
-def pbWait(frames); ($waits ||= []) << frames; end
+def pbWait(seconds); ($waits ||= []) << seconds; end
+def pbExclaim(event); ($exclaims ||= []) << event; end
 
 load File.expand_path("../essentials/Plugins/Shattered Gate Story/001_GateStory.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Gate Story/002_Install.rb", __dir__)
@@ -70,7 +78,33 @@ class GateStoryTest < Minitest::Test
     $PokemonGlobal = Object.new
     $bag = BagStub.new
     $messages, $sounds, $waits = [], [], []
+    $exclaims = []
+    $game_screen = GateScreenStub.new
   end
+  def test_native_essentials_message_text_is_mutable
+    # The actual v21.1 pbMessageDisplay calls gsub! on its input.
+    # Frozen literals in this plugin caused a native mkxp-z FrozenError
+    # at Map223 event #5 during the third collapse impact.
+    ShatteredGateStory.run_collapse(%w[rum1 rum2 rum3 rum4 rum5 rum6], "roar")
+    ShatteredGateStory.blocked_johto
+    assert ShatteredGateStory.run_aipom("cry")
+    refute_empty $messages
+    assert $messages.all? { |message| message.is_a?(String) && !message.frozen? },
+      "Every message passed to Essentials must be a mutable String"
+  end
+
+  # Actual Essentials v21.1 Overworld#pbWait accepts seconds (System.uptime),
+  # not frame counts. The previous 16/24 values delayed the six-beat opening
+  # by 112 seconds and the key aftershock by another 16 seconds.
+  def test_collapse_and_key_aftershock_waits_are_short_seconds
+    ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    assert_equal [0.8, 0.8, 1.2, 0.8, 0.8, 1.2], $waits
+    assert_equal 6, ShatteredGateStory.state[:impacts]
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal 0.8, $waits.last
+    assert_operator $waits.sum, :<, 7.0
+  end
+
   def test_six_impacts_resume_and_collapse_persist_in_save
     assert_equal false, ShatteredGateStory.collapsed?
     2.times { ShatteredGateStory.impact! }
@@ -118,6 +152,32 @@ class GateStoryTest < Minitest::Test
     assert ShatteredGateStory.run_aipom("cry")
     assert_equal 1, $bag.added
   end
+  def test_native_aipom_turns_north_and_exclaims_only_before_first_key
+    event = Object.new
+    event.define_singleton_method(:map_id) { 223 }
+    turns = []
+    event.define_singleton_method(:turn_up) { turns << :north }
+    6.times { ShatteredGateStory.impact! }
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM", event)
+    assert_equal [:north], turns
+    assert_equal [event], $exclaims
+    assert_equal ["Cries/AIPOM", "Mining collapse"], $sounds
+    assert_equal [ShatteredGateStory::KEY_AFTERSHOCK], $game_screen.shakes
+    assert ShatteredGateStory.state[:post_key_impact]
+    assert_equal 1, $bag.added
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM", event)
+    assert_equal [:north], turns
+    assert_equal [event], $exclaims
+    assert_equal 1, $bag.added
+  end
+
+  def test_native_aipom_rejects_invalid_event_before_award
+    6.times { ShatteredGateStory.impact! }
+    assert_raises(ArgumentError) { ShatteredGateStory.run_aipom("Cries/AIPOM", Object.new) }
+    assert_equal 0, $bag.added
+    assert_empty $exclaims
+  end
+
   def test_original_private_aipom_cry_subdirectory_and_path_safety
     6.times { ShatteredGateStory.impact! }
     assert ShatteredGateStory.run_aipom("Cries/AIPOM")
@@ -198,6 +258,120 @@ class GateStoryTest < Minitest::Test
     assert ShatteredGateStory.award_key!
     assert_equal 1, $bag.added
   end
+
+  def test_native_screen_shake_beats_resume_without_repeating_completed_impacts
+    2.times { ShatteredGateStory.impact! }
+    $PokemonGlobal = Marshal.load(Marshal.dump($PokemonGlobal))
+    ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    assert_equal ShatteredGateStory::IMPACT_SHAKES.drop(2), $game_screen.shakes
+    assert_equal %w[c d e f roar], $sounds
+    assert_equal 6, ShatteredGateStory.state[:impacts]
+    ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    assert_equal 4, $game_screen.shakes.length
+  end
+
+  def test_native_screen_missing_does_not_clear_unplayed_impact
+    $game_screen = nil
+    assert_raises(RuntimeError) do
+      ShatteredGateStory.run_collapse(%w[a b c d e f], "roar")
+    end
+    assert_equal 0, ShatteredGateStory.state[:impacts]
+    assert_empty $sounds
+  end
+
+  def test_key_aftershock_once_and_legacy_save_does_not_replay_it
+    6.times { ShatteredGateStory.impact! }
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal ["Cries/AIPOM", "Mining collapse"], $sounds
+    assert_equal [ShatteredGateStory::KEY_AFTERSHOCK], $game_screen.shakes
+    assert ShatteredGateStory.state[:post_key_impact]
+    $PokemonGlobal, $bag = Marshal.load(Marshal.dump([$PokemonGlobal, $bag]))
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal 1, $game_screen.shakes.length
+    assert_equal 1, $bag.added
+
+    ShatteredGateStory.state.delete(:post_key_impact)
+    assert ShatteredGateStory.state[:post_key_impact]
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert_equal 1, $game_screen.shakes.length
+  end
+
+  def test_failed_key_aftershock_keeps_key_and_retries_without_duplicate_award
+    6.times { ShatteredGateStory.impact! }
+    broken_screen = Object.new
+    def broken_screen.start_shake(*_args); raise "injected screen failure"; end
+    $game_screen = broken_screen
+    assert_raises(RuntimeError) { ShatteredGateStory.run_aipom("Cries/AIPOM") }
+    assert ShatteredGateStory.key_obtained?
+    refute ShatteredGateStory.state[:post_key_impact]
+    assert_equal 1, $bag.added
+    $game_screen = GateScreenStub.new
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.state[:post_key_impact]
+    assert_equal [ShatteredGateStory::KEY_AFTERSHOCK], $game_screen.shakes
+    assert_equal 1, $bag.added
+  end
+
+  def test_invalid_aftershock_save_state_fails_closed
+    value = ShatteredGateStory.state
+    value[:post_key_impact] = true
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+    value[:post_key_impact] = "done"
+    assert_raises(ShatteredGateStory::InvalidState) { ShatteredGateStory.state }
+  end
+end
+
+
+class GateKeyBagPersistenceTest < Minitest::Test
+  def setup
+    $PokemonGlobal = Object.new
+    $bag = BagStub.new
+    $messages, $sounds, $waits = [], [], []
+    $game_screen = GateScreenStub.new
+    6.times { ShatteredGateStory.impact! }
+    ShatteredGateStory.clue!
+  end
+
+  def test_saved_award_flag_without_bag_item_cannot_unlock_gate
+    assert ShatteredGateStory.award_key!
+    assert ShatteredGateStory.key_obtained?
+    $bag.remove!(:SHATTEREDGATEKEY)
+    assert_equal true, ShatteredGateStory.state[:key]
+    refute ShatteredGateStory.key_obtained?
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.key_obtained?
+    assert_equal 2, $bag.added
+  end
+
+  def test_full_bag_during_recovery_keeps_door_locked
+    assert ShatteredGateStory.award_key!
+    $bag.remove!(:SHATTEREDGATEKEY)
+    $bag.reject!
+    refute ShatteredGateStory.run_aipom("Cries/AIPOM")
+    refute ShatteredGateStory.key_obtained?
+    assert_equal true, ShatteredGateStory.state[:key]
+    $bag = BagStub.new
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.key_obtained?
+  end
+
+  def test_item_present_before_saved_award_is_reconciled_without_duplicate
+    assert $bag.add(:SHATTEREDGATEKEY, 1)
+    refute ShatteredGateStory.key_obtained?
+    assert ShatteredGateStory.run_aipom("Cries/AIPOM")
+    assert ShatteredGateStory.key_obtained?
+    assert_equal 1, $bag.added
+  end
+
+  def test_bag_and_story_marshal_roundtrip_requires_both
+    assert ShatteredGateStory.award_key!
+    $PokemonGlobal, $bag = Marshal.load(Marshal.dump([$PokemonGlobal, $bag]))
+    assert ShatteredGateStory.key_obtained?
+    $bag = BagStub.new
+    refute ShatteredGateStory.key_obtained?
+    assert ShatteredGateStory.award_key!
+    assert ShatteredGateStory.key_obtained?
+  end
 end
 
 class GateInstallerTest < Minitest::Test
@@ -269,6 +443,7 @@ class GateInstallerTest < Minitest::Test
     assert_equal "Exit north", map.events[2].name
     aipom = map.events.values.find { |e| e.name == "SHATTERED_GATE:aipom" }
     assert_equal "Aipom", aipom.pages[0].graphic.character_name
+    assert_includes aipom.pages[0].list[0].parameters[0], "get_character(0)"
     assert_equal 0, aipom.pages[0].trigger
     assert_equal 6, @config["collapse_sounds"].length
     collapse_script = map.events.values.find { |e| e.name == "SHATTERED_GATE:collapse" }.pages[0].list[0].parameters[0]
@@ -329,6 +504,56 @@ class GateInstallerTest < Minitest::Test
     assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
     assert_equal original, File.binread("Data/Map010.rxdata")
   end
+  def test_rejects_blocked_ground_under_passable_upper_tile
+    map = load_data("Data/Map010.rxdata")
+    map.data[9, 11, 0] = 2
+    map.data[9, 11, 1] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[2] = 0x0F
+    tilesets[1].passages[3] = 0
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+
+  def test_rejects_blocked_ground_under_star_overlay
+    map = load_data("Data/Map010.rxdata")
+    map.data[11, 18, 0] = 2
+    map.data[11, 18, 2] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[2] = 0x0F
+    tilesets[1].passages[3] = 0x10
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+
+  def test_rejects_star_only_ground_without_walkable_floor
+    map = load_data("Data/Map010.rxdata")
+    map.data[9, 11, 0] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[3] = 0x10
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    original = File.binread("Data/Map010.rxdata")
+    assert_raises(RuntimeError) { ShatteredGateStory.install(@config) }
+    assert_equal original, File.binread("Data/Map010.rxdata")
+  end
+
+  def test_accepts_passable_upper_tile_over_walkable_ground
+    map = load_data("Data/Map010.rxdata")
+    map.data[9, 11, 1] = 3
+    save_data(map, "Data/Map010.rxdata")
+    tilesets = load_data("Data/Tilesets.rxdata")
+    tilesets[1].passages[3] = 0
+    save_data(tilesets, "Data/Tilesets.rxdata")
+    assert_equal 3, ShatteredGateStory.install(@config)["installed"].length
+  end
+
   def test_allows_impassable_south_exit_if_northern_approach_is_walkable
     map = load_data("Data/Map010.rxdata")
     map.data[11, 19, 0] = 2

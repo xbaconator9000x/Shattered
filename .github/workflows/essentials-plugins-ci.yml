@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install pinned Pillow for full-suite HnS PNG and preview tests
-        run: python3 -m pip install --disable-pip-version-check 'Pillow==12.3.0'
+        run: python3 -m pip install --disable-pip-version-check 'Pillow==13.0.0'
       - name: Validate queue and plugin version manifest
         run: python3 scripts/validate_integration.py
       - name: Test safe installer and queue
@@ -91,6 +91,10 @@ jobs:
         run: |
           ruby -c scripts/finalize_private_runtime.rb
           ruby tests/test_private_runtime_isolation.rb
+      - name: Compiled versus editable Shattered plugin source coherence
+        run: |
+          ruby -c scripts/verify_private_plugin_coherence.rb
+          ruby tests/test_private_plugin_coherence.rb
       - name: Native Essentials PBS compiler runner and rollback regressions
         run: |
           ruby -c scripts/compile_private_pbs_native.rb
@@ -104,6 +108,7 @@ jobs:
           for suite in \
             tests/test_gate_story.rb \
             tests/test_private_hns_gate_key_branch.rb \
+            tests/test_upgrade_approved_hns_opening.rb \
             tests/test_hns_gate_import.rb \
             tests/test_route22.rb \
             tests/test_murkrow_rescue.rb \

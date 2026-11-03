@@ -6,11 +6,11 @@ on:
       - "essentials/Plugins/Shattered Gate Story/**"
       - "essentials/PBS/SHATTEREDGATEKEY.pbs"
       - "scripts/install_gate_key_pbs.py"
+      - "scripts/compile_private_gate_key.rb"
+      - "tests/test_compile_private_gate_key.rb"
       - "tests/test_gate_story.rb"
       - "scripts/repair_private_hns_gate_key_branch.rb"
       - "tests/test_private_hns_gate_key_branch.rb"
-      - "scripts/compile_private_gate_key.rb"
-      - "tests/test_compile_private_gate_key.rb"
       - "scripts/verify_private_plugin_coherence.rb"
       - "tests/test_private_plugin_coherence.rb"
       - "scripts/upgrade_approved_hns_opening.rb"
@@ -41,34 +41,18 @@ jobs:
           ruby tests/test_gate_story.rb
           ruby -c scripts/repair_private_hns_gate_key_branch.rb
           ruby tests/test_private_hns_gate_key_branch.rb
-          if test -f scripts/verify_private_plugin_coherence.rb; then ruby -c scripts/verify_private_plugin_coherence.rb; fi
-          if test -f tests/test_private_plugin_coherence.rb; then ruby tests/test_private_plugin_coherence.rb; fi
-          if test -f scripts/upgrade_approved_hns_opening.rb; then ruby -c scripts/upgrade_approved_hns_opening.rb; fi
-          if test -f tests/test_upgrade_approved_hns_opening.rb; then ruby tests/test_upgrade_approved_hns_opening.rb; fi
-          if test -f scripts/repair_private_hns_player_avatar.rb; then ruby -c scripts/repair_private_hns_player_avatar.rb; fi
-          if test -f tests/test_private_hns_player_avatar.rb; then ruby tests/test_private_hns_player_avatar.rb; fi
-          if test -f scripts/install_private_hns_debris.rb; then ruby -c scripts/install_private_hns_debris.rb; fi
-          if test -f tests/test_hns_south_debris.rb; then ruby tests/test_hns_south_debris.rb; fi
-          if test -f tests/test_hns_debris_state.rb; then ruby tests/test_hns_debris_state.rb; fi
-          if test -f scripts/verify_private_hns_east_door.rb; then ruby -c scripts/verify_private_hns_east_door.rb; fi
-          if test -f tests/test_private_hns_east_door.rb; then ruby tests/test_private_hns_east_door.rb; fi
-          if test -f scripts/compile_private_gate_key.rb; then ruby -c scripts/compile_private_gate_key.rb; fi
-          if test -f tests/test_compile_private_gate_key.rb; then ruby tests/test_compile_private_gate_key.rb; fi
-      - name: HGSS Gate integration regressions (after source merge)
-        run: |
-          set -eu
-          if test -f 'scripts/compile_private_gate_key.rb'; then ruby -c 'scripts/compile_private_gate_key.rb'; fi
-          if test -f 'tests/test_compile_private_gate_key.rb'; then ruby 'tests/test_compile_private_gate_key.rb'; fi
-          if test -f 'scripts/verify_private_plugin_coherence.rb'; then ruby -c 'scripts/verify_private_plugin_coherence.rb'; fi
-          if test -f 'tests/test_private_plugin_coherence.rb'; then ruby 'tests/test_private_plugin_coherence.rb'; fi
-          if test -f 'scripts/upgrade_approved_hns_opening.rb'; then ruby -c 'scripts/upgrade_approved_hns_opening.rb'; fi
-          if test -f 'tests/test_upgrade_approved_hns_opening.rb'; then ruby 'tests/test_upgrade_approved_hns_opening.rb'; fi
-          if test -f 'scripts/repair_private_hns_player_avatar.rb'; then ruby -c 'scripts/repair_private_hns_player_avatar.rb'; fi
-          if test -f 'tests/test_private_hns_player_avatar.rb'; then ruby 'tests/test_private_hns_player_avatar.rb'; fi
-          if test -f 'scripts/install_private_hns_debris.rb'; then ruby -c 'scripts/install_private_hns_debris.rb'; fi
-          if test -f 'tests/test_hns_south_debris.rb'; then ruby 'tests/test_hns_south_debris.rb'; fi
-          if test -f 'tests/test_hns_debris_state.rb'; then ruby 'tests/test_hns_debris_state.rb'; fi
-          if test -f 'scripts/verify_private_hns_east_door.rb'; then ruby -c 'scripts/verify_private_hns_east_door.rb'; fi
-          if test -f 'tests/test_private_hns_east_door.rb'; then ruby 'tests/test_private_hns_east_door.rb'; fi
+          ruby -c scripts/verify_private_plugin_coherence.rb
+          ruby tests/test_private_plugin_coherence.rb
+          ruby -c scripts/upgrade_approved_hns_opening.rb
+          ruby tests/test_upgrade_approved_hns_opening.rb
+          ruby -c scripts/repair_private_hns_player_avatar.rb
+          ruby tests/test_private_hns_player_avatar.rb
+          ruby -c scripts/install_private_hns_debris.rb
+          ruby tests/test_hns_south_debris.rb
+          ruby tests/test_hns_debris_state.rb
+          ruby -c scripts/verify_private_hns_east_door.rb
+          ruby tests/test_private_hns_east_door.rb
+          ruby -c scripts/compile_private_gate_key.rb
+          ruby tests/test_compile_private_gate_key.rb
       - name: Gate key staged PBS tests
         run: python3 -m unittest discover -s tests -p 'test_gate_key_pbs.py' -v
