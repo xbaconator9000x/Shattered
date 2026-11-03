@@ -1,0 +1,22 @@
+name: Restore xx0.95 integration base
+on:
+  push:
+    branches:
+      - codex/restore-xx095-for-crystal-integration
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reassemble and verify archive
+        working-directory: .backups/shattered-rom/2026-11-01
+        run: python3 restore.py
+      - name: Extract current ROM and project
+        working-directory: .backups/shattered-rom/2026-11-01
+        run: unzip -q restored/xx0.95_Pokemon_Shattered_Backup.zip -d ../../../../xx095
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shattered-xx095-integration-base
+          path: xx095/
+          if-no-files-found: error
+          retention-days: 1
