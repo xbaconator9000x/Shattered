@@ -115,7 +115,32 @@ jobs:
       - name: HGSS Victory Road integration regressions when merged
         run: |
           set -eu
-          # PR #57 owns these sources. Run them once present in the same tree.
+          # PR #57 owns these sources. An entirely absent feature is allowed on
+          # this independent branch; a partially merged feature is NOT.
+          victory_files=(
+            scripts/convert_hns_victory_road.py
+            scripts/render_hns_tiles.py
+            scripts/validate_hns_gate_victory_link.py
+            tests/test_hns_victory_road_conversion.py
+            tests/test_hns_victory_road_audit.py
+            tests/test_hns_gate_victory_link.py
+            tests/test_render_hns_tiles.py
+            tests/test_hns_victory_road_install.rb
+            tests/test_hns_south_debris.rb
+            tests/test_private_hns_east_door.rb
+          )
+          present=0
+          for file in "${victory_files[@]}"; do
+            if test -f "$file"; then present=$((present + 1)); fi
+          done
+          if test "$present" -gt 0 && test "$present" -ne "${#victory_files[@]}"; then
+            echo "::error::Incomplete HGSS Victory Road integration: $present/${#victory_files[@]} required files present"
+            for file in "${victory_files[@]}"; do
+              if ! test -f "$file"; then echo "::error file=$file::Required source or regression missing"; fi
+            done
+            exit 1
+          fi
+          if test "$present" -eq 0; then echo "HGSS Victory Road not yet integrated; independently tracked by PR #57"; fi
           for script in \
             scripts/convert_hns_victory_road.py \
             scripts/render_hns_tiles.py \
