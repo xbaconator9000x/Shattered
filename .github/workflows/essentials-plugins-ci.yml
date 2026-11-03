@@ -73,6 +73,8 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Dojo/001_Starter.rb'
           ruby -c 'essentials/Plugins/Shattered Dojo/002_Install.rb'
           ruby tests/test_dojo.rb
+          ruby -c scripts/upgrade_private_dojo_v011.rb
+          ruby tests/test_upgrade_private_dojo_v011.rb
       - name: Provisional Viridian starter mentor native-map installer regression
         run: |
           ruby -c scripts/install_private_viridian_mentor.rb
