@@ -112,6 +112,29 @@ jobs:
             ruby -c "$suite"
             ruby "$suite"
           done
+      - name: HGSS Victory Road integration regressions when merged
+        run: |
+          set -eu
+          # PR #57 owns these sources. Run them once present in the same tree.
+          for script in \
+            scripts/convert_hns_victory_road.py \
+            scripts/render_hns_tiles.py \
+            scripts/validate_hns_gate_victory_link.py; do
+            if test -f "$script"; then python3 -m py_compile "$script"; fi
+          done
+          for suite in \
+            tests/test_hns_victory_road_conversion.py \
+            tests/test_hns_victory_road_audit.py \
+            tests/test_hns_gate_victory_link.py \
+            tests/test_render_hns_tiles.py; do
+            if test -f "$suite"; then python3 "$suite"; fi
+          done
+          for suite in \
+            tests/test_hns_victory_road_install.rb \
+            tests/test_hns_south_debris.rb \
+            tests/test_private_hns_east_door.rb; do
+            if test -f "$suite"; then ruby -c "$suite"; ruby "$suite"; fi
+          done
       - name: Smoke test staged project output
         run: |
           mkdir -p /tmp/base/PBS
