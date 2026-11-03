@@ -41,6 +41,19 @@ jobs:
           ruby tests/test_gate_story.rb
           ruby -c scripts/repair_private_hns_gate_key_branch.rb
           ruby tests/test_private_hns_gate_key_branch.rb
+          ruby -c scripts/verify_private_plugin_coherence.rb
+          ruby tests/test_private_plugin_coherence.rb
+          ruby -c scripts/upgrade_approved_hns_opening.rb
+          ruby tests/test_upgrade_approved_hns_opening.rb
+          ruby -c scripts/repair_private_hns_player_avatar.rb
+          ruby tests/test_private_hns_player_avatar.rb
+          ruby -c scripts/install_private_hns_debris.rb
+          ruby tests/test_hns_south_debris.rb
+          ruby tests/test_hns_debris_state.rb
+          ruby -c scripts/verify_private_hns_east_door.rb
+          ruby tests/test_private_hns_east_door.rb
+          ruby -c scripts/compile_private_gate_key.rb
+          ruby tests/test_compile_private_gate_key.rb
       - name: HGSS Gate integration regressions (after source merge)
         run: |
           set -eu
