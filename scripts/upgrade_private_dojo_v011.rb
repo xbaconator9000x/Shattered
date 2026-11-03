@@ -14,7 +14,7 @@ module ShatteredPrivateDojo011
   OLD_SOURCE_SHA = '4ec57f99784ae6e87a98b0654963ee1fda9d8e76fc3e58a9d1f38d0530bcb018'
   NEW_SOURCE_SHA = '18bc13a7cc8c904f21eb114a61252a6ff33c7ac943da5287106ec103b7b25fcd'
   OLD_META_SHA = '34de09081070b1dabf12339424a256854a99f46c8f862f5672e462f85ba38686'
-  NEW_META_SHA = 'b4db62410a3e98a5e6b63c5547d6a4447c4de07b7c950daa26fcffe6c8e1d8ea'
+  NEW_META_SHA = 'a5ff70f05493eb3d9692b91ad4fe2ef6caca699d0c38d7a6012dd67972518a22'
   module_function
 
   def sha(bytes) = Digest::SHA256.hexdigest(bytes)
