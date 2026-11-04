@@ -77,9 +77,19 @@ module ShatteredPrivatePluginCompiler
     check(meta[:name] == folder, "Plugin folder/name mismatch")
     scripts = Dir.children(directory).select { |name| name.end_with?(".rb") }.sort
     expected = (RUNTIME_FILES.fetch(folder, []) + INSTALLER_FILES.fetch(folder, [])).sort
-    check(!expected.empty? && scripts == expected,
-      "Unreviewed plugin source inventory for #{folder}; refusing native compilation")
     runtime = RUNTIME_FILES.fetch(folder, [])
+    if scripts != expected
+      # After finalize_private_runtime.rb, installers live outside Plugins/.
+      # A pinned runtime-only upgrade is safe only if every expected offline
+      # installer still exists in the designated private tools directory.
+      offline = File.join(project, "SHATTERED_OFFLINE_TOOLS", folder)
+      offline_files = INSTALLER_FILES.fetch(folder, [])
+      check(!expected.empty? && scripts == runtime && !offline_files.empty? &&
+        File.directory?(offline) && !File.symlink?(offline) &&
+        offline_files.all? { |name| File.file?(File.join(offline, name)) &&
+          !File.symlink?(File.join(offline, name)) },
+        "Unreviewed plugin source inventory for #{folder}; refusing native compilation")
+    end
     packed = runtime.map do |name|
       check(name.match?(/\A[A-Za-z0-9 _-]+\.rb\z/), "Unsafe plugin filename")
       source = File.binread(safe_file!(File.join(directory, name)))
@@ -120,7 +130,7 @@ module ShatteredPrivatePluginCompiler
     end
   end
 
-  def compile(project, folders)
+  def compile(project, folders, replace_pins: {})
     project = File.realpath(project)
     check(File.file?(File.join(project, "SHATTERED_STAGING_REPORT.json")),
       "Refusing to compile a project without a private staging report")
@@ -134,7 +144,11 @@ module ShatteredPrivatePluginCompiler
       folders.uniq == folders, "Invalid requested plugin list")
     added = []
     unchanged = []
+    replaced = []
     offline_only = []
+    check(replace_pins.is_a?(Hash) && replace_pins.keys.all? { |name| folders.include?(name) } &&
+      replace_pins.values.all? { |pin| pin.is_a?(String) && /\A[0-9a-f]{64}\z/.match?(pin) },
+      "Invalid or unrelated pinned replacement request")
     folders.each do |folder|
       proposed = source_entry(project, folder)
       old = entries.find { |entry| entry[0] == proposed[0] }
@@ -144,15 +158,41 @@ module ShatteredPrivatePluginCompiler
         next
       end
       if old
-        check(equivalent?(old, proposed),
-          "Plugin #{folder} is already compiled with different source; use a fresh stage")
-        unchanged << folder
+        if equivalent?(old, proposed)
+          unchanged << folder
+        elsif replace_pins.key?(folder)
+          # Explicit one-script upgrade of an already compiled private runtime.
+          # Refuse any unexpected prior bytes, script count or metadata drift.
+          # A pinned source upgrade may bump the plugin version, but must not
+          # silently change its identity, Essentials compatibility or credits.
+          # Reject downgrades and all other metadata drift before writing.
+          old_version = old[1][:version]
+          new_version = proposed[1][:version]
+          version_safe = old_version.is_a?(String) &&
+            /\A\d+\.\d+\.\d+\z/.match?(old_version) &&
+            (new_version.split(".").map(&:to_i) <=> old_version.split(".").map(&:to_i)) >= 0
+          metadata_safe = old[1].reject { |key, _| key == :version } ==
+            proposed[1].reject { |key, _| key == :version }
+          check(old[2].length == 1 && proposed[2].length == 1 &&
+            old[2][0][0] == proposed[2][0][0] &&
+            version_safe && metadata_safe,
+            "Pinned replacement requires a non-downgrade single-script plugin with unchanged metadata")
+          actual = Digest::SHA256.hexdigest(Zlib::Inflate.inflate(old[2][0][1]))
+          check(actual == replace_pins.fetch(folder),
+            "Compiled #{folder} source digest differs from approved replacement pin")
+          entries[entries.index(old)] = proposed
+          replaced << { "plugin" => folder, "previous_source_sha256" => actual,
+            "new_source_sha256" => Digest::SHA256.hexdigest(Zlib::Inflate.inflate(proposed[2][0][1])) }
+        else
+          check(false, "Plugin #{folder} is already compiled with different source; use a fresh stage")
+        end
       else
+        check(!replace_pins.key?(folder), "Cannot replace missing compiled plugin #{folder}")
         entries << proposed
         added << folder
       end
     end
-    if added.any?
+    if added.any? || replaced.any?
       backup = "#{target}.pre_shattered_#{Digest::SHA256.hexdigest(original)[0, 12]}.bak"
       check(!File.exist?(backup) && !File.symlink?(backup), "Existing backup needs review")
       temp = "#{target}.shattered.tmp"
@@ -168,7 +208,7 @@ module ShatteredPrivatePluginCompiler
     end
     report = {
       "kind" => "native_format_plugin_archive_not_gameplay_acceptance",
-      "added" => added, "unchanged" => unchanged,
+      "added" => added, "unchanged" => unchanged, "replaced" => replaced,
       "offline_only" => offline_only,
       "runtime_script_names" => entries.select { |entry| RUNTIME_FILES.key?(entry[0]) }.to_h { |entry| [entry[0], entry[2].map(&:first)] },
       "plugin_names" => entries.map(&:first),
@@ -184,14 +224,20 @@ module ShatteredPrivatePluginCompiler
 end
 
 if $PROGRAM_NAME == __FILE__
-  options = { :plugins => [] }
+  options = { :plugins => [], :replace_pins => {} }
   parser = OptionParser.new do |opts|
     opts.banner = "Usage: ruby scripts/compile_private_plugins.rb --project PRIVATE_STAGED --plugin 'Shattered Core'"
     opts.on("--project PATH") { |value| options[:project] = value }
     opts.on("--plugin NAME") { |value| options[:plugins] << value }
+    opts.on("--replace-pinned NAME=SHA256") do |value|
+      name, sha = value.split("=", 2)
+      abort "Invalid pinned replacement" unless name && sha && !options[:replace_pins].key?(name)
+      options[:replace_pins][name] = sha
+    end
   end
   parser.parse!
   abort parser.to_s unless options[:project]
   options[:plugins] = ["Shattered Core"] if options[:plugins].empty?
-  puts JSON.pretty_generate(ShatteredPrivatePluginCompiler.compile(options[:project], options[:plugins]))
+  puts JSON.pretty_generate(ShatteredPrivatePluginCompiler.compile(options[:project], options[:plugins],
+    replace_pins: options[:replace_pins]))
 end

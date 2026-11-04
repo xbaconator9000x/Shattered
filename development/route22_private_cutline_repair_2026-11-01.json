@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "kind": "private_hns_route22_cutline_repair_source_checkpoint_not_gameplay_acceptance",
+  "date": "2026-11-01",
+  "original_private_candidate_sha256": "0d95363f0897c12a5944242c3a957ea751ce2e97216eb356297020af982ee395",
+  "original_map016_sha256": "e480646fa53bf5ad138686abcbb1e763b5c10f378b92b3b2b080b533cfb6b629",
+  "repaired_map016_sha256": "064d66435b37c263369380d6c4077d53191f6d2f65db71569977717f312e6339",
+  "repaired_private_candidate_sha256": "479a3ced72855535c4daf3946ddbcd37e7f5ca4b031c0a65e802b22a12d459f9",
+  "repaired_private_candidate_bytes": 160845969,
+  "original_legacy_event_id": 3,
+  "original_viridian_transfer_event_id": 4,
+  "original_transfer": [
+    0,
+    10,
+    25,
+    20,
+    2,
+    0
+  ],
+  "reserved_ids": {
+    "outcome_variable": 991,
+    "cleared_switch": 992
+  },
+  "implemented": [
+    "removed unconditional post-defeat self-switch",
+    "changed original autorun to player-touch encounter",
+    "guarded actual Viridian transfer against bypass",
+    "restored canLose battle rule for retry",
+    "preserved original native map tile bytes and unrelated events",
+    "rejected unreviewed/tampered native map and stale transaction"
+  ],
+  "evidence": {
+    "native_source_map_repair": "performed on exact private candidate Map016.rxdata",
+    "zip_integrity": "7723 entries, testzip no errors",
+    "ruby_regressions": "4 isolated native cutline tests, 21 assertions passed; additional compiler replacement tests committed, GitHub CI pending.",
+    "battle_logic": "defeat/retry/victory/persistent-state source stub passed",
+    "native_runtime": "not run",
+    "native_pbs_compilation": "not run",
+    "plugin_scripts_rxdata_compilation": "Route22 compiled source updated; actual mkxp-z engine not launched.",
+    "android": "not run",
+    "native_format_plugin_archive": "Updated Route22 compressed source inside actual private PluginScripts.rxdata, preserved eight other compiled plugin entries byte-for-byte, and verified Marshal roundtrip; not a gameplay test."
+  },
+  "release_gates_open": [
+    "native Essentials compiled plugin archive",
+    "HUMAN vs Rattata actual defeat and retry",
+    "Gate to Route22 continuous playthrough",
+    "normal save/close/reopen/Continue",
+    "Android JoiPlay/NaviaXP",
+    "Rattata overworld scatter animation and event-trigger timing in actual Essentials runtime"
+  ],
+  "asset_policy": "Private candidate contains copyrighted user-provided game assets; never commit or redistribute via GitHub. This record contains hashes and test results only.",
+  "compiled_plugin_archive_sha256": "1fd3b17ee80c7d9f28ec1a114c8c739ad2fb59729dee05a3935062a7f83cc938",
+  "previous_plugin_archive_sha256": "31bfa8e81f9e26fbcc4f3fae8a2abce769620f200ed3638d6605efcbbe3f5d5c",
+  "rattata_group_2026_11_01": {
+    "status": "source_implemented_and_private_native_map_installed_not_engine_verified",
+    "hns_source_sha256": "05e3e63cfbea4809604e09476320eebad923c93484ddd211ff12790013cdcf53",
+    "source_revision": "PokemonHnS-Development/pokehns-expansion@167aa6d537b109bb229c231ddce4616974c4da71",
+    "private_sprite_sha256": "3b7119e99a4bba28ceeab6250792ca9d3aad6f3aa6ca2ead37fdbeb448efef03",
+    "private_map016_sha256": "56151d32ce1146bc9229db51fbd49a28e35e7c571183661ee6df608c1d01fe08",
+    "private_compiled_plugin_archive_sha256": "dcf0b860f76a9dd0e807b399759a293ca157bc5f395caa13e32fdfd7d30d5f2c",
+    "private_candidate_sha256": "56d65a601a67eef11abeb3ddf0a30397bc8b479f056d4edbe2beec27cf8d2ce9",
+    "private_candidate_bytes": 160851297,
+    "native_event_ids": [
+      5,
+      6,
+      7
+    ],
+    "switch_hides_sprites": 992,
+    "local_tests": "6 tests / 40 assertions passed; native Map016 transform 7 events, preserves unrelated events/tile bytes; 9 compiled plugins preserved (8 unchanged)",
+    "github_ci": [
+      "41290049755",
+      "41290049675",
+      "41290049667"
+    ],
+    "native_gameplay_verified": false,
+    "android_verified": false,
+    "route22_plugin_version": "0.1.1"
+  }
+}

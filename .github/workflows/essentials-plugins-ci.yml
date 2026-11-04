@@ -31,7 +31,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install pinned Pillow for full-suite HnS PNG and preview tests
-        run: python3 -m pip install --disable-pip-version-check 'Pillow==12.3.0'
+        run: python3 -m pip install --disable-pip-version-check 'Pillow==13.0.0'
       - name: Validate queue and plugin version manifest
         run: python3 scripts/validate_integration.py
       - name: Test safe installer and queue
@@ -40,6 +40,8 @@ jobs:
         run: ruby -c 'essentials/Plugins/Shattered Core/001_Core.rb'
       - name: Shattered HUMAN API unit tests
         run: ruby tests/test_shattered_core.rb
+      - name: HUMAN native healing regression
+        run: ruby tests/test_human_healing.rb
       - name: HUMAN equipment and merged Core integration regression
         run: |
           ruby -c 'essentials/Plugins/Shattered Equipment/001_Equipment.rb'
@@ -63,11 +65,20 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
           ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
           ruby tests/test_viridian.rb
+          ruby tests/test_viridian_map_restore.rb
+          ruby -c scripts/repair_private_viridian_center_arrival.rb
+          ruby tests/test_private_viridian_center_arrival.rb
       - name: Native dojo starter questionnaire and map collision regression
         run: |
           ruby -c 'essentials/Plugins/Shattered Dojo/001_Starter.rb'
           ruby -c 'essentials/Plugins/Shattered Dojo/002_Install.rb'
           ruby tests/test_dojo.rb
+          ruby -c scripts/upgrade_private_dojo_v011.rb
+          ruby tests/test_upgrade_private_dojo_v011.rb
+      - name: Provisional Viridian starter mentor native-map installer regression
+        run: |
+          ruby -c scripts/install_private_viridian_mentor.rb
+          ruby tests/test_private_viridian_mentor.rb
       - name: World-link native installer syntax and unit tests
         run: |
           ruby -c 'essentials/Plugins/Shattered World Links/001_Install.rb'
@@ -88,22 +99,73 @@ jobs:
         run: |
           ruby -c scripts/compile_private_pbs_native.rb
           ruby tests/test_private_native_pbs_compile.rb
+          if test -f scripts/verify_private_plugin_coherence.rb; then ruby -c scripts/verify_private_plugin_coherence.rb; fi
+          if test -f tests/test_private_plugin_coherence.rb; then ruby tests/test_private_plugin_coherence.rb; fi
       - name: Native gate, HnS, Route22, rescue and raid Ruby regressions
         run: |
           # Run each suite in a fresh Ruby process: their RGSS fixture globals
           # and mock Pokemon classes intentionally differ across files.
           for suite in \
             tests/test_gate_story.rb \
+            tests/test_private_hns_gate_key_branch.rb \
             tests/test_upgrade_approved_hns_opening.rb \
-            tests/test_private_hns_east_door.rb \
             tests/test_hns_gate_import.rb \
             tests/test_route22.rb \
             tests/test_murkrow_rescue.rb \
             tests/test_shattered_native_handoff.rb \
             tests/test_shattered_raid.rb \
-            tests/test_raid_core_integration.rb; do
+            tests/test_raid_core_integration.rb \
+            tests/test_private_opening_convergence.rb; do
             ruby -c "$suite"
             ruby "$suite"
+          done
+      - name: HGSS Victory Road integration regressions when merged
+        run: |
+          set -eu
+          # PR #57 owns these sources. An entirely absent feature is allowed on
+          # this independent branch; a partially merged feature is NOT.
+          victory_files=(
+            scripts/convert_hns_victory_road.py
+            scripts/render_hns_tiles.py
+            scripts/validate_hns_gate_victory_link.py
+            tests/test_hns_victory_road_conversion.py
+            tests/test_hns_victory_road_audit.py
+            tests/test_hns_gate_victory_link.py
+            tests/test_render_hns_tiles.py
+            tests/test_hns_victory_road_install.rb
+            tests/test_hns_south_debris.rb
+            tests/test_private_hns_east_door.rb
+          )
+          present=0
+          for file in "${victory_files[@]}"; do
+            if test -f "$file"; then present=$((present + 1)); fi
+          done
+          if test "$present" -gt 0 && test "$present" -ne "${#victory_files[@]}"; then
+            echo "::error::Incomplete HGSS Victory Road integration: $present/${#victory_files[@]} required files present"
+            for file in "${victory_files[@]}"; do
+              if ! test -f "$file"; then echo "::error file=$file::Required source or regression missing"; fi
+            done
+            exit 1
+          fi
+          if test "$present" -eq 0; then echo "HGSS Victory Road not yet integrated; independently tracked by PR #57"; fi
+          for script in \
+            scripts/convert_hns_victory_road.py \
+            scripts/render_hns_tiles.py \
+            scripts/validate_hns_gate_victory_link.py; do
+            if test -f "$script"; then python3 -m py_compile "$script"; fi
+          done
+          for suite in \
+            tests/test_hns_victory_road_conversion.py \
+            tests/test_hns_victory_road_audit.py \
+            tests/test_hns_gate_victory_link.py \
+            tests/test_render_hns_tiles.py; do
+            if test -f "$suite"; then python3 "$suite"; fi
+          done
+          for suite in \
+            tests/test_hns_victory_road_install.rb \
+            tests/test_hns_south_debris.rb \
+            tests/test_private_hns_east_door.rb; do
+            if test -f "$suite"; then ruby -c "$suite"; ruby "$suite"; fi
           done
       - name: Smoke test staged project output
         run: |

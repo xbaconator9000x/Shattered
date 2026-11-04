@@ -44,6 +44,18 @@ module ShatteredRoute22
     done
   end
 
+  # Native RMXP map setup can restore event pages before the Route22 trigger
+  # executes. Reconcile the saved encounter flag as soon as Map016 loads so a
+  # completed fight cannot display its Rattata sprites again on Continue.
+  # Leave all other maps untouched and do not initialise save data prematurely.
+  def self.reconcile_on_map_setup
+    return false unless defined?($PokemonGlobal) && $PokemonGlobal &&
+      defined?($game_switches) && $game_switches &&
+      defined?($game_map) && $game_map &&
+      $game_map.respond_to?(:map_id) && $game_map.map_id == 16
+    reconcile(992)
+  end
+
   def self.validate_id(value)
     raise ArgumentError, "expected a reserved game ID" unless value.instance_of?(Integer) &&
       (1..9999).include?(value)
@@ -66,12 +78,28 @@ module ShatteredRoute22
     player = defined?($player) ? $player : nil
     raise "HUMAN party member missing" unless player && player.respond_to?(:party) &&
       player.party.any? { |member| Shattered.human?(member) }
+    # Essentials v21.1 treats a wild battle with zero able party members as
+    # a *skipped victory* (decision 1). Never let that skip clear a mandatory
+    # encounter. This is a native engine contract, not a synthetic battle rule.
+    return false unless player.respond_to?(:able_pokemon_count) &&
+      player.able_pokemon_count > 0
+    # Essentials chooses the first able party member as the opening battler.
+    # A fainted HUMAN with a healthy companion would otherwise let this
+    # mandatory *first HUMAN battle* be cleared without HUMAN fighting.
+    # Pokemon#able? in the pinned v21.1 Scripts.rxdata excludes eggs/fainted.
+    first_able = player.party.find { |member| member.respond_to?(:able?) && member.able? }
+    return false unless first_able && Shattered.human?(first_able)
+    return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
+      defined?(Input::CTRL) && Input.press?(Input::CTRL)
     return false if @running
     @running = true
     @last_capture_violation = false
     begin
       $game_variables[outcome_variable] = 0
       setBattleRule("disablePokeBalls")
+      # A lost mandatory encounter must return to the map for a retry, not
+      # trigger game over before the persistent quest flag can be checked.
+      setBattleRule("canLose")
       setBattleRule("outcome", outcome_variable)
       WildBattle.start(SPECIES, LEVEL)
       decision = $game_variables[outcome_variable]
@@ -81,9 +109,27 @@ module ShatteredRoute22
         request_map_refresh
         return true
       end
+      # Essentials v21.1 heals the party after a canLose loss/draw (decisions
+      # 2/5), but Shattered's stamina lives on PokemonGlobal, not the Pokemon.
+      # Restore HUMAN stamina as well or repeated mandatory defeats can leave
+      # a fully healed HUMAN unable to use any techniques on the next attempt.
+      # Do not grant free stamina after escape, abort or capture violations.
+      if [2, 5].include?(decision)
+        player.party.each do |member|
+          Shattered.restore_stamina(member) if Shattered.human?(member)
+        end
+      end
       # A result of 4 is an explicit violation of the no-capture acceptance gate.
       @last_capture_violation = (decision == 4)
       false
+    rescue StandardError
+      # Essentials v21.1 queues rules on Game_Temp and clears them only
+      # after the battle scene has been prepared (or on a skipped battle).
+      # A failed foe generator/scene initialization can otherwise leak
+      # canLose/disablePokeBalls/outcome into the NEXT unrelated battle.
+      temp = defined?($game_temp) ? $game_temp : nil
+      temp.clear_battle_rules if temp && temp.respond_to?(:clear_battle_rules)
+      raise
     ensure
       @running = false
     end
@@ -108,7 +154,47 @@ module ShatteredRoute22
     false
   end
 
+  # Three real Route22 overworld events. A failed attempt resets their positions
+  # before scattering again; the saved victory switch hides their second pages.
+  # Essentials v21.1 pbWait takes SECONDS, not frames. Twelve 20-FPS
+  # ticks of scatter animation are 0.6 seconds, not a 12-second stall.
+  SCATTER_PAUSE_SECONDS = 0.6
+  SCATTER_EVENTS = {5 => [31, 17, :move_right],
+                    6 => [31, 18, :move_left],
+                    7 => [32, 18, :move_right]}.freeze
+
+  def self.scatter!
+    return false if cleared?
+    map = defined?($game_map) ? $game_map : nil
+    raise 'Route22 Rattata group requires native Map016' unless map &&
+      map.respond_to?(:map_id) && map.map_id == 16 && map.respond_to?(:events)
+    actors = SCATTER_EVENTS.map do |id, (x, y, direction)|
+      actor = map.events[id]
+      raise "Missing native Rattata scatter event #{id}" unless actor &&
+        actor.respond_to?(:moveto) && actor.respond_to?(direction)
+      [actor, x, y, direction]
+    end
+    actors.each { |actor, x, y, _direction| actor.moveto(x, y) }
+    actors.each { |actor, _x, _y, direction| actor.public_send(direction) }
+    pbWait(SCATTER_PAUSE_SECONDS) if defined?(pbWait)
+    true
+  end
+
   def self.capture_violation?
     !!@last_capture_violation
   end
+end
+
+# Use the saved quest state, not a potentially stale RMXP switch, when native
+# Map016 is opened via transfer, New Game, or Continue.
+if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_route22_reconcile,
+    proc { |*args| ShatteredRoute22.reconcile_on_map_setup })
+  # Essentials v21.1 Game.load_map normally restores the saved MapFactory
+  # without calling Game_Map#setup. Scene_Map#createSpritesets does invoke
+  # :on_map_or_spriteset_change even on Continue. Reconcile there too, after
+  # the saved map and switches are restored but before the first rendered frame.
+  # Reconciliation is idempotent and never initialises state on unrelated maps.
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_route22_reconcile_on_continue,
+    proc { |*args| ShatteredRoute22.reconcile_on_map_setup })
 end

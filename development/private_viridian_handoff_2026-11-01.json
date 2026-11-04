@@ -1,0 +1,37 @@
+{
+  "kind": "private_native_viridian_arrival_center_handoff",
+  "date": "2026-11-01",
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "source_commit_before_receipt": "d5a3e8adf6071b9d36967b4805febd786864db03",
+  "candidate_name_private_only": "Shattered_Essentials_HnS_Viridian_Arrival_Center_Handoff_Candidate.zip",
+  "candidate_sha256": "0158aef1bc403a5634059100f4e3ccb70db8d0ddb7aab31d3021b39ae8def792",
+  "candidate_bytes": 160854823,
+  "input_city_sha256": "0fc83d0c1d55d9286727fc948759730d23d792b9e34524dbe6669f0076879b25",
+  "input_center_sha256": "cd6bd89cb6b06307422058882eade1ca916a1a263a6ccd919dee2a9639cdbe03",
+  "output_native_sha256": {
+    "Data/Map010.rxdata": "dcc96f73607eca6b83bceee85473a8eff77b17d79234dcbc0bfc95edee2d0bcf",
+    "Data/Map011.rxdata": "d096c3244c3f7fdee749d9c5c121d6a3e91ed90fedaad0b60a1dcee1d1bea3b6",
+    "Data/System.rxdata": "f638861d52157b0320b54870358f14c772c101f5379eccb0062831d9d483a141"
+  },
+  "changes": [
+    "Replace original v0.4 Viridian arrival prototype-ending autorun with persistent arrival state and rain",
+    "Add Map010 switch-gated rain restoration parallel event",
+    "Add Map011 first Center visit autorun that ends rain and records Center visit",
+    "Name four reserved RMXP switches 993-996 without modifying other map files"
+  ],
+  "verification": {
+    "private_native_marshal_roundtrip": true,
+    "all_227_native_map_switch_conflicts_checked": true,
+    "candidate_zip_integrity": true,
+    "local_synthetic_installer_tests": "3 tests, 17 assertions passed",
+    "local_actual_native_event_script_tests": "2 tests, 13 assertions passed",
+    "essentials_runtime_scene": false,
+    "android_playthrough": false
+  },
+  "limitations": [
+    "Source maps remain original v0.4 vanilla Viridian and Center, not walled Viridian parity",
+    "No guard/Nidoran escort sprite or movement route is installed by this patch",
+    "This is native event serialization and isolated script execution, not a launched game",
+    "Private Pokémon assets and native game files must not be uploaded to GitHub"
+  ]
+}

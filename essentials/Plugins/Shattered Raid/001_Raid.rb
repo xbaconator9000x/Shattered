@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# Shattered Raid v0.1 — Pokémon Essentials 21.1.
+# Shattered Raid v0.1.3 — Pokémon Essentials 21.1.
 # Native runtime must not load CRuby-only libraries at startup.
 # The map installer loads Digest lazily, outside gameplay.
 
@@ -9,6 +9,11 @@ module ShatteredRaid
   OUTCOME_WON = 1
   DIRECTIONS = [2, 4, 6, 8].freeze
   EVENT_PREFIX = "ShatteredRaid:BEEDRILL:"
+  # The original private v0.2.8 candidate reused Gate Story switch 997.
+  # Persisted raid progression, never the shared switch value, is authoritative.
+  LEGACY_VIRIDIAN_SWITCHES = [997, 998, 999].freeze
+  VIRIDIAN_SWITCHES = [1001, 1002, 1003].freeze
+  VIRIDIAN_MAP_ID = 10
   SOURCE_MAP_WIDTH = 48
   SOURCE_MAP_HEIGHT = 40
   BATTLE_GUARD = Mutex.new
@@ -36,6 +41,12 @@ module ShatteredRaid
                 value["switch_ids"].uniq.length == ENCOUNTER_COUNT))
         raise ConfigurationError, "invalid or unsupported saved raid state"
       end
+      if value["map_id"] == VIRIDIAN_MAP_ID &&
+         value["switch_ids"] == LEGACY_VIRIDIAN_SWITCHES
+        value = value.dup
+        value["switch_ids"] = VIRIDIAN_SWITCHES.dup
+        store.instance_variable_set(:@shattered_raid_state, value)
+      end
       value
     end
 
@@ -56,16 +67,51 @@ module ShatteredRaid
       begin
         validate_runtime_dependencies!
         current_state = state
+        # The native Beedrill event page is gated by Center switch 995, but
+        # scripts can invoke this API directly and saved switches may be stale.
+        # Require the authoritative saved escort state, not a switch alone.
+        if runtime_config["map_id"] == VIRIDIAN_MAP_ID
+          return false unless defined?(ShatteredViridian) &&
+            ShatteredViridian.respond_to?(:state) &&
+            ShatteredViridian.state[:center] == true
+        end
         sync_map_state(runtime_config, current_state)
         return false if current_state["completed"] || current_state["progression"] != index
+        # Essentials v21.1 can report a skipped wild battle as decision 1 when
+        # the party has no able Pokemon. It also chooses the FIRST able party
+        # member, so an unconscious HUMAN cannot be carried by a companion.
+        return false unless able_human_leads?
+        return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
+          defined?(Input::CTRL) && Input.press?(Input::CTRL)
         $game_variables[runtime_config["outcome_variable_id"]] = 0
         self.send(:setBattleRule, "disablePokeBalls")
+        # A lost raid encounter must return to the map for a retry, not end
+        # the game before its saved progression can be reconciled.
+        self.send(:setBattleRule, "canLose")
         self.send(:setBattleRule, "outcome", runtime_config["outcome_variable_id"])
         WildBattle.start(:BEEDRILL, runtime_config["events"][index]["level"])
-        return false unless $game_variables[runtime_config["outcome_variable_id"]] == OUTCOME_WON
-        new_state = write_state(nil, current_state["progression"] + 1)
-        sync_map_state(runtime_config, new_state)
-        true
+        decision = $game_variables[runtime_config["outcome_variable_id"]]
+        if decision == OUTCOME_WON
+          new_state = write_state(nil, current_state["progression"] + 1)
+          sync_map_state(runtime_config, new_state)
+          return true
+        end
+        # Essentials heals the party after canLose defeat/draw, but HUMAN
+        # stamina is stored on PokemonGlobal and must also be restored.
+        if [2, 5].include?(decision) && defined?(Shattered) &&
+           Shattered.respond_to?(:restore_stamina)
+          $player.party.each do |member|
+            Shattered.restore_stamina(member) if Shattered.human?(member)
+          end
+        end
+        false
+      rescue StandardError
+        # Rules are queued in Game_Temp and cleared by Essentials only once
+        # battle setup reaches its normal cleanup. A failed scene/foe generator
+        # otherwise leaks canLose/outcome/disablePokeBalls to the next battle.
+        temp = defined?($game_temp) ? $game_temp : nil
+        temp.clear_battle_rules if temp && temp.respond_to?(:clear_battle_rules)
+        raise
       ensure
         BATTLE_GUARD.synchronize { @battle_active = false } if acquired
       end
@@ -83,9 +129,13 @@ module ShatteredRaid
                           defined?($game_switches) && $game_switches
       saved_state = state
       return false unless saved_state["map_id"] == map_id && saved_state["switch_ids"]
+      changed = false
       saved_state["switch_ids"].each_with_index do |switch_id, index|
-        $game_switches[switch_id] = index < saved_state["progression"]
+        expected = index < saved_state["progression"]
+        changed ||= $game_switches[switch_id] != expected
+        $game_switches[switch_id] = expected
       end
+      request_map_refresh if changed
       true
     end
 
@@ -104,6 +154,19 @@ module ShatteredRaid
     end
 
     private
+
+    def request_map_refresh
+      map = defined?($game_map) ? $game_map : nil
+      map.need_refresh = true if map && map.respond_to?(:need_refresh=)
+    end
+
+    def able_human_leads?
+      player = defined?($player) ? $player : nil
+      return false unless player && player.respond_to?(:party) &&
+        player.respond_to?(:able_pokemon_count) && player.able_pokemon_count > 0
+      first_able = player.party.find { |pkmn| pkmn.respond_to?(:able?) && pkmn.able? }
+      first_able && Shattered.human?(first_able)
+    end
 
     def write_state(store, progression)
       store ||= defined?($PokemonGlobal) ? $PokemonGlobal : nil
@@ -163,6 +226,15 @@ module ShatteredRaid
         raise ConfigurationError, "duplicate encounter switch" if seen_switches.include?(entry["switch_id"])
         seen_switches << entry["switch_id"]
       end
+      # The original private candidate accidentally reused Gate debris switch
+      # 997. Fail closed on any stale/foreign native event rather than letting
+      # an event-script regression mutate unrelated Johto story switches.
+      if config["map_id"] == VIRIDIAN_MAP_ID &&
+         (seen_switches != VIRIDIAN_SWITCHES ||
+          config["outcome_variable_id"] != 990 ||
+          config["events"].map { |entry| entry["level"] } != [5, 6, 7])
+        raise ConfigurationError, "Viridian raid runtime IDs or levels differ from reviewed native Map010"
+      end
       config
     end
 
@@ -178,9 +250,13 @@ module ShatteredRaid
       saved_state["map_id"] = config["map_id"]
       saved_state["switch_ids"] = switch_ids
       $PokemonGlobal.instance_variable_set(:@shattered_raid_state, saved_state)
+      changed = false
       config["events"].each_with_index do |entry, index|
-        $game_switches[entry["switch_id"]] = index < saved_state["progression"]
+        expected = index < saved_state["progression"]
+        changed ||= $game_switches[entry["switch_id"]] != expected
+        $game_switches[entry["switch_id"]] = expected
       end
+      request_map_refresh if changed
     end
 
     def install_staged_map(project_root, config, passability, failure_hook)
@@ -427,4 +503,12 @@ end
 if defined?(EventHandlers)
   EventHandlers.add(:on_game_map_setup, :shattered_raid_switch_sync,
     proc { |map_id, _map, _tileset| ShatteredRaid.sync_saved_state_for_map(map_id) })
+  # Continue can restore a saved MapFactory without Game_Map#setup. Reconcile
+  # before the first spriteset frame so completed Beedrill events stay hidden.
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_raid_continue_sync,
+    proc { |*args|
+      if defined?($game_map) && $game_map && $game_map.respond_to?(:map_id)
+        ShatteredRaid.sync_saved_state_for_map($game_map.map_id)
+      end
+    })
 end

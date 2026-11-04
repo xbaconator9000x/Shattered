@@ -51,6 +51,22 @@ module Shattered
 end
 def load_data(path); Marshal.load(File.binread(path)); end
 def save_data(value,path); File.binwrite(path,Marshal.dump(value)); end
+# Essentials v21.1 mutates pbMessageDisplay's input with gsub!. These
+# fixture entry points deliberately reject frozen text and choice labels.
+def _INTL(message, *_args); message; end
+def pbMessage(message, choices = nil, *_args)
+  raise FrozenError, "frozen native dojo message" if message.frozen?
+  if choices
+    raise FrozenError, "frozen native dojo choice" if choices.any?(&:frozen?)
+    return 0
+  end
+  nil
+end
+def pbConfirmMessage(message)
+  raise FrozenError, "frozen native dojo confirmation" if message.frozen?
+  true
+end
+
 load File.expand_path("../essentials/Plugins/Shattered Dojo/001_Starter.rb",__dir__)
 load File.expand_path("../essentials/Plugins/Shattered Dojo/002_Install.rb",__dir__)
 
@@ -63,6 +79,13 @@ class DojoStateTest < Minitest::Test
   def complete(answers=[0,1,2])
     answers.each_with_index { |answer,index| @s.answer!(index,answer) }
   end
+  def test_native_quiz_dialogue_and_choices_are_mutable
+    assert @s.run_quiz
+    assert_equal 3, @s.state[:answers].length
+    assert_equal 2, $player.party.length
+    assert @s.run_quiz # already recruited dialogue must also be mutable
+  end
+
   def test_append_only_and_save_restore
     assert @s.answer!(0,0)
     assert @s.answer!(0,0)
@@ -130,6 +153,52 @@ class DojoStateTest < Minitest::Test
     $PokemonGlobal.instance_variable_set(:@shattered_dojo_starter,
       {:version=>99,:answers=>[],:choice=>nil,:recruited=>false})
     assert_raises(ShatteredDojo::InvalidState) { @s.state }
+  end
+
+  def test_cached_choice_cannot_precede_completed_questionnaire
+    saved = {:version=>1, :answers=>[0], :choice=>:VULPIX, :recruited=>false}
+    $PokemonGlobal.instance_variable_set(:@shattered_dojo_starter, saved)
+    assert_raises(ShatteredDojo::InvalidState) { @s.state }
+    assert_equal saved, $PokemonGlobal.instance_variable_get(:@shattered_dojo_starter)
+    assert_equal 1, $player.party.length
+  end
+
+  def test_cached_choice_cannot_disagree_with_saved_answers
+    saved = {:version=>1, :answers=>[1,1,1], :choice=>:VULPIX, :recruited=>true}
+    $PokemonGlobal.instance_variable_set(:@shattered_dojo_starter, saved)
+    assert_raises(ShatteredDojo::InvalidState) { @s.recruit! }
+    assert_equal saved, $PokemonGlobal.instance_variable_get(:@shattered_dojo_starter)
+    assert_equal 1, $player.party.length
+  end
+
+  def test_completed_quest_interaction_refuses_missing_award
+    complete([0,0,0])
+    assert_equal :VULPIX, @s.recruit!.species
+    $player.party.pop
+    refute @s.run_quiz
+    assert_equal 1, $player.party.length
+    assert @s.state[:recruited]
+  end
+
+  def test_completed_quest_interaction_refuses_untagged_replacement
+    complete([1,1,1])
+    assert_equal :STARYU, @s.recruit!.species
+    $player.party.pop
+    $player.party << DojoPokemon.new(:STARYU)
+    refute @s.run_quiz
+    assert_equal 2, $player.party.length
+    assert @s.state[:recruited]
+    refute @s.starter_tagged?($player.party.last)
+  end
+
+  def test_valid_cached_choice_still_roundtrips_and_reopens
+    complete([2,2,2])
+    assert_equal :EXEGGCUTE, @s.recruit!.species
+    $PokemonGlobal = Marshal.load(Marshal.dump($PokemonGlobal))
+    $player = Marshal.load(Marshal.dump($player))
+    assert @s.run_quiz
+    assert_equal :EXEGGCUTE, @s.state[:choice]
+    assert_equal 2, $player.party.length
   end
 end
 

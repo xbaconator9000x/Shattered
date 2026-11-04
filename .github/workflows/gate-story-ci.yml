@@ -9,10 +9,12 @@ on:
       - "scripts/compile_private_gate_key.rb"
       - "tests/test_compile_private_gate_key.rb"
       - "tests/test_gate_story.rb"
+      - "scripts/repair_private_hns_gate_key_branch.rb"
+      - "tests/test_private_hns_gate_key_branch.rb"
       - "scripts/verify_private_plugin_coherence.rb"
       - "tests/test_private_plugin_coherence.rb"
-      - "tests/test_upgrade_approved_hns_opening.rb"
       - "scripts/upgrade_approved_hns_opening.rb"
+      - "tests/test_upgrade_approved_hns_opening.rb"
       - "scripts/repair_private_hns_player_avatar.rb"
       - "tests/test_private_hns_player_avatar.rb"
       - "scripts/install_private_hns_debris.rb"
@@ -37,6 +39,8 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Gate Story/001_GateStory.rb'
           ruby -c 'essentials/Plugins/Shattered Gate Story/002_Install.rb'
           ruby tests/test_gate_story.rb
+          ruby -c scripts/repair_private_hns_gate_key_branch.rb
+          ruby tests/test_private_hns_gate_key_branch.rb
           ruby -c scripts/verify_private_plugin_coherence.rb
           ruby tests/test_private_plugin_coherence.rb
           ruby -c scripts/upgrade_approved_hns_opening.rb

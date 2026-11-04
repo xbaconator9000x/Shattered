@@ -50,24 +50,40 @@ jobs:
       - name: Reject assets and unexpected tracked paths before packaging
         run: |
           python3 - <<'PY'
-          import pathlib, subprocess
+          import json, pathlib, subprocess
           raw = subprocess.check_output(
               ['git', 'ls-files', '-z', '--', 'essentials/Plugins', 'essentials/PBS', 'scripts', 'development', 'tests']
           )
-          paths = [part.decode() for part in raw.split(bytes([0])) if part]
-          assert len(paths) > 10, 'source inventory unexpectedly empty'
+          tracked = [part.decode() for part in raw.split(bytes([0])) if part]
           allowed = {'.rb', '.txt', '.pbs', '.py', '.json', '.md', '.sh'}
-          for name in paths:
+          paths, excluded = [], []
+          for name in tracked:
               path = pathlib.Path(name)
-              assert path.suffix.lower() in allowed, f'non-source file refused: {name}'
-              assert path.is_file() and not path.is_symlink(), f'unsafe source path: {name}'
+              assert path.is_file() and not path.is_symlink(), f'unsafe tracked path: {name}'
+              if path.suffix.lower() not in allowed:
+                  # The private repository can contain unrelated development
+                  # reference images. Never copy them into the source handoff.
+                  assert path.parts[0] == 'development', f'non-source in runtime code: {name}'
+                  excluded.append(name)
+                  continue
               assert path.stat().st_size < 2_000_000, f'oversized source file: {name}'
-          print(f'Validated {len(paths)} tracked source files; no graphics/audio/RXData/ROMs')
+              paths.append(name)
+          assert len(paths) > 10, 'source inventory unexpectedly empty'
+          pathlib.Path('source-bundle').mkdir(exist_ok=True)
+          pathlib.Path('source-bundle/source_paths.json').write_text(json.dumps(paths))
+          print(f'Validated {len(paths)} source files; excluded {len(excluded)} development assets')
+          for name in excluded:
+              print(f'Excluded non-source development reference: {name}')
           PY
       - name: Build exact-commit source-only bundle
         run: |
-          mkdir -p source-bundle
-          git archive --format=tar.gz --output=source-bundle/shattered-source.tar.gz HEAD essentials/Plugins essentials/PBS scripts development tests
+          python3 - <<'PY'
+          import json, subprocess
+          paths = json.loads(open('source-bundle/source_paths.json').read())
+          subprocess.run(['git', 'archive', '--format=tar.gz',
+                          '--output=source-bundle/shattered-source.tar.gz',
+                          'HEAD', *paths], check=True)
+          PY
           echo "$GITHUB_SHA" > source-bundle/main-or-pr-head.sha
           (cd source-bundle && sha256sum shattered-source.tar.gz > SHA256SUMS)
           tar -tzf source-bundle/shattered-source.tar.gz | grep -Fq 'essentials/Plugins/Shattered Core/001_Core.rb'

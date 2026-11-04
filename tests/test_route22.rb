@@ -11,6 +11,7 @@ module GameData
 end
 module Shattered
   def self.human?(pokemon); pokemon == :HUMAN; end
+  def self.restore_stamina(pokemon); ($stamina_restores ||= []) << pokemon; end
 end
 module WildBattle
   def self.start(species, level)
@@ -61,6 +62,15 @@ def _INTL(message); message; end
 load File.expand_path("../essentials/Plugins/Shattered Route22/001_Route22.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Route22/002_Install.rb", __dir__)
 
+# Match the real Essentials v21.1 Pokemon#able? contract for the compact
+# party symbols used by these isolated tests. RATTATA represents a healthy
+# non-HUMAN companion; HUMAN can be fainted independently.
+class Symbol
+  def able?
+    self == :RATTATA || (self == :HUMAN && $human_able != false)
+  end
+end
+
 class Route22TestPlayer
   attr_reader :x, :y
   def initialize(x, y)
@@ -76,9 +86,11 @@ class Route22BattleTest < Minitest::Test
     $PokemonGlobal=Object.new
     $game_variables=Hash.new(0)
     $game_switches=Hash.new(false)
-    $player=OpenStruct.new(:party=>[:HUMAN])
+    $player=OpenStruct.new(:party=>[:HUMAN], :able_pokemon_count=>1)
+    $human_able=true
     $game_map=OpenStruct.new(:need_refresh=>false)
-    $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false
+    $rules=[]; $battle_calls=[]; $battle_outcome=1; $battle_raises=false; $stamina_restores=[]
+    $game_temp=nil
   end
   def test_win_sets_both_persistent_state_and_switch
     assert ShatteredRoute22.encounter(91,92)
@@ -86,7 +98,7 @@ class Route22BattleTest < Minitest::Test
     assert $game_switches[92]
     assert_equal true, $game_map.need_refresh
     assert_equal [[:RATTATA,5]], $battle_calls
-    assert_equal [["disablePokeBalls",nil],["outcome",91]], $rules
+    assert_equal [["disablePokeBalls",nil],["canLose",nil],["outcome",91]], $rules
     assert ShatteredRoute22.encounter(91,92)
     assert_equal 1, $battle_calls.size
     $PokemonGlobal=Marshal.load(Marshal.dump($PokemonGlobal))
@@ -103,6 +115,46 @@ class Route22BattleTest < Minitest::Test
     assert_empty $battle_calls
   end
 
+  def test_no_able_party_cannot_trigger_essentials_skipped_wild_victory
+    # Actual v21.1 WildBattle.start_core skips with decision 1 when the
+    # player has no able Pokemon. It must not mark Route22 as cleared.
+    $player.able_pokemon_count = 0
+    $battle_outcome = 1
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.cleared?
+    refute $game_switches[92]
+    assert_empty $battle_calls
+    assert_empty $rules
+    $player.able_pokemon_count = 1
+    assert ShatteredRoute22.encounter(91, 92)
+  end
+
+  def test_fainted_human_cannot_bypass_first_human_battle_with_companion
+    $human_able = false
+    $player.party = [:HUMAN, :RATTATA]
+    $player.able_pokemon_count = 1
+    $battle_outcome = 1
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.cleared?
+    refute $game_switches[92]
+    assert_empty $battle_calls
+    assert_empty $rules
+    $human_able = true
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, $battle_calls.length
+  end
+
+  def test_non_human_party_lead_cannot_clear_mandatory_first_human_battle
+    $player.party = [:RATTATA, :HUMAN]
+    $player.able_pokemon_count = 2
+    refute ShatteredRoute22.encounter(91, 92)
+    refute ShatteredRoute22.cleared?
+    assert_empty $battle_calls
+    $player.party = [:HUMAN, :RATTATA]
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, $battle_calls.length
+  end
+
   def test_nonvictory_remains_mandatory
     [0,2,3,5].each do |result|
       $battle_outcome=result
@@ -114,6 +166,39 @@ class Route22BattleTest < Minitest::Test
     $battle_outcome=1
     assert ShatteredRoute22.encounter(91,92)
   end
+  def test_defeat_enables_can_lose_and_remains_retryable
+    $battle_outcome = 2
+    refute ShatteredRoute22.encounter(91, 92)
+    assert_includes $rules, ["canLose", nil]
+    refute ShatteredRoute22.cleared?
+    $battle_outcome = 1
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 2, $battle_calls.length
+  end
+
+  def test_defeat_and_draw_restore_human_stamina_for_retry
+    # Actual Essentials v21.1 BattleCreationHelperMethods.after_battle heals
+    # the party after canLose decisions 2/5; Shattered stamina is separate.
+    [2, 5].each do |result|
+      $battle_outcome = result
+      refute ShatteredRoute22.encounter(91, 92)
+      refute ShatteredRoute22.cleared?
+    end
+    assert_equal [:HUMAN, :HUMAN], $stamina_restores
+    refute $game_switches[92]
+  end
+
+  def test_escape_abort_capture_and_victory_do_not_refill_stamina
+    [0, 3, 4].each do |result|
+      $battle_outcome = result
+      refute ShatteredRoute22.encounter(91, 92)
+    end
+    assert_empty $stamina_restores
+    $battle_outcome = 1
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_empty $stamina_restores
+  end
+
   def test_capture_is_detected_and_never_clears
     $battle_outcome=4
     refute ShatteredRoute22.encounter(91,92)
@@ -164,6 +249,26 @@ class Route22BattleTest < Minitest::Test
     $battle_raises=false
     assert ShatteredRoute22.encounter(91,92)
   end
+  def test_failed_battle_setup_clears_essentials_queued_rules_before_retry
+    # Pinned Essentials v21.1 Game_Temp#clear_battle_rules is normally called
+    # only after battle preparation. A failed WildBattle.start must clean up.
+    temp = Object.new
+    temp.instance_variable_set(:@clear_count, 0)
+    temp.define_singleton_method(:clear_battle_rules) do
+      @clear_count += 1
+    end
+    temp.define_singleton_method(:clear_count) { @clear_count }
+    $game_temp = temp
+    $battle_raises = true
+    assert_raises(RuntimeError) { ShatteredRoute22.encounter(91, 92) }
+    assert_equal 1, temp.clear_count
+    refute ShatteredRoute22.cleared?
+    refute $game_switches[92]
+    $battle_raises = false
+    assert ShatteredRoute22.encounter(91, 92)
+    assert_equal 1, temp.clear_count, "successful battle should retain engine-owned rule lifecycle"
+  end
+
   def test_nonvictory_returns_player_to_safe_gate_side_only_on_route22
     $game_player = Route22TestPlayer.new(31, 17)
     $game_map.map_id = 16

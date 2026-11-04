@@ -5,6 +5,25 @@ on:
     paths:
       - "essentials/Plugins/Shattered Route22/**"
       - "tests/test_route22.rb"
+      - "tests/test_route22_map_setup.rb"
+      - "tests/test_route22_rattata_group.rb"
+      - "scripts/install_private_route22_rattata_sprites.rb"
+      - "scripts/repair_private_route22_warp_scatter.rb"
+      - "tests/test_private_route22_warp_scatter.rb"
+      - "scripts/upgrade_private_viridian_handoff.rb"
+      - "tests/test_private_viridian_handoff.rb"
+      - "scripts/upgrade_private_viridian_escort.rb"
+      - "tests/test_private_viridian_escort.rb"
+      - "tests/test_viridian_map_restore.rb"
+      - "scripts/verify_private_opening_convergence.rb"
+      - "tests/test_private_opening_convergence.rb"
+      - "scripts/verify_private_opening_walkability.rb"
+      - "scripts/verify_private_route22_viridian_guard.rb"
+      - "tests/test_private_route22_viridian_guard.rb"
+      - "tests/test_private_opening_walkability.rb"
+      - "essentials/Plugins/Shattered Viridian/**"
+      - "scripts/repair_private_v0216_runtime_sources.rb"
+      - "tests/test_private_v0216_runtime_coherence.rb"
       - ".github/workflows/route22-ci.yml"
 
 permissions:
@@ -21,3 +40,22 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Route22/001_Route22.rb'
           ruby -c 'essentials/Plugins/Shattered Route22/002_Install.rb'
           ruby tests/test_route22.rb
+          ruby tests/test_route22_map_setup.rb
+          ruby -c scripts/install_private_route22_rattata_sprites.rb
+          ruby tests/test_route22_rattata_group.rb
+          ruby -c scripts/repair_private_route22_warp_scatter.rb
+          ruby tests/test_private_route22_warp_scatter.rb
+          ruby -c scripts/upgrade_private_viridian_handoff.rb
+          ruby tests/test_private_viridian_handoff.rb
+          ruby -c scripts/upgrade_private_viridian_escort.rb
+          ruby tests/test_private_viridian_escort.rb
+          ruby -c 'essentials/Plugins/Shattered Viridian/001_Entry.rb'
+          ruby tests/test_viridian_map_restore.rb
+          ruby -c scripts/verify_private_opening_convergence.rb
+          ruby tests/test_private_opening_convergence.rb
+          ruby -c scripts/verify_private_opening_walkability.rb
+          ruby tests/test_private_opening_walkability.rb
+          ruby -c scripts/verify_private_route22_viridian_guard.rb
+          ruby tests/test_private_route22_viridian_guard.rb
+          ruby -c scripts/repair_private_v0216_runtime_sources.rb
+          ruby tests/test_private_v0216_runtime_coherence.rb

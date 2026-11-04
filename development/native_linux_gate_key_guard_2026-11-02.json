@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_mkxp_z_opening_observation_not_full_gameplay_acceptance",
+  "date": "2026-11-02",
+  "repository": "xbaconator9000x/Shattered",
+  "source_pr": 59,
+  "source_code_head_before_receipt": "03a97bd7627f0766e2478ec0d823dd081e4ad4f2",
+  "main_sha": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
+  "private_candidate": {
+    "filename": "Shattered_Essentials_HnS_Gate_Key_Guard_Candidate.zip",
+    "sha256": "3bd21c0c9e43b2536e52383d975828cf25c2833252b20f88b9e137134d1283fa",
+    "bytes": 160865852,
+    "zip_entries": 7735,
+    "modified_project_payloads": [
+      "Data/Map223.rxdata"
+    ],
+    "old_map223_sha256": "77f309fcf2f0c3c1cdbacf27939be2d5f5fec14c31678d141d66f2ace732bfc4",
+    "new_map223_sha256": "1b46bc347b2094d81c9bcde64dc40b1f6ef3a368a43312a5ef22f742da3bbb6a"
+  },
+  "engine": {
+    "name": "official mkxp-z Linux x86_64",
+    "binary_sha256": "9a100525f7d9c40cde09f38630129802808c8df8c1d8256a96f0af3ec6c50345",
+    "runner": "Xvfb :98, Mesa llvmpipe OpenGL 4.5, OpenAL null/dummy",
+    "engine_warning": "mkxp-z 2.4.2/9b7b023 versus Essentials recommended 2.4.2/c9378cf",
+    "data_aliases": 227
+  },
+  "observations": {
+    "native_engine_started": true,
+    "title_screen_rendered": true,
+    "new_game_menu_rendered": true,
+    "new_game_entered": true,
+    "hns_gate_map_rendered": true,
+    "gate_opening_dialogue_seen": true,
+    "game_crash_observed": false,
+    "actual_east_door_key_condition_exercised": false,
+    "actual_route22_battle_exercised": false,
+    "normal_save_continue_exercised": false,
+    "android_exercised": false,
+    "visual_parity_verified": false,
+    "observed_visual_blocker": "Map223 gate renders visibly incorrect pale repeating tiles and black empty areas; HnS tileset/metatile mapping is not acceptance-ready. Player sprite not visually confirmed in opening screenshot."
+  },
+  "private_screenshot_sha256": {
+    "title": "5e891873a53ed65a9203a81f3f4ec53a7a4f06d94412568ec54614019adf0abc",
+    "new_game_dialogue": "3a1517a8e80c133a3ddefa8cf15349cd07704fabe6abecb5c377012a45acfe52",
+    "opening_map": "2663ea69b7b063ddf4207ea0f5326cfb7de29dd88b21585073daea66aae3b80d"
+  },
+  "source_verification": {
+    "local_repair_tests": "7 tests, 17 assertions passed",
+    "source_ci_head": "03a97bd7627f0766e2478ec0d823dd081e4ad4f2",
+    "source_ci_runs": [
+      41333431393,
+      41333431404,
+      41333431394,
+      41333431401,
+      41333431388,
+      41333431384
+    ],
+    "actual_native_script_semantics": "Private Scripts.rxdata Interpreter_Commands#command_111 calls command_skip on false; command_skip returns on next command with matching indent. Original event 7 had all indents 0, allowing unconditional transfer. Repaired indents 0,1,1,0,1,0,0."
+  },
+  "distribution": {
+    "game_assets_uploaded_to_github": false,
+    "screenshots_uploaded_to_github": false,
+    "source_assets_rights_review_complete": false
+  },
+  "next_blockers": [
+    "Correct HnS 2.0 gate tileset/metatile graphics and native collision with rights-cleared assets",
+    "Exercise locked and unlocked east gate in native runtime",
+    "Complete opening -> Route22 Rattata -> save/Continue runtime test",
+    "Finish Victory Road 1F/B1F and Viridian rescue/dojo integration",
+    "Android JoiPlay/NaviaXP runtime test"
+  ]
+}

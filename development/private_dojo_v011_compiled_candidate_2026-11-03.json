@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "kind": "private_native_essentials_compiled_source_upgrade_receipt",
+  "date": "2026-11-03",
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "source_commit": "9c993cf0c57bfd9ceb25dfc22c3c13d8ae90304f",
+  "candidate_version": "0.2.19",
+  "base_candidate_version": "0.2.18",
+  "base_archive_sha256": "df79374bf65bc9efbef4efcb587d6d3d1f3c20f3dec08769cbedecbf024d668c",
+  "private_candidate_sha256": "e6eaf0f988db9b1ab7bfa9ceb5124909f9441f39959527912298bf2c72e4d69d",
+  "private_candidate_size_bytes": 160890062,
+  "zip_entries": 7746,
+  "changed_entries": [
+    "Data/PluginScripts.rxdata",
+    "Plugins/Shattered Dojo/001_Starter.rb",
+    "Plugins/Shattered Dojo/meta.txt"
+  ],
+  "compiled_plugin_archive_before_sha256": "ecb95008bc3f8a1c5fa8d53f8bb27dd97400583809bfec61488a15499f7dcb06",
+  "compiled_plugin_archive_after_sha256": "b45274ca802992c169a90d89cb7c644e538cce5a79017388a2148f0cf1c75faf",
+  "dojo_plugin": {
+    "version_before": "0.1.0",
+    "version_after": "0.1.1",
+    "source_before_sha256": "4ec57f99784ae6e87a98b0654963ee1fda9d8e76fc3e58a9d1f38d0530bcb018",
+    "source_after_sha256": "18bc13a7cc8c904f21eb114a61252a6ff33c7ac943da5287106ec103b7b25fcd",
+    "metadata_after_sha256": "a5ff70f05493eb3d9692b91ad4fe2ef6caca699d0c38d7a6012dd67972518a22"
+  },
+  "local_validation": {
+    "zip_crc": true,
+    "changed_entries_exactly_three": true,
+    "unrelated_native_maps_and_game_executable_unchanged": true,
+    "compiled_and_loose_shattered_scripts_coherent": 8,
+    "source_ruby_syntax": true
+  },
+  "github_ci_at_source_commit": {
+    "combined": "https://github.com/xbaconator9000x/Shattered/actions/runs/41555589751",
+    "dojo": "https://github.com/xbaconator9000x/Shattered/actions/runs/41555589817",
+    "result": "passed"
+  },
+  "acceptance": {
+    "native_plugin_archive_repacked": true,
+    "native_pbs_compiled_in_this_run": false,
+    "game_launched_in_this_run": false,
+    "dojo_recruitment_runtime_verified": false,
+    "normal_save_continue_verified": false,
+    "android_verified": false,
+    "rights_cleared_for_distribution": false
+  },
+  "private_artifact_uploaded_to_github": false
+}

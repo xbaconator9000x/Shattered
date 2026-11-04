@@ -11,6 +11,71 @@ module ShatteredMurkrowRescue
   ITEM_PATTERN = /\A[A-Z][A-Z0-9_]*\z/
   SYMBOL_PATTERN = /\A[A-Z][A-Z0-9_]*\z/
   STATE_IVAR = :@shattered_murkrow_rescue
+  RECRUIT_TAG = :@shattered_murkrow_rescue_award
+  PREFIX = "SHATTERED_MURKROW_RESCUE:"
+
+  # The saved quest is authoritative; the RMXP self-switch only selects the
+  # empty event page after Murkrow joins. Reconcile it on map setup AND normal
+  # Continue (which restores a MapFactory without calling Game_Map#setup).
+  # This prevents a recruited Murkrow reappearing, and a stale self-switch
+  # hiding an unfinished rescue.
+  def self.sync_event_self_switch!(map_id, event_id, store = nil)
+    raise ArgumentError, "Invalid Murkrow map/event identity" unless
+      map_id.instance_of?(Integer) && event_id.instance_of?(Integer) &&
+      map_id.between?(1, 999) && event_id.between?(1, 9999)
+    map = defined?($game_map) ? $game_map : nil
+    raise "Murkrow event map unavailable" unless map &&
+      map.respond_to?(:map_id) && map.map_id == map_id &&
+      map.respond_to?(:events) && map.events.is_a?(Hash)
+    live = map.events[event_id]
+    source = if live && live.respond_to?(:event)
+               live.event
+             elsif live && live.instance_variable_defined?(:@event)
+               live.instance_variable_get(:@event)
+             else
+               live
+             end
+    raise "Murkrow event identity changed" unless source &&
+      source.respond_to?(:name) && source.name.is_a?(String) &&
+      source.name.start_with?(PREFIX)
+    raise "Murkrow self-switch storage unavailable" unless
+      defined?($game_self_switches) && $game_self_switches
+    complete = state(store)[:stage] == :complete
+    key = [map_id, event_id, "A"]
+    previous = $game_self_switches[key]
+    $game_self_switches[key] = complete
+    map.need_refresh = true if previous != complete &&
+      map.respond_to?(:need_refresh=)
+    complete
+  end
+
+  def self.reconcile_current_map
+    map = defined?($game_map) ? $game_map : nil
+    return false unless map && map.respond_to?(:map_id) &&
+      map.respond_to?(:events) && map.events.is_a?(Hash) &&
+      defined?($PokemonGlobal) && $PokemonGlobal &&
+      defined?($game_self_switches) && $game_self_switches
+    managed = map.events.filter_map do |event_id, live|
+      source = if live && live.respond_to?(:event)
+                 live.event
+               elsif live && live.instance_variable_defined?(:@event)
+                 live.instance_variable_get(:@event)
+               else
+                 live
+               end
+      event_id if source && source.respond_to?(:name) &&
+        source.name.is_a?(String) && source.name.start_with?(PREFIX)
+    end
+    return false if managed.empty?
+    raise "Multiple native Murkrow rescue events on one map" if managed.length != 1
+    sync_event_self_switch!(map.map_id, managed.first)
+    true
+  end
+
+  def self.tagged_murkrow?(pokemon)
+    pokemon && pokemon.respond_to?(:species) && pokemon.species == SPECIES &&
+      pokemon.instance_variable_get(RECRUIT_TAG) == VERSION
+  end
 
   class InvalidState < StandardError; end
 
@@ -52,6 +117,20 @@ module ShatteredMurkrowRescue
       (!flags[:reward_claimed] || flags[:murkrow_recruited]) &&
       (!flags[:complete] || flags[:reward_claimed])
     raise InvalidState, "Inconsistent Murkrow rescue progress" unless consistent
+    # A stage cannot be ahead of its authoritative saved flags. A malformed
+    # :complete stage with reward flags false would otherwise hide Murkrow
+    # without a battle or friendship. Preserve existing flags-ahead recovery.
+    required = case value[:stage]
+               when :undiscovered then []
+               when :discovered, :battle_pending then [:discovered]
+               when :befriending then [:discovered, :battle_won]
+               when :recruited then [:discovered, :battle_won, :murkrow_recruited]
+               when :complete then [:discovered, :battle_won, :murkrow_recruited,
+                                    :reward_claimed, :complete]
+               end
+    raise InvalidState, "Murkrow rescue stage exceeds saved flags" unless
+      required.all? { |key| flags[key] } &&
+      (value[:stage] != :undiscovered || flags.values.none?)
     if recover_interrupted && value[:stage] == :battle_pending
       value[:stage] = :discovered
     elsif flags[:reward_claimed]
@@ -94,6 +173,9 @@ module ShatteredMurkrowRescue
     value
   end
 
+  # A species match is NOT evidence of this quest's reward. Without a tag,
+  # an unrelated Murkrow can be silently adopted and the rescue skipped.
+  # Tag the actual befriended Pokemon before committing the saved quest flag.
   def self.recruit!(player = nil, store = nil)
     player ||= (defined?($player) ? $player : nil)
     value = state(store)
@@ -101,27 +183,27 @@ module ShatteredMurkrowRescue
     party = player.party
     friends = party.select { |pokemon| pokemon.respond_to?(:species) && pokemon.species == SPECIES }
     raise InvalidState, "Multiple Murkrow already exist in the party" if friends.length > 1
+    tagged = friends.select { |pokemon| tagged_murkrow?(pokemon) }
     if value[:flags][:murkrow_recruited]
-      return friends.first || false
+      raise InvalidState, "Tagged Murkrow rescue companion missing" if tagged.empty?
+      return tagged.first
     end
     return false unless value[:stage] == :befriending
-    if friends.first
+    if tagged.any?
+      # Recover only a tagged companion from an interrupted save, never a
+      # random Murkrow already travelling with the player.
       value[:flags][:murkrow_recruited] = true
       value[:stage] = :recruited
-      return friends.first
+      return tagged.first
     end
+    raise InvalidState, "Unrelated Murkrow cannot be adopted as rescue reward" if friends.any?
     return false if party.length >= 6
     raise "Shattered Core befriending API unavailable" unless
       defined?(Shattered) && Shattered.respond_to?(:befriend)
-    begin
-      friend = Shattered.befriend(SPECIES, 5, player)
-    rescue StandardError
-      friend = party.find { |pokemon| pokemon.respond_to?(:species) && pokemon.species == SPECIES }
-      raise unless friend
-    end
-    return false unless friend && party.include?(friend) && friend.species == SPECIES
-    friends = party.select { |pokemon| pokemon.respond_to?(:species) && pokemon.species == SPECIES }
-    raise InvalidState, "Befriending created duplicate Murkrow" unless friends.length == 1
+    friend = Shattered.befriend(SPECIES, 5, player)
+    raise InvalidState, "Befriending did not create a new Murkrow" unless
+      friend && party.include?(friend) && friend.species == SPECIES
+    friend.instance_variable_set(RECRUIT_TAG, VERSION)
     value[:flags][:murkrow_recruited] = true
     value[:stage] = :recruited
     friend
@@ -131,6 +213,10 @@ module ShatteredMurkrowRescue
     value = state(store)
     return true if value[:stage] == :complete || value[:flags][:reward_claimed]
     return false unless value[:stage] == :recruited
+    # Never pay out a rescue reward when the actual tagged companion has
+    # vanished or was replaced by an unrelated Murkrow after save/reload.
+    # recruit! is idempotent here and checks the saved award provenance.
+    return false unless recruit!(nil, store)
     validate_reward!(reward)
     return false unless Object.new.respond_to?(:pbReceiveItem, true)
     value[:flags][:reward_claimed] = true
@@ -208,16 +294,44 @@ module ShatteredMurkrowRescue
     receiver = battle_receiver(battle)
     raise "Essentials v21.1 battle entry unavailable: #{battle['hook']}" unless receiver
     arguments = battle["arguments"].map { |argument| decode_battle_argument(argument) }
-    if battle["hook"] == "WildBattle.start_core"
-      rules = Object.new
-      raise "Essentials no-capture battle rule unavailable" unless
-        rules.respond_to?(:setBattleRule, true)
-      rules.send(:setBattleRule, "disablePokeBalls")
+    # WildBattle.start_core returns decision 1 when Essentials skips a battle
+    # because the player has no able Pokemon (or Debug Ctrl is held). That
+    # result must never count as rescuing Murkrow or grant a companion/reward.
+    return false unless defined?($player) && $player &&
+      $player.respond_to?(:able_pokemon_count) && $player.able_pokemon_count > 0
+    return false if $DEBUG && defined?(Input) && Input.respond_to?(:press?) &&
+      defined?(Input::CTRL) && Input.press?(Input::CTRL)
+    begin
+      if battle["hook"] == "WildBattle.start_core"
+        rules = Object.new
+        raise "Essentials no-capture battle rule unavailable" unless
+          rules.respond_to?(:setBattleRule, true)
+        rules.send(:setBattleRule, "disablePokeBalls")
+        # A failed rescue must return to the overworld for a retry rather than
+        # ending the run at Game Over. This also lets Essentials restore HP.
+        rules.send(:setBattleRule, "canLose")
+      end
+      # start_core returns the actual Essentials decision (1 victory, 2 loss,
+      # 3 escape, 4 capture, 5 draw). WildBattle.start returns true for escape
+      # and capture as well as victory, so never use its boolean for quest flags.
+      decision = receiver.start_core(*arguments)
+    rescue StandardError
+      # In Essentials v21.1 Game_Temp#battle_rules is cleared only once the
+      # battle is prepared. Failed setup must not poison the next encounter.
+      temp = defined?($game_temp) ? $game_temp : nil
+      temp.clear_battle_rules if temp && temp.respond_to?(:clear_battle_rules)
+      raise
     end
-    # start_core returns the actual Essentials decision (1 victory, 2 loss,
-    # 3 escape, 4 capture, 5 draw). WildBattle.start returns true for escape
-    # and capture as well as victory, so never use its boolean for quest flags.
-    receiver.start_core(*arguments) == 1
+    # Essentials restores HP on canLose loss/draw, but HUMAN stamina is saved
+    # separately. Mirror the mandatory Route 22 retry recovery contract.
+    if battle["hook"] == "WildBattle.start_core" && [2, 5].include?(decision) &&
+       defined?(Shattered) && Shattered.respond_to?(:restore_stamina) &&
+       defined?($player) && $player && $player.respond_to?(:party)
+      $player.party.each do |member|
+        Shattered.restore_stamina(member) if Shattered.human?(member)
+      end
+    end
+    decision == 1
   end
 
   # New native events pass a reviewed Ruby Hash directly. Legacy JSON event
@@ -241,40 +355,40 @@ module ShatteredMurkrowRescue
     unless defined?(Shattered) && Shattered.respond_to?(:befriend) &&
            Object.new.respond_to?(:pbReceiveItem, true) &&
            battle_receiver(plan["battle"])
-      Object.new.send(:pbMessage, "The rescue cannot continue until its game integrations are available.")
+      Object.new.send(:pbMessage, "The rescue cannot continue until its game integrations are available.".dup)
       return false
     end
     stage = state[:stage]
     message = stage == :discovered ? "A Murkrow needs help!" : "Murkrow is safe now."
-    Object.new.send(:pbMessage, message)
+    Object.new.send(:pbMessage, message.dup)
     if state[:stage] == :discovered
-      return false unless Object.new.send(:pbConfirmMessage, "Will you step in?")
+      return false unless Object.new.send(:pbConfirmMessage, "Will you step in?".dup)
       begin_battle!
       begin
         won = run_battle!(plan["battle"])
         finish_battle!(won)
       rescue StandardError
         interrupt!
-        Object.new.send(:pbMessage, "The rescue was interrupted. You can try again.")
+        Object.new.send(:pbMessage, "The rescue was interrupted. You can try again.".dup)
         return false
       end
       unless won
-        Object.new.send(:pbMessage, "The rescue can be attempted again.")
+        Object.new.send(:pbMessage, "The rescue can be attempted again.".dup)
         return false
       end
     end
     if state[:stage] == :befriending
-      return false unless Object.new.send(:pbConfirmMessage, "Will you befriend Murkrow?")
+      return false unless Object.new.send(:pbConfirmMessage, "Will you befriend Murkrow?".dup)
       friend = recruit!
       unless friend
-        Object.new.send(:pbMessage, "Make room in your party and return to Murkrow.")
+        Object.new.send(:pbMessage, "Make room in your party and return to Murkrow.".dup)
         return false
       end
-      Object.new.send(:pbMessage, "Murkrow joined you through friendship!")
+      Object.new.send(:pbMessage, "Murkrow joined you through friendship!".dup)
     end
     if state[:stage] == :recruited
       unless claim_reward!(plan["reward"])
-        Object.new.send(:pbMessage, "There is no room for the rescue reward yet.")
+        Object.new.send(:pbMessage, "There is no room for the rescue reward yet.".dup)
         return false
       end
     end
@@ -284,4 +398,13 @@ module ShatteredMurkrowRescue
       (defined?(JSON::ParserError) && error.is_a?(JSON::ParserError))
     false
   end
+end
+
+# Normal Continue does not necessarily invoke on_game_map_setup in Essentials
+# v21.1. Both callbacks are idempotent; they never touch unrelated maps.
+if defined?(EventHandlers)
+  EventHandlers.add(:on_game_map_setup, :shattered_murkrow_page_reconcile,
+    proc { |*args| ShatteredMurkrowRescue.reconcile_current_map })
+  EventHandlers.add(:on_map_or_spriteset_change, :shattered_murkrow_continue_reconcile,
+    proc { |*args| ShatteredMurkrowRescue.reconcile_current_map })
 end

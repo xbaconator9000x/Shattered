@@ -1,0 +1,57 @@
+{
+  "kind": "private_native_opening_walkability_receipt_not_runtime_acceptance",
+  "date": "2026-11-02",
+  "private_candidate_sha256": "aa51def0c54f2cfee8a553731c84cbb4f7bcd5e7458e994198d6739d43bc5b21",
+  "private_map223_sha256": "3004ab941e1579de3c6a6061b054850087c58815e50c3b6e2cdaaacae2dfa75c",
+  "essentials_v21_1_game_map_source_sha256": "8b2e10ce1b52b67c40241614d64606c657a81b17bee7c7e35d973b7f6ef9cb63",
+  "essentials_v21_1_game_character_source_sha256": "0cb6a5149f998c053055d3c7726d557fe1a1368fcabe14bb4a7c159f09a686b9",
+  "gate_reachable_tiles_before_collapse": 124,
+  "gate_reachable_tiles_after_collapse": 118,
+  "reachable_after_collapse": {
+    "aipom_adjacent": [
+      11,
+      8
+    ],
+    "east_door_adjacent": [
+      19,
+      9
+    ],
+    "north_exits": [
+      [
+        10,
+        1
+      ],
+      [
+        11,
+        1
+      ]
+    ]
+  },
+  "south_central_rock_11_19_blocked_after_collapse": true,
+  "b2f_north_landings_tile_passable": [
+    [
+      30,
+      46
+    ],
+    [
+      29,
+      47
+    ]
+  ],
+  "route22_and_viridian_events_structurally_present": true,
+  "synthetic_tests": {
+    "runs": 6,
+    "assertions": 17,
+    "failures": 0,
+    "errors": 0,
+    "skips": 0,
+    "with_private_candidate": true
+  },
+  "limitations": [
+    "Offline native Marshal and pinned Essentials directional collision branch, not an actual game launch",
+    "Route22/Viridian have nonzero terrain tags; full terrain/ledge and event collision must be tested in engine",
+    "No complete HUMAN battle/save/Continue or Android runtime test",
+    "HnS gate pale/black visual parity still unresolved"
+  ],
+  "licensed_private_assets_uploaded": false
+}

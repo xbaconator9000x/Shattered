@@ -8,6 +8,9 @@ class Pokemon
   def initialize(species, level = 5)
     @species, @level = species, level
   end
+  def able?
+    true
+  end
 end
 
 module GameData
@@ -51,7 +54,11 @@ load File.expand_path("../essentials/Plugins/Shattered Raid/001_Raid.rb", __dir_
 class RaidMergedCoreIntegrationTest < Minitest::Test
   def setup
     $PokemonGlobal = Object.new
-    $player = Struct.new(:party).new([])
+    $player = Struct.new(:party) do
+      def able_pokemon_count
+        party.count { |pkmn| pkmn.respond_to?(:able?) && pkmn.able? }
+      end
+    end.new([])
     $game_variables = Hash.new(0)
     $game_switches = Hash.new(false)
     $game_map = Struct.new(:map_id).new(301)
@@ -79,7 +86,7 @@ class RaidMergedCoreIntegrationTest < Minitest::Test
     assert Shattered.human?($player.party.first)
     assert ShatteredRaid.trigger(0, config)
     assert_equal [[:BEEDRILL, 5]], WildBattle.calls
-    assert_equal [["disablePokeBalls"], ["outcome", 77]], $rules
+    assert_equal [["disablePokeBalls"], ["canLose"], ["outcome", 77]], $rules
   end
 
   def test_save_restore_retries_flee_and_keeps_completed_encounters_cleared

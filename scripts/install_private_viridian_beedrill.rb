@@ -1,0 +1,245 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+# Private-only native Viridian Beedrill placement for Essentials v21.1.
+# Source map and HnS sprite are held locally; no game assets in this file.
+require 'digest'
+require 'json'
+require 'optparse'
+require 'pathname'
+require_relative 'private_rgss_writer'
+
+module ShatteredPrivateViridianBeedrill
+  module_function
+
+  MAP_SHA = '9a30262d8f21a46259b677a78a17b51aa6f8f16cb14f0b169d54b625adda2180'
+  LEGACY_INSTALLED_SHA = 'dcae21f06f1bb138c082d89ebe882fbd125e549dc9dc53b35b39e6aba3638da5'
+  PRE_CENTER_GATE_SHA = '772266eab4497a950feb97a07ad0599c63fc5ee8a5a3fba69e9048e77c1a89cb'
+  INSTALLED_SHA = 'e8c6de9a324e514425180bc07ae631a43a5de6f7b4b0d74086749713141a5740'
+  SPRITE_SHA = '840ebd96f47124e89a0fa68fce882969d40104ae5271a9c42523054039247a00'
+  SOURCE_SPRITE_SHA = '663b93a030f303569fefd40d15736b4b6270e9d8a398d9433040c09320a0339f'
+  MAP_ID = 10
+  # 997 is the Gate Story's permanent Johto debris switch. The original
+  # private raid prototype accidentally reused it; never reuse 992-999.
+  LEGACY_SWITCHES = [997, 998, 999].freeze
+  SWITCHES = [1001, 1002, 1003].freeze
+  CENTER_SWITCH = 995 # ShatteredViridian.center!; the raid starts after shelter
+  OUTCOME_VARIABLE = 990
+  LEVELS = [5, 6, 7].freeze
+  POSITIONS = [[32, 22], [32, 25], [31, 28]].freeze
+  EVENT_IDS = [29, 30, 31].freeze
+  PREFIX = 'ShatteredRaid:BEEDRILL:'
+  STAGING = 'SHATTERED_STAGING_REPORT.json'
+
+  def script(index, switches = SWITCHES)
+    entries = LEVELS.each_with_index.map do |level, i|
+      { 'index' => i, 'level' => level, 'switch_id' => switches.fetch(i) }
+    end
+    config = { 'map_id' => MAP_ID, 'outcome_variable_id' => OUTCOME_VARIABLE,
+               'events' => entries }
+    "ShatteredRaid.trigger(#{index}, #{config.inspect})"
+  end
+
+  def page(sprite: '', switch: nil, second_switch: nil, through: true, trigger: 0, commands: nil)
+    p = RPG::Event::Page.new
+    p.graphic.character_name = sprite
+    p.graphic.character_hue = 0
+    p.step_anime = !sprite.empty?
+    p.through = through
+    p.trigger = trigger
+    if switch
+      p.condition.switch1_valid = true
+      p.condition.switch1_id = switch
+    end
+    if second_switch
+      p.condition.switch2_valid = true
+      p.condition.switch2_id = second_switch
+    end
+    p.list = commands || [RPG::EventCommand.new(0, 0, [])]
+    p
+  end
+
+  def event(index, switches = SWITCHES, center_gate: true)
+    x, y = POSITIONS.fetch(index)
+    e = RPG::Event.new(x, y)
+    e.id = EVENT_IDS.fetch(index)
+    e.name = PREFIX + index.to_s
+    hidden = page
+    # The raid must not be visible during the rain/guard escort. Native RMXP
+    # page conditions require Center visited (995), then previous victory.
+    active = page(sprite: 'Beedrill',
+                  switch: (index.zero? ? (center_gate ? CENTER_SWITCH : nil) : switches[index - 1]),
+                  second_switch: (center_gate && index > 0 ? CENTER_SWITCH : nil),
+                  through: false, trigger: 2,
+                  commands: [RPG::EventCommand.new(355, 0, [script(index, switches)]),
+                             RPG::EventCommand.new(0, 0, [])])
+    cleared = page(switch: switches.fetch(index))
+    # Later encounters are invisible until the preceding encounter is won.
+    e.pages = index.zero? ? [active, cleared] : [hidden, active, cleared]
+    e
+  end
+
+  def tile_clear?(map, tilesets, x, y)
+    return false unless x.between?(0, map.width - 1) && y.between?(0, map.height - 1)
+    tileset = tilesets[map.tileset_id]
+    return false unless tileset && tileset.respond_to?(:passages) && tileset.passages
+    (map.data.zsize - 1).downto(0) do |z|
+      tile = map.data[x, y, z]
+      next if tile.nil? || tile.zero?
+      flag = tileset.passages[tile]
+      return false unless flag.is_a?(Integer)
+      next if (flag & 0x10) != 0
+      return (flag & 0x0f).zero?
+    end
+    false
+  end
+
+  def adjacent_reachable?(map, tilesets, from, goal, occupied)
+    visited = { from => true }
+    queue = [from]
+    until queue.empty?
+      x, y = queue.shift
+      return true if (x - goal[0]).abs + (y - goal[1]).abs == 1
+      [[x - 1, y], [x + 1, y], [x, y - 1], [x, y + 1]].each do |point|
+        next if visited[point] || occupied.include?(point)
+        next unless tile_clear?(map, tilesets, *point)
+        visited[point] = true
+        queue << point
+      end
+    end
+    false
+  end
+
+  def validate_map!(map, tilesets)
+    raise 'Expected native Viridian 50x40 map' unless map.is_a?(RPG::Map) &&
+      [map.width, map.height, map.tileset_id] == [50, 40, 1] &&
+      map.events.is_a?(Hash) && map.data.is_a?(Table)
+    arrival = map.events[23]
+    raise 'Unreviewed Viridian escort anchor' unless arrival &&
+      arrival.name == 'SHATTERED: Viridian arrival' && [arrival.x, arrival.y] == [25, 20]
+    raise 'Missing escort/Center actors' unless [25, 26, 27, 28].all? { |id| map.events.key?(id) }
+    occupied = map.events.values.map { |e| [e.x, e.y] }
+    POSITIONS.each do |x, y|
+      raise "Occupied Beedrill spawn #{x},#{y}" if occupied.include?([x, y])
+      raise "Blocked Beedrill spawn #{x},#{y}" unless tile_clear?(map, tilesets, x, y)
+      raise "Inaccessible Beedrill encounter #{x},#{y}" unless
+        adjacent_reachable?(map, tilesets, [25, 27], [x, y], occupied + POSITIONS)
+    end
+    true
+  end
+
+  def transform!(map, tilesets)
+    existing = map.events.values.select { |e| e.name.to_s.start_with?(PREFIX) }
+    unless existing.empty?
+      raise 'Partial or foreign Beedrill install' unless existing.map(&:id).sort == EVENT_IDS
+      EVENT_IDS.each_with_index do |id, index|
+        raise "Beedrill event drift at #{id}" unless Marshal.dump(map.events.fetch(id)) == Marshal.dump(event(index))
+      end
+      return :already_installed
+    end
+    raise 'Unreviewed native Viridian event inventory' unless map.events.keys.sort == (1..28).to_a
+    validate_map!(map, tilesets)
+    old_tiles = Marshal.dump(map.data)
+    old_events = map.events.transform_values { |e| Marshal.dump(e) }
+    3.times { |i| map.events[EVENT_IDS[i]] = event(i) }
+    raise 'Native Viridian tiles changed' unless Marshal.dump(map.data) == old_tiles
+    raise 'Unrelated Viridian events changed' unless old_events.all? { |id, bytes| Marshal.dump(map.events.fetch(id)) == bytes }
+    :installed
+  end
+
+  # Upgrade only the exact known legacy native map, replacing the three raid
+  # events while leaving Gate Story's switch 997 and all other events intact.
+  # An unrecognized map SHA must never be rewritten as a supposed migration.
+  def migrate_legacy!(map)
+    raise 'Unexpected legacy Beedrill inventory' unless map.events.keys.sort == (1..31).to_a
+    EVENT_IDS.each_with_index do |id, index|
+      raise "Legacy raid event drift at #{id}" unless
+        Marshal.dump(map.events.fetch(id)) == Marshal.dump(event(index, LEGACY_SWITCHES, center_gate: false))
+    end
+    EVENT_IDS.each_with_index { |id, index| map.events[id] = event(index) }
+    :migrated
+  end
+
+  # Upgrade the exact v0.2.9 private candidate, which has independent raid
+  # switches but prematurely shows Beedrill before the Center visit.
+  def migrate_pre_center_gate!(map)
+    raise 'Unexpected pre-center Beedrill inventory' unless map.events.keys.sort == (1..31).to_a
+    EVENT_IDS.each_with_index do |id, index|
+      raise "Pre-center raid event drift at #{id}" unless
+        Marshal.dump(map.events.fetch(id)) == Marshal.dump(event(index, SWITCHES, center_gate: false))
+    end
+    EVENT_IDS.each_with_index { |id, index| map.events[id] = event(index) }
+    :migrated
+  end
+
+  def install!(root, failure_hook: nil)
+    project = Pathname.new(root).expand_path
+    raise 'Only a private staged Shattered project may be modified' unless
+      project.directory? && !project.symlink? && project.join(STAGING).file?
+    marker = project.join(STAGING).read
+    raise 'Staging report is not Essentials 21.1' unless marker.include?('"engine": "Essentials 21.1"')
+    map_path = project.join('Data/Map010.rxdata')
+    tiles_path = project.join('Data/Tilesets.rxdata')
+    sprite_path = project.join('Graphics/Characters/Beedrill.png')
+    plugin_path = project.join('Plugins/Shattered Raid/001_Raid.rb')
+    [map_path, tiles_path, sprite_path, plugin_path].each do |path|
+      raise "Missing or symlinked private input #{path}" unless path.file? && !path.symlink?
+    end
+    raise 'Unreviewed private Beedrill overworld sprite' unless
+      Digest::SHA256.file(sprite_path).hexdigest == SPRITE_SHA
+    raise 'Missing runtime Beedrill battle hook' unless
+      plugin_path.read.include?('def trigger(index, config)')
+    source_bytes = map_path.binread
+    map = Marshal.load(source_bytes)
+    tilesets = Marshal.load(tiles_path.binread)
+    input_sha = Digest::SHA256.hexdigest(source_bytes)
+    case input_sha
+    when INSTALLED_SHA
+      raise 'Installed raid events drifted' unless transform!(map, tilesets) == :already_installed
+      return { 'result' => 'already_installed', 'map_sha256' => input_sha }
+    when PRE_CENTER_GATE_SHA
+      raise 'Pre-center raid migration failed' unless migrate_pre_center_gate!(map) == :migrated
+    when LEGACY_INSTALLED_SHA
+      raise 'Legacy raid migration failed' unless migrate_legacy!(map) == :migrated
+    when MAP_SHA
+      raise 'Unexpected existing Beedrill events' unless transform!(map, tilesets) == :installed
+    else
+      raise 'Native Viridian map SHA changed; refusing overwrite'
+    end
+    result = Marshal.dump(map)
+    raise 'Unexpected native Beedrill map result' unless Digest::SHA256.hexdigest(result) == INSTALLED_SHA
+    raise 'Native Marshal roundtrip failed' unless Marshal.dump(Marshal.load(result)) == result
+    tmp = Pathname.new(map_path.to_s + '.beedrill.tmp')
+    backup = Pathname.new(map_path.to_s + '.beedrill.bak')
+    raise 'Stale Beedrill transaction' if [tmp, backup].any? { |p| p.exist? || p.symlink? }
+    begin
+      File.binwrite(tmp, result)
+      failure_hook.call(:after_temp) if failure_hook
+      File.rename(map_path, backup)
+      failure_hook.call(:after_backup) if failure_hook
+      File.rename(tmp, map_path)
+      failure_hook.call(:after_replace) if failure_hook
+    rescue Exception
+      if backup.file?
+        File.delete(map_path) if map_path.file?
+        File.rename(backup, map_path)
+      end
+      raise
+    ensure
+      File.delete(tmp) if tmp.file?
+    end
+    File.delete(backup)
+    { 'result' => 'installed', 'map_sha256' => Digest::SHA256.file(map_path).hexdigest,
+      'sprite_sha256' => SPRITE_SHA, 'source_sprite_sha256' => SOURCE_SPRITE_SHA,
+      'events' => EVENT_IDS, 'switches' => SWITCHES,
+      'legacy_switch_collision_repaired' => input_sha == LEGACY_INSTALLED_SHA,
+      'center_visit_gate_added' => input_sha != INSTALLED_SHA,
+      'native_gameplay_verified' => false, 'android_verified' => false }
+  end
+end
+
+if $PROGRAM_NAME == __FILE__
+  opts = {}
+  OptionParser.new { |o| o.on('--project DIR') { |v| opts[:project] = v } }.parse!
+  abort 'Usage: ruby install_private_viridian_beedrill.rb --project PRIVATE_PROJECT' unless opts[:project]
+  puts JSON.pretty_generate(ShatteredPrivateViridianBeedrill.install!(opts[:project]))
+end

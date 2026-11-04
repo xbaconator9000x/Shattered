@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "kind": "private_native_viridian_escort_geometry_and_compiled_source_preflight_not_runtime",
+  "source_branch": "fix/route22-native-encounter-20261101",
+  "source_main_sha": "ccbfe54997063e661d278424dad07d693dc3303e",
+  "candidate": {
+    "name": "Shattered_Essentials_HnS_Viridian_Save_Validation_v0218_Private_Candidate.zip",
+    "sha256": "df79374bf65bc9efbef4efcb587d6d3d1f3c20f3dec08769cbedecbf024d668c",
+    "map010_sha256": "e8c6de9a324e514425180bc07ae631a43a5de6f7b4b0d74086749713141a5740",
+    "tilesets_sha256": "9e6310a10b0cf0510b6d4d2b58fb2d7662f9d181d809164bec6cf7b3ec2af69b"
+  },
+  "source_pin_reconciliation": {
+    "Shattered Gate Story": "0.2.4 / git blob 3eccf46f9e7b32dcfcde1ab59ee204c9cd74bc3c",
+    "Shattered Route22": "0.1.6 / git blob 57819f23ee4a397b78a5ca5c983c18a87d3e9f67",
+    "Shattered Viridian": "0.1.3 / git blob 7c1574f0dfee5dd6d5c52145c21c8b8d7f14f779"
+  },
+  "native_map_tests": {
+    "ruby": "2 tests, 94 assertions, 0 failures, 0 errors",
+    "map_id": 10,
+    "arrival_event_id": 23,
+    "escort_npc_ids": [
+      25,
+      26
+    ],
+    "movement_wait_commands": 2,
+    "guard_start": [
+      24,
+      20
+    ],
+    "guard_end": [
+      25,
+      27
+    ],
+    "nidoran_start": [
+      23,
+      20
+    ],
+    "nidoran_end": [
+      24,
+      27
+    ],
+    "all_reviewed_path_tiles_direction_flags_zero": true,
+    "center_arrival_switch": 994,
+    "first_visit_center_switch": 995
+  },
+  "verification_scope": {
+    "native_marshal_deserialized": true,
+    "native_tile_passage_data_inspected": true,
+    "real_rmxp_event_command_sequence_inspected": true,
+    "graphical_mkxp_gameplay_executed": false,
+    "android_joiplay_naviaxp_executed": false,
+    "normal_save_continue_executed_this_run": false
+  },
+  "notes": "Source-only hash receipt; no map, tileset, compiled archive, commercial artwork, or user-held game files uploaded. Escort geometry is statically passable, but event scheduling, weather rendering, actual runtime movement, and save persistence remain open."
+}

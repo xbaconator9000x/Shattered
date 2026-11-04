@@ -13,7 +13,12 @@ class Pokemon
   end
 end
 
-PlayerStub = Struct.new(:party)
+PlayerStub = Struct.new(:party) do
+  attr_accessor :forced_able_count
+  def able_pokemon_count
+    forced_able_count.nil? ? party.length : forced_able_count
+  end
+end
 SaveStub = Class.new
 
 load File.expand_path("../essentials/Plugins/Shattered Core/001_Core.rb", __dir__)
@@ -31,10 +36,19 @@ module RPG
         attr_accessor :character_name
       end
 
-      attr_accessor :trigger, :through, :always_on_top, :graphic, :list
+      class Condition
+        attr_accessor :self_switch_valid, :self_switch_ch
+        def initialize
+          @self_switch_valid = false
+          @self_switch_ch = "A"
+        end
+      end
+
+      attr_accessor :trigger, :through, :always_on_top, :graphic, :list, :condition
 
       def initialize
         @graphic = Graphic.new
+        @condition = Condition.new
       end
     end
   end
@@ -68,11 +82,14 @@ def save_data(data, path)
   File.binwrite(path, Marshal.dump(data))
 end
 
-def pbMessage(_message)
+def pbMessage(message)
+  # Native Essentials v21.1 pbMessageDisplay mutates its input via gsub!.
+  raise FrozenError, "frozen Murkrow dialogue" if message.frozen?
   true
 end
 
-def pbConfirmMessage(_message)
+def pbConfirmMessage(message)
+  raise FrozenError, "frozen Murkrow confirmation" if message.frozen?
   $confirm_results.empty? ? true : $confirm_results.shift
 end
 
@@ -135,6 +152,9 @@ class MurkrowRescueTest < Minitest::Test
     $fail_map_save = false
     $battle_rules = []
     $fail_battle_rule = false
+    $game_map = nil
+    $game_self_switches = nil
+    $game_temp = nil
   end
 
   def test_loss_flee_and_interruption_leave_encounter_retryable
@@ -192,6 +212,56 @@ class MurkrowRescueTest < Minitest::Test
     end
   end
 
+  def test_save_stage_cannot_jump_ahead_of_authoritative_rescue_flags
+    # A stale/malformed stage alone must not hide the native event, skip the
+    # battle, recruit an unrelated Murkrow or claim the rescue reward.
+    requirements = {
+      :discovered => :discovered,
+      :battle_pending => :discovered,
+      :befriending => :battle_won,
+      :recruited => :murkrow_recruited,
+      :complete => :reward_claimed
+    }
+    requirements.each do |stage, missing|
+      store = SaveStub.new
+      value = ShatteredMurkrowRescue.state(store)
+      value[:flags].keys.each { |flag| value[:flags][flag] = true }
+      value[:flags][missing] = false
+      value[:stage] = stage
+      restored = Marshal.load(Marshal.dump(store))
+      saved = restored.instance_variable_get(ShatteredMurkrowRescue::STATE_IVAR)
+      assert_raises(ShatteredMurkrowRescue::InvalidState, "#{stage} without #{missing}") do
+        ShatteredMurkrowRescue.state(restored)
+      end
+      assert_equal stage, saved[:stage]
+      refute saved[:flags][missing]
+    end
+
+    store = SaveStub.new
+    value = ShatteredMurkrowRescue.state(store)
+    value[:stage] = :complete
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.state(Marshal.load(Marshal.dump(store)))
+    end
+    assert_equal 0, $reward_count
+  end
+
+  def test_undiscovered_stage_rejects_progress_flags_but_valid_retry_recovers
+    store = SaveStub.new
+    value = ShatteredMurkrowRescue.state(store)
+    value[:flags][:discovered] = true
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.state(store)
+    end
+
+    store = SaveStub.new
+    ShatteredMurkrowRescue.discover!(store)
+    assert ShatteredMurkrowRescue.begin_battle!(store)
+    restored = Marshal.load(Marshal.dump(store))
+    assert_equal :discovered, ShatteredMurkrowRescue.state(restored)[:stage]
+    assert ShatteredMurkrowRescue.begin_battle!(restored)
+  end
+
   def test_recruitment_is_non_ball_and_idempotent
     ready_to_befriend
     friend = ShatteredMurkrowRescue.recruit!(@player, @store)
@@ -201,13 +271,59 @@ class MurkrowRescueTest < Minitest::Test
     assert ShatteredMurkrowRescue.state(@store)[:flags][:murkrow_recruited]
   end
 
-  def test_existing_murkrow_is_not_duplicated_after_interrupted_recruitment
+  def test_unrelated_murkrow_cannot_be_adopted_as_quest_reward
     ready_to_befriend
     existing = Pokemon.new(:MURKROW, 5)
     @player.party << existing
-
-    assert_same existing, ShatteredMurkrowRescue.recruit!(@player, @store)
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.recruit!(@player, @store)
+    end
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:murkrow_recruited]
+    assert_equal :befriending, ShatteredMurkrowRescue.state(@store)[:stage]
     assert_equal 1, @player.party.count { |pokemon| pokemon.species == :MURKROW }
+  end
+
+  def test_tagged_murkrow_recovers_after_interrupted_save_without_duplication
+    ready_to_befriend
+    friend = Pokemon.new(:MURKROW, 5)
+    friend.instance_variable_set(ShatteredMurkrowRescue::RECRUIT_TAG, ShatteredMurkrowRescue::VERSION)
+    @player.party << friend
+    restored = Marshal.load(Marshal.dump(@store))
+    assert_same friend, ShatteredMurkrowRescue.recruit!(@player, restored)
+    assert ShatteredMurkrowRescue.state(restored)[:flags][:murkrow_recruited]
+    assert_equal :recruited, ShatteredMurkrowRescue.state(restored)[:stage]
+    assert_equal 1, @player.party.count { |pokemon| pokemon.species == :MURKROW }
+  end
+
+  def test_missing_tagged_reward_does_not_adopt_an_unrelated_murkrow
+    ready_to_befriend
+    friend = ShatteredMurkrowRescue.recruit!(@player, @store)
+    assert ShatteredMurkrowRescue.tagged_murkrow?(friend)
+    @player.party.delete(friend)
+    @player.party << Pokemon.new(:MURKROW, 5)
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.recruit!(@player, @store)
+    end
+    assert_equal :recruited, ShatteredMurkrowRescue.state(@store)[:stage]
+  end
+
+  def test_reward_requires_the_actual_tagged_rescue_companion
+    ready_to_befriend
+    friend = ShatteredMurkrowRescue.recruit!(@player, @store)
+    reward = { "item" => "POTION", "quantity" => 1 }
+    @player.party.delete(friend)
+    @player.party << Pokemon.new(:MURKROW, 5)
+    assert_raises(ShatteredMurkrowRescue::InvalidState) do
+      ShatteredMurkrowRescue.claim_reward!(reward, @store)
+    end
+    assert_equal 0, $reward_count
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:reward_claimed]
+    @player.party.pop
+    @player.party << friend
+    assert ShatteredMurkrowRescue.claim_reward!(reward, @store)
+    assert_equal 1, $reward_count
+    assert ShatteredMurkrowRescue.claim_reward!(reward, @store)
+    assert_equal 1, $reward_count
   end
 
   def test_complete_native_event_recruits_and_rewards_once
@@ -231,11 +347,48 @@ class MurkrowRescueTest < Minitest::Test
     assert_equal 1, $reward_count
   end
 
+  def test_failed_wild_rescue_restores_human_stamina_only_after_loss_or_draw
+    human = @player.party.first
+    [2, 5].each do |decision|
+      @store.instance_variable_set(:@shattered_stamina, 0)
+      $confirm_results = [true]
+      $battle_results = [decision]
+      refute ShatteredMurkrowRescue.run_event(runtime_plan)
+      assert_equal Shattered.max_stamina(human.level), Shattered.stamina(human, @store)
+      assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    end
+    [0, 3, 4].each do |decision|
+      @store.instance_variable_set(:@shattered_stamina, 0)
+      $confirm_results = [true]
+      $battle_results = [decision]
+      refute ShatteredMurkrowRescue.run_event(runtime_plan)
+      assert_equal 0, Shattered.stamina(human, @store)
+    end
+  end
+
+  def test_no_able_party_cannot_skip_murkrow_battle_as_victory
+    # Essentials' real skip_battle helper returns 1 for a skipped wild
+    # battle. An exhausted party cannot use that outcome to earn Murkrow.
+    @player.forced_able_count = 0
+    $confirm_results = [true]
+    $battle_results = [1]
+    refute ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:battle_won]
+    assert_equal [1], $battle_results
+    assert_empty $battle_rules
+    assert_equal 0, $reward_count
+    @player.forced_able_count = 1
+    $confirm_results = [true, true]
+    assert ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal :complete, ShatteredMurkrowRescue.state(@store)[:stage]
+  end
+
   def test_wild_rescue_battle_enforces_no_pokeballs
     $confirm_results = [true, true]
     $battle_results = [1]
     assert ShatteredMurkrowRescue.run_event(runtime_plan)
-    assert_equal ["disablePokeBalls"], $battle_rules
+    assert_equal ["disablePokeBalls", "canLose"], $battle_rules
   end
 
   def test_failed_battle_rule_does_not_start_rescue_or_complete_it
@@ -248,6 +401,24 @@ class MurkrowRescueTest < Minitest::Test
     assert_equal [1], $battle_results
     assert_equal 0, $reward_count
     assert_equal 1, @player.party.length
+  end
+
+  def test_murkrow_setup_failure_clears_queued_rules_and_preserves_retry
+    temp = Object.new
+    temp.instance_variable_set(:@clear_count, 0)
+    temp.define_singleton_method(:clear_battle_rules) { @clear_count += 1 }
+    temp.define_singleton_method(:clear_count) { @clear_count }
+    $game_temp = temp
+    $confirm_results = [true]
+    $battle_results = [:raise]
+    refute ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal 1, temp.clear_count
+    assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
+    refute ShatteredMurkrowRescue.state(@store)[:flags][:battle_won]
+    $confirm_results = [true, true]
+    $battle_results = [1]
+    assert ShatteredMurkrowRescue.run_event(runtime_plan)
+    assert_equal 1, temp.clear_count, "successful battle should retain engine-owned rule lifecycle"
   end
 
   def test_event_battle_loss_or_abort_can_be_retried
@@ -272,7 +443,7 @@ class MurkrowRescueTest < Minitest::Test
       assert_equal :discovered, ShatteredMurkrowRescue.state(@store)[:stage]
       refute ShatteredMurkrowRescue.state(@store)[:flags][:battle_won]
       assert_equal 0, $reward_count
-      assert_equal ["disablePokeBalls"], $battle_rules
+      assert_equal ["disablePokeBalls", "canLose"], $battle_rules
     end
   end
 
@@ -505,6 +676,84 @@ class MurkrowRescueTest < Minitest::Test
       assert_equal original_bytes, File.binread(path)
       refute File.exist?(path + ".shattered_murkrow.tmp")
       refute File.exist?(path + ".shattered_murkrow.bak")
+    end
+  end
+
+  def test_native_murkrow_event_hides_only_after_saved_quest_completion
+    with_staged_project do |_root, plan|
+      event = ShatteredMurkrowRescue.build_event(plan)
+      assert_equal 2, event.pages.length
+      assert_equal "Murkrow", event.pages.first.graphic.character_name
+      assert_includes event.pages.first.list.first.parameters.first,
+        "sync_event_self_switch!($game_map.map_id, @event_id)"
+      assert event.pages.last.condition.self_switch_valid
+      assert_equal "A", event.pages.last.condition.self_switch_ch
+      assert event.pages.last.through
+      assert_nil event.pages.last.graphic.character_name
+
+      live = Struct.new(:event).new(event)
+      $game_map = Struct.new(:map_id, :events, :need_refresh).new(
+        plan["target_map_id"], { plan["event_id"] => live }, false)
+      $game_self_switches = Hash.new(false)
+      key = [plan["target_map_id"], plan["event_id"], "A"]
+      $game_self_switches[key] = true # stale switch must NOT bypass the rescue
+      assert ShatteredMurkrowRescue.reconcile_current_map
+      refute $game_self_switches[key]
+      assert $game_map.need_refresh
+
+      ShatteredMurkrowRescue.discover!
+      ShatteredMurkrowRescue.begin_battle!
+      ShatteredMurkrowRescue.finish_battle!(true)
+      assert ShatteredMurkrowRescue.recruit!
+      assert ShatteredMurkrowRescue.claim_reward!({ "item" => "POTION", "quantity" => 1 })
+      $game_map.need_refresh = false
+      assert ShatteredMurkrowRescue.reconcile_current_map
+      assert $game_self_switches[key]
+      assert $game_map.need_refresh
+
+      $PokemonGlobal = Marshal.load(Marshal.dump($PokemonGlobal))
+      $game_self_switches[key] = false # normal Continue may restore stale state
+      $game_map.need_refresh = false
+      assert ShatteredMurkrowRescue.reconcile_current_map
+      assert $game_self_switches[key]
+      assert $game_map.need_refresh
+    end
+  end
+
+  def test_murkrow_reconcile_ignores_unrelated_maps_and_invalid_event_ids
+    $game_self_switches = Hash.new(false)
+    ordinary = RPG::Event.new(1, 1)
+    ordinary.id = 5
+    ordinary.name = "Other event"
+    $game_map = Struct.new(:map_id, :events, :need_refresh).new(
+      16, { 5 => Struct.new(:event).new(ordinary) }, false)
+    $game_self_switches[[16, 5, "A"]] = true
+    refute ShatteredMurkrowRescue.reconcile_current_map
+    assert $game_self_switches[[16, 5, "A"]]
+    refute $game_map.need_refresh
+    assert_raises(ArgumentError) do
+      ShatteredMurkrowRescue.sync_event_self_switch!(16, 0)
+    end
+    assert_raises(RuntimeError) do
+      ShatteredMurkrowRescue.sync_event_self_switch!(16, 5)
+    end
+  end
+
+  def test_native_murkrow_reinstall_ignores_encoding_tags_but_rejects_event_drift
+    with_staged_project do |root, plan|
+      path = File.join(root, "Data/Map001.rxdata")
+      assert_equal 1, Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }["installed"]
+      map = load_data(path)
+      event = map.events[plan["event_id"]]
+      event.pages.first.condition.self_switch_ch = "A".dup.force_encoding(Encoding::BINARY)
+      event.pages.first.graphic.character_name = "Murkrow".dup.force_encoding(Encoding::BINARY)
+      save_data(map, path)
+      assert_equal 1, Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }["unchanged"]
+      event.pages.first.graphic.character_name = "WrongSprite"
+      save_data(map, path)
+      assert_raises(RuntimeError) do
+        Dir.chdir(root) { ShatteredMurkrowRescue.install(plan) }
+      end
     end
   end
 

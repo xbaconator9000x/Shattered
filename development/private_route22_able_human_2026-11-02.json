@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-02",
+  "kind": "private_compiled_route22_first_human_battle_guard_source_evidence_not_native_gameplay",
+  "main_sha_at_review": "be0a4a33d498e4f5fde6401f4a7b8321d943724a",
+  "pr": 59,
+  "implementation_commit": "f4edf0a75cebef74f4d4b788d0fc7f7ec1aaf6cd",
+  "tests_commit": "9e8f79382878410e254f2b3bb35c75189ec3104f",
+  "version_commit": "788cfb04b1f48f03e222e0eeb6f957f14bf910fe",
+  "route22_plugin_version": "0.1.5",
+  "private_input_candidate_sha256": "d86c50b31aad61d50077ac52f8c211ba16e26034577b7748cb5d29dc14ec8cda",
+  "private_output_candidate_sha256": "b3d12fe6e953a9459ae3db11d52c506011e3d84c3b92261cd2ce432b914c127f",
+  "private_output_bytes": 160871166,
+  "private_zip_entries": 7737,
+  "unchanged_payload_entries": 7734,
+  "private_route22_source_sha256": "cdbae6e04887f3e15cbda92b5fc0c23cd9d184f931e420f8018b50cef594a72d",
+  "private_compiled_plugin_archive_sha256": "d0ca51497baf0d806fc9f688be58b150c70a3e176bcd112173d9ed45d1675104",
+  "actual_private_essentials_scripts_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+  "actual_essentials_pokemon_source_sha256": "2cc5db14ec402faedd355afddca951743a7723d1dc0724c45d3f230c2cb116ec",
+  "issue": "Previously an unconscious HUMAN with a healthy companion, or a healthy companion leading the party, could clear the mandatory first-HUMAN Rattata fight without HUMAN participating.",
+  "fix": "Require the first Pokemon#able? party member to satisfy Shattered.human? before any battle rule or wild battle call; no saved flags change on rejection.",
+  "local_evidence": [
+    "Private candidate compiled PluginScripts.rxdata Route22 source extracted, patched and source-coherence verified",
+    "Ruby syntax OK; all eight other compiled plugin entries Marshal-identical",
+    "3 isolated compiled-plugin scenarios passed using the actual Essentials v21.1 Pokemon#able? implementation extracted from private Scripts.rxdata",
+    "ZIP CRC passed, all 7,734 unrelated file payloads unchanged"
+  ],
+  "github_workflows": [
+    {
+      "id": 41359025886,
+      "name": "Route22",
+      "conclusion": "success"
+    },
+    {
+      "id": 41359026001,
+      "name": "Viridian",
+      "conclusion": "success"
+    },
+    {
+      "id": 41359025938,
+      "name": "Murkrow",
+      "conclusion": "success"
+    },
+    {
+      "id": 41359026111,
+      "name": "source handoff",
+      "conclusion": "success"
+    },
+    {
+      "id": 41359025961,
+      "name": "Gate Story",
+      "conclusion": "success"
+    },
+    {
+      "id": 41359025892,
+      "name": "combined plugins",
+      "conclusion": "success"
+    }
+  ],
+  "acceptance": {
+    "source_implemented": true,
+    "private_compiled_archive_updated": true,
+    "synthetic_and_source_probe_passed": true,
+    "native_wild_battle_executed_this_run": false,
+    "route22_map_event_playthrough": false,
+    "normal_save_continue": false,
+    "android": false,
+    "main_merged": false
+  },
+  "rights": "No proprietary game bytes, sprite assets, ROMs, or private candidate ZIP committed to GitHub."
+}
