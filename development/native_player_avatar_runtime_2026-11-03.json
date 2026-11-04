@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "date": "2026-11-03",
+  "kind": "actual_private_official_mkxp_z_player_avatar_bug_and_fix",
+  "source_pr": 57,
+  "source_before_head": "95f6cf7caaa8bf3999c3337e5f278f8d964373b0",
+  "private_input_candidate_sha256": "c91a8b170d1707688ea7ad862dfff2fe70561419536ab34b163c6d907f4eca2c",
+  "private_output_candidate_sha256": "ed263486bf49095f73cdf21a47c8bf056c42cb97807ca0c958203bb803a25bb6",
+  "candidate_bytes": 160888974,
+  "entries": 7746,
+  "changed_native_map": "Data/Map223.rxdata",
+  "map_before_sha256": "3004ab941e1579de3c6a6061b054850087c58815e50c3b6e2cdaaacae2dfa75c",
+  "map_after_sha256": "ec21eecaca1653672040c35fd9d3429c2bfbd3e04a3215e3bba545ea3dfb653d",
+  "engine_sha256": "9a100525f7d9c40cde09f38630129802808c8df8c1d8256a96f0af3ec6c50345",
+  "engine": "official mkxp-z Linux under Xvfb 1280x800, Mesa llvmpipe, OpenAL null",
+  "before_observed": {
+    "scene": "Scene_Map",
+    "map_id": 223,
+    "player_character_ID": 0,
+    "game_player_character_name": "",
+    "party": [
+      "HUMAN"
+    ],
+    "intro_event_id": 5
+  },
+  "after_observed": {
+    "scene": "Scene_Map",
+    "map_id": 223,
+    "player_character_ID": 1,
+    "game_player_character_name": "trainer_POKEMONTRAINER_Red",
+    "party": [
+      "HUMAN"
+    ],
+    "avatar_visible": true,
+    "intro_event_id": 5
+  },
+  "private_screenshot_sha256": "364aacbdc126589785f7d1086d830bcce7191a014c64cd7162eccdab1ac29599",
+  "native_original_scripts_sha256": "38d9b59fb41a8b0d2449134cf1e316a3297a3f5eceac3a281f40ad80dc4c0b05",
+  "local_tests": "4 tests, 18 assertions, zero failures; private Map223 Marshal exact-hash install/reinstall and ZIP CRC passed",
+  "unverified": [
+    "full gate collapse and Aipom completion",
+    "Route22 battle through native map",
+    "normal save/reload",
+    "Android",
+    "Gate visual parity"
+  ],
+  "rights": "No commercial native map, graphics, original game ZIP, or screenshot uploaded to GitHub"
+}

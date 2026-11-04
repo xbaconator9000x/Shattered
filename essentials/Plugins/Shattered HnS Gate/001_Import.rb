@@ -1,4 +1,5 @@
 require "json"
+require "digest"
 
 module ShatteredHNSGateImport
   FORMAT = "shattered-hns-rmxp-map"
@@ -23,7 +24,7 @@ module ShatteredHNSGateImport
     File.file?(path) && !File.symlink?(path)
   end
 
-  def preflight!(config)
+  def preflight!(config, pending_destinations = {})
     marker = File.join(Dir.pwd, "SHATTERED_STAGING_REPORT.json")
     raise "Reception gate import requires a staged project" unless regular_file?(marker)
     report = JSON.parse(File.read(marker))
@@ -58,15 +59,23 @@ module ShatteredHNSGateImport
 
     image_path = File.join("Graphics", "Tilesets", "#{tileset_name}.png")
     raise "Reception gate tileset image is missing or invalid" unless valid_tileset_image?(image_path)
+    expected_image_sha = target_config["tileset_sha256"]
+    raise "Reception gate requires a generated tileset SHA-256" unless
+      expected_image_sha.is_a?(String) && /\A[0-9a-f]{64}\z/.match?(expected_image_sha)
+    raise "Reception gate tileset image SHA-256 mismatch" unless
+      Digest::SHA256.file(image_path).hexdigest == expected_image_sha
 
     layers = config["layers"]
     raise "Reception gate import must have three tile layers" unless
       layers.is_a?(Array) && layers.length == 3 &&
       layers.all? { |layer| layer.is_a?(Array) && layer.length == WIDTH * HEIGHT }
     used_tile_ids = layers.flatten.uniq
+    image_height = File.open(image_path, "rb") { |stream| stream.read(24)[16, 8].unpack("NN")[1] }
+    highest_png_tile = 384 + (image_height / 32) * 8 - 1
     used_tile_ids.each do |tile_id|
       integer!(tile_id, "XP tile ID", 0, 8191)
       raise "Unsupported XP autotile ID #{tile_id}" if tile_id > 0 && tile_id < 384
+      raise "XP tile ID exceeds approved Reception Gate PNG capacity" if tile_id > highest_png_tile
     end
     tables = config["tileset_tables"]
     raise "Reception gate tileset tables are invalid" unless tables.is_a?(Hash)
@@ -106,12 +115,21 @@ module ShatteredHNSGateImport
       target_direction = integer!(target["direction"], "destination direction", 0, 8)
       raise "Invalid destination direction" unless [0, 2, 4, 6, 8].include?(target_direction)
       fade = integer!(target["fade"], "destination fade", 0, 1)
-      raise "Reception gate destination map is missing" unless
-        map_infos.key?(target_map_id) && regular_file?(sprintf("Data/Map%03d.rxdata", target_map_id))
-      destination_map = load_data(sprintf("Data/Map%03d.rxdata", target_map_id))
-      unless destination_map.respond_to?(:width) && destination_map.respond_to?(:height) &&
-             target_x < destination_map.width && target_y < destination_map.height
-        raise "Reception gate warp destination is outside its map"
+      if map_infos.key?(target_map_id)
+        path = sprintf("Data/Map%03d.rxdata", target_map_id)
+        raise "Reception gate destination map is missing" unless regular_file?(path)
+        destination_map = load_data(path)
+        raise "Reception gate warp destination is outside its map" unless
+          destination_map.respond_to?(:width) && destination_map.respond_to?(:height) &&
+          target_x < destination_map.width && target_y < destination_map.height
+      else
+        # Only the atomic Gate + Victory Road installer may supply this context.
+        # Standalone imports still reject every missing destination.
+        raise "Reception gate destination map is missing" unless
+          warp["direction"] == "north" &&
+          warp["source_destination"] == "MAP_VICTORY_ROAD_KANTO_B2F_HNS" &&
+          pending_destinations[target_map_id] == [40, 50] &&
+          target_x < 40 && target_y < 50
       end
       warp_targets << [target_map_id, target_x, target_y, target_direction, fade]
     end
