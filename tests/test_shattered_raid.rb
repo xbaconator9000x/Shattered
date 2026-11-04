@@ -103,6 +103,10 @@ end
 load File.expand_path("../essentials/Plugins/Shattered Raid/001_Raid.rb", __dir__)
 load File.expand_path("../essentials/Plugins/Shattered Viridian/001_Entry.rb", __dir__)
 
+module ShatteredRoute22
+  def self.cleared?; true; end
+end
+
 class ShatteredRaidTest < Minitest::Test
   def setup
     $PokemonGlobal = Object.new

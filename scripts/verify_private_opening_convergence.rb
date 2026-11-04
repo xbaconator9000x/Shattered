@@ -15,7 +15,7 @@ module ShatteredPrivateOpeningConvergence
     'Shattered Route22' => ['001_Route22.rb', '57819f23ee4a397b78a5ca5c983c18a87d3e9f67', '0.1.6'],
     'Shattered Murkrow Rescue' => ['001_Quest.rb', '30d370ddfe30edd94860f9de654dbeb718b93fa7', '0.1.3'],
     'Shattered Raid' => ['001_Raid.rb', '414dfddd790e80a64c5fc842d5dbfcdeeacd0a81', '0.1.3'],
-    'Shattered Viridian' => ['001_Entry.rb', '7c1574f0dfee5dd6d5c52145c21c8b8d7f14f779', '0.1.3']
+    'Shattered Viridian' => ['001_Entry.rb', '6914d2cb0a5c049b64c1751614237b5976dee0b1', '0.1.4']
   }.freeze
   module_function
 

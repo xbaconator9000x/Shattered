@@ -16,6 +16,10 @@ module EventHandlers
   end
 end
 
+module ShatteredRoute22
+  def self.cleared?; $route22_cleared; end
+end
+
 load File.expand_path("../essentials/Plugins/Shattered Viridian/001_Entry.rb", __dir__)
 
 class ViridianMapRestoreTest < Minitest::Test
@@ -25,12 +29,14 @@ class ViridianMapRestoreTest < Minitest::Test
     $PokemonGlobal = Object.new
     $game_switches = Hash.new(false)
     $game_map = FakeMap.new(10, false)
+    $route22_cleared = true
   end
 
   def teardown
     $PokemonGlobal = nil
     $game_switches = nil
     $game_map = nil
+    $route22_cleared = nil
   end
 
   def test_callbacks_cover_both_map_setup_and_continue
@@ -71,6 +77,16 @@ class ViridianMapRestoreTest < Minitest::Test
     $game_switches[994] = true
     assert ShatteredViridian.reconcile_on_map_restore
     refute $game_switches[994]
+    assert $game_map.need_refresh
+  end
+
+  def test_route22_win_is_required_to_restore_viridian_pages
+    ShatteredViridian.start!(993, 996)
+    ShatteredViridian.arrive!(994)
+    $route22_cleared = false
+    $game_map.need_refresh = false
+    assert ShatteredViridian.reconcile_on_map_restore
+    [993, 994, 995, 996].each { |id| refute $game_switches[id] }
     assert $game_map.need_refresh
   end
 

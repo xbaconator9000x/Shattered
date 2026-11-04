@@ -45,6 +45,31 @@ class PrivateOpeningConvergenceTest < Minitest::Test
     end
   end
 
+  def test_viridian_route22_guard_source_and_compiled_plugin_are_pinned
+    name = 'Shattered Viridian'
+    script, pin, version = V::SOURCES.fetch(name)
+    source = File.binread(File.expand_path("../essentials/Plugins/#{name}/#{script}", __dir__))
+    assert_equal pin, V.git_blob(source)
+    Dir.mktmpdir do |dir|
+      plugin = File.join(dir, 'Plugins', name)
+      FileUtils.mkdir_p(plugin)
+      File.binwrite(File.join(plugin, script), source)
+      FileUtils.cp(File.expand_path("../essentials/Plugins/#{name}/meta.txt", __dir__),
+        File.join(plugin, 'meta.txt'))
+      archive = [[name, { :version => version },
+        [[script, Zlib::Deflate.deflate(source)]]]]
+      checked = V.verify_plugin_sources!(dir, archive, name => V::SOURCES.fetch(name))
+      assert_equal version, checked.first.fetch('version')
+
+      stale_archive = [[name, { :version => version },
+        [[script, Zlib::Deflate.deflate('stale Viridian source')]]]]
+      error = assert_raises(RuntimeError) do
+        V.verify_plugin_sources!(dir, stale_archive, name => V::SOURCES.fetch(name))
+      end
+      assert_match(/Stale compiled source: Shattered Viridian/, error.message)
+    end
+  end
+
   def test_rejects_unstaged_or_missing_project
     Dir.mktmpdir do |dir|
       assert_raises(RuntimeError) { V.verify!(dir) }

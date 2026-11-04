@@ -4,6 +4,10 @@ require 'tmpdir'
 require_relative '../scripts/upgrade_private_viridian_escort'
 require_relative '../essentials/Plugins/Shattered Viridian/001_Entry'
 
+module ShatteredRoute22
+  def self.cleared?; true; end
+end
+
 class EscortActor
   attr_reader :x, :y
   def initialize(x, y); @x = x; @y = y; end
