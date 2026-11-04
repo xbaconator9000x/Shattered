@@ -11,6 +11,40 @@ class PrivateOpeningConvergenceTest < Minitest::Test
     assert_equal 'ce013625030ba8dba906f756967f9e9ca394464a', V.git_blob('hello\n'.gsub('\\n', "\n"))
   end
 
+  def test_human_core_source_and_compiled_plugin_are_pinned
+    name = 'Shattered Core'
+    script, pin, version = V::SOURCES.fetch(name)
+    source = File.binread(File.expand_path("../essentials/Plugins/#{name}/#{script}", __dir__))
+    assert_equal pin, V.git_blob(source)
+    Dir.mktmpdir do |dir|
+      plugin = File.join(dir, 'Plugins', name)
+      FileUtils.mkdir_p(plugin)
+      File.binwrite(File.join(plugin, script), source)
+      FileUtils.cp(File.expand_path("../essentials/Plugins/#{name}/meta.txt", __dir__),
+        File.join(plugin, 'meta.txt'))
+      archive = [[name, { :version => version },
+        [[script, Zlib::Deflate.deflate(source)]]]]
+      checked = V.verify_plugin_sources!(dir, archive, name => V::SOURCES.fetch(name))
+      assert_equal name, checked.first.fetch('name')
+      assert_equal version, checked.first.fetch('version')
+
+      source_path = File.join(plugin, script)
+      File.binwrite(source_path, source + "\n# tampered")
+      error = assert_raises(RuntimeError) do
+        V.verify_plugin_sources!(dir, archive, name => V::SOURCES.fetch(name))
+      end
+      assert_match(/Source Git blob mismatch: Shattered Core/, error.message)
+      File.binwrite(source_path, source)
+
+      stale_archive = [[name, { :version => version },
+        [[script, Zlib::Deflate.deflate('stale Core source')]]]]
+      error = assert_raises(RuntimeError) do
+        V.verify_plugin_sources!(dir, stale_archive, name => V::SOURCES.fetch(name))
+      end
+      assert_match(/Stale compiled source: Shattered Core/, error.message)
+    end
+  end
+
   def test_rejects_unstaged_or_missing_project
     Dir.mktmpdir do |dir|
       assert_raises(RuntimeError) { V.verify!(dir) }
@@ -194,7 +228,7 @@ class PrivateOpeningConvergenceTest < Minitest::Test
         FileUtils.cp(File.join(source, relative), File.join(dir, relative))
       end
       report = V.verify!(dir)
-      assert_equal 5, report.fetch('checked_plugins').length
+      assert_equal 6, report.fetch('checked_plugins').length
       assert report.fetch('center_autorun_requires_escort_arrival')
       assert report.fetch('route22_warp_scatter_guarded')
       assert report.fetch('viridian_escort_route_guarded').fetch('arrival_requires_both_routes')

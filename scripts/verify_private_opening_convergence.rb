@@ -10,6 +10,7 @@ require_relative 'install_private_viridian_beedrill'
 
 module ShatteredPrivateOpeningConvergence
   SOURCES = {
+    'Shattered Core' => ['001_Core.rb', 'fc4a9d3a275be55ac9f2adcc0b2e86507bd1dbe8', '0.2.4'],
     'Shattered Gate Story' => ['001_GateStory.rb', '3eccf46f9e7b32dcfcde1ab59ee204c9cd74bc3c', '0.2.4'],
     'Shattered Route22' => ['001_Route22.rb', '57819f23ee4a397b78a5ca5c983c18a87d3e9f67', '0.1.6'],
     'Shattered Murkrow Rescue' => ['001_Quest.rb', '30d370ddfe30edd94860f9de654dbeb718b93fa7', '0.1.3'],
@@ -75,6 +76,26 @@ module ShatteredPrivateOpeningConvergence
         event.pages.last.condition.switch1_id == 992
     end
     true
+  end
+
+  def verify_plugin_sources!(root, archive, sources = SOURCES)
+    checked = []
+    sources.each do |name, (script, pin, version)|
+      source = File.binread(require_file!(root, "Plugins/#{name}/#{script}"))
+      raise "Source Git blob mismatch: #{name}" unless git_blob(source) == pin
+      metadata = File.read(require_file!(root, "Plugins/#{name}/meta.txt"))
+      raise "Loose metadata version mismatch: #{name}" unless
+        metadata[/^Version\s*=\s*(\d+\.\d+\.\d+)/, 1] == version
+      entry = archive.select { |item| item.is_a?(Array) && item[0] == name }
+      raise "Missing/duplicate compiled plugin: #{name}" unless entry.length == 1
+      _, compiled_meta, scripts = entry.first
+      raise "Compiled metadata mismatch: #{name}" unless compiled_meta[:version] == version
+      raise "Compiled source inventory mismatch: #{name}" unless
+        scripts.length == 1 && scripts[0][0] == script
+      raise "Stale compiled source: #{name}" unless Zlib::Inflate.inflate(scripts[0][1]) == source
+      checked << { 'name' => name, 'version' => version, 'git_blob' => pin }
+    end
+    checked
   end
 
   def verify_center_arrival!(center)
@@ -163,21 +184,7 @@ module ShatteredPrivateOpeningConvergence
     require_file!(root, 'SHATTERED_STAGING_REPORT.json')
     archive = Marshal.load(File.binread(require_file!(root, 'Data/PluginScripts.rxdata')))
     raise 'Invalid compiled plugin archive' unless archive.is_a?(Array)
-    checked = []
-    SOURCES.each do |name, (script, pin, version)|
-      source = File.binread(require_file!(root, "Plugins/#{name}/#{script}"))
-      raise "Source Git blob mismatch: #{name}" unless git_blob(source) == pin
-      metadata = File.read(require_file!(root, "Plugins/#{name}/meta.txt"))
-      raise "Loose metadata version mismatch: #{name}" unless
-        metadata[/^Version\s*=\s*(\d+\.\d+\.\d+)/, 1] == version
-      entry = archive.select { |item| item.is_a?(Array) && item[0] == name }
-      raise "Missing/duplicate compiled plugin: #{name}" unless entry.length == 1
-      _, compiled_meta, scripts = entry.first
-      raise "Compiled metadata mismatch: #{name}" unless compiled_meta[:version] == version
-      raise "Compiled source inventory mismatch: #{name}" unless scripts.length == 1 && scripts[0][0] == script
-      raise "Stale compiled source: #{name}" unless Zlib::Inflate.inflate(scripts[0][1]) == source
-      checked << { 'name' => name, 'version' => version, 'git_blob' => pin }
-    end
+    checked = verify_plugin_sources!(root, archive)
     gate = Marshal.load(File.binread(require_file!(root, 'Data/Map223.rxdata')))
     route = Marshal.load(File.binread(require_file!(root, 'Data/Map016.rxdata')))
     city = Marshal.load(File.binread(require_file!(root, 'Data/Map010.rxdata')))
