@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'minitest/autorun'
+require 'minitest/mock'
 require 'tmpdir'
 require 'fileutils'
 require 'zlib'
@@ -75,6 +76,78 @@ class UpgradePrivateViridian014Test < Minitest::Test
     before = [File.binread(archive), File.binread(meta)]
     assert_raises(RuntimeError) { ShatteredPrivateViridian014.update!(@dir, SRC) }
     assert_equal before, [File.binread(archive), File.binread(meta)]
+  end
+
+  def test_dangling_temp_symlink_is_rejected_without_writing_through_it
+    temp = "#{loose}.viridian014.tmp"
+    Dir.mktmpdir('shattered-outside') do |outside|
+      target = File.join(outside, 'outside-staged-project')
+      File.symlink(target, temp)
+      before = bytes
+
+      assert_raises(RuntimeError) { ShatteredPrivateViridian014.update!(@dir, SRC) }
+
+      assert File.symlink?(temp)
+      refute File.exist?(target)
+      assert_equal before, bytes
+    end
+  end
+
+  def test_staging_failure_leaves_originals_untouched
+    write_temp = ShatteredPrivateViridian014.method(:write_temp!)
+    failing_writer = lambda do |path, content|
+      raise IOError, 'injected staging failure' if path == "#{loose}.viridian014.tmp"
+      write_temp.call(path, content)
+    end
+    before = bytes
+
+    ShatteredPrivateViridian014.stub(:write_temp!, failing_writer) do
+      error = assert_raises(IOError) { ShatteredPrivateViridian014.update!(@dir, SRC) }
+      assert_equal 'injected staging failure', error.message
+    end
+
+    assert_equal before, bytes
+    refute File.exist?("#{archive}.viridian014.tmp")
+  end
+
+  def test_failed_replacement_restores_originals_with_rename_backups
+    rename = File.method(:rename)
+    failing_rename = lambda do |source, destination|
+      raise IOError, 'injected replacement failure' if
+        source == "#{loose}.viridian014.tmp" && destination == loose
+      rename.call(source, destination)
+    end
+    before = bytes
+
+    File.stub(:rename, failing_rename) do
+      assert_raises(IOError) { ShatteredPrivateViridian014.update!(@dir, SRC) }
+    end
+
+    assert_equal before, bytes
+    [archive, loose, meta].each { |path| refute File.exist?("#{path}.viridian014.bak") }
+  end
+
+  def test_failed_rollback_preserves_recovery_backup
+    rename = File.method(:rename)
+    failing_rename = lambda do |source, destination|
+      if (source == "#{loose}.viridian014.tmp" && destination == loose) ||
+         (source == "#{loose}.viridian014.bak" && destination == loose)
+        raise IOError, 'injected rename failure'
+      end
+      rename.call(source, destination)
+    end
+    before = bytes
+
+    File.stub(:rename, failing_rename) do
+      error = assert_raises(RuntimeError) { ShatteredPrivateViridian014.update!(@dir, SRC) }
+      assert_match(/recovery backups retained/, error.message)
+      assert_match(/#{Regexp.escape("#{loose}.viridian014.bak")}/, error.message)
+    end
+
+    assert_equal before[0], File.binread(archive)
+    assert_equal before[2], File.binread(meta)
+    refute File.exist?(loose)
+    assert_equal before[1], File.binread("#{loose}.viridian014.bak")
   end
 
   private

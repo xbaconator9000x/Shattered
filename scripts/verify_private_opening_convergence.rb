@@ -131,14 +131,14 @@ module ShatteredPrivateOpeningConvergence
     raise 'Escort completion page is not switch 994' unless
       finished.condition.switch1_valid && finished.condition.switch1_id == 994
     list = first.list
-    expected_codes = [355, 236, 101, 209, 210, 209, 210, 111, 355,
-                      101, 411, 101, 116, 412, 0]
+    expected_codes = [111, 236, 101, 209, 210, 209, 210, 111, 355,
+                      101, 411, 101, 116, 412, 412, 0]
     raise 'Native escort command sequence changed' unless list.map(&:code) == expected_codes
-    raise 'Escort does not start rain before moving' unless
-      list[0].parameters == ['ShatteredViridian.start!(993, 996)'] &&
-      list[1].parameters == [1, 6, 20]
+    raise 'Arrival effects are not guarded by Route 22 victory' unless
+      list[0].parameters == [12, 'ShatteredViridian.start!(993, 996)'] &&
+      list[0].indent.zero? && list[1].indent == 1 && list[1].parameters == [1, 6, 20]
     raise 'Escort must wait for each movement route' unless
-      list[4].indent == 0 && list[6].indent == 0
+      list[4].indent == 1 && list[6].indent == 1
     expected_moves = {
       25 => [[24, 20], [25, 27], [1, 1, 2, 1, 1, 1, 1, 1, 3, 3, 0]],
       26 => [[23, 20], [24, 27], [1, 1, 1, 1, 1, 1, 1, 3, 0]]
@@ -151,7 +151,7 @@ module ShatteredPrivateOpeningConvergence
         npc.pages.last.condition.switch1_valid &&
         npc.pages.last.condition.switch1_id == 994
       command = list[index == 0 ? 3 : 5]
-      raise "Wrong native move-route target #{id}" unless command.parameters[0] == id
+      raise "Wrong native move-route target #{id}" unless command.indent == 1 && command.parameters[0] == id
       route = command.parameters[1]
       raise "Unreviewed native move route #{id}" unless route.is_a?(RPG::MoveRoute) &&
         !route.repeat && route.list.map(&:code) == moves
@@ -170,12 +170,14 @@ module ShatteredPrivateOpeningConvergence
       raise "Escort NPC #{id} misses Center endpoint" unless [x, y] == finish
     end
     raise 'Escort arrival flag not guarded by both NPC endpoints' unless
-      list[7].parameters == [12,
+      list[7].indent == 1 && list[7].parameters == [12,
         'ShatteredViridian.complete_route!(25, 26, [24, 20], [23, 20], [25, 27], [24, 27], 993, 996)'] &&
-      list[8].indent == 1 &&
+      list[8].indent == 2 &&
       list[8].parameters == ['ShatteredViridian.arrive!(994)'] &&
-      list[12].code == 116 && list[12].indent == 1
+      list[12].code == 116 && list[12].indent == 2 &&
+      list[14].code == 412 && list[14].indent.zero?
     { 'escort_npcs' => [25, 26], 'endpoints' => [[25, 27], [24, 27]],
+      'arrival_requires_saved_route22_victory_before_effects' => true,
       'arrival_requires_both_routes' => true }
   end
 

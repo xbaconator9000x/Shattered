@@ -203,27 +203,35 @@ class PrivateOpeningConvergenceTest < Minitest::Test
     guard_route = route.call([1, 1, 2, 1, 1, 1, 1, 1, 3, 3, 0])
     nidoran_route = route.call([1, 1, 1, 1, 1, 1, 1, 3, 0])
     arrival.pages[0].list = [
-      RPG::EventCommand.new(355, 0, ['ShatteredViridian.start!(993, 996)']),
-      RPG::EventCommand.new(236, 0, [1, 6, 20]),
-      RPG::EventCommand.new(101, 0, ['Escort']),
-      RPG::EventCommand.new(209, 0, [25, guard_route]),
-      RPG::EventCommand.new(210, 0, []),
-      RPG::EventCommand.new(209, 0, [26, nidoran_route]),
-      RPG::EventCommand.new(210, 0, []),
-      RPG::EventCommand.new(111, 0,
+      RPG::EventCommand.new(111, 0, [12, 'ShatteredViridian.start!(993, 996)']),
+      RPG::EventCommand.new(236, 1, [1, 6, 20]),
+      RPG::EventCommand.new(101, 1, ['Escort']),
+      RPG::EventCommand.new(209, 1, [25, guard_route]),
+      RPG::EventCommand.new(210, 1, []),
+      RPG::EventCommand.new(209, 1, [26, nidoran_route]),
+      RPG::EventCommand.new(210, 1, []),
+      RPG::EventCommand.new(111, 1,
         [12, 'ShatteredViridian.complete_route!(25, 26, [24, 20], [23, 20], [25, 27], [24, 27], 993, 996)']),
-      RPG::EventCommand.new(355, 1, ['ShatteredViridian.arrive!(994)']),
-      RPG::EventCommand.new(101, 1, ['Center ahead']),
-      RPG::EventCommand.new(411, 0, []),
-      RPG::EventCommand.new(101, 1, ['Retry later']),
-      RPG::EventCommand.new(116, 1, []),
+      RPG::EventCommand.new(355, 2, ['ShatteredViridian.arrive!(994)']),
+      RPG::EventCommand.new(101, 2, ['Center ahead']),
+      RPG::EventCommand.new(411, 1, []),
+      RPG::EventCommand.new(101, 2, ['Retry later']),
+      RPG::EventCommand.new(116, 2, []),
+      RPG::EventCommand.new(412, 1, []),
       RPG::EventCommand.new(412, 0, []),
       RPG::EventCommand.new(0, 0, [])
     ]
     city.events[23] = arrival
     result = V.verify_viridian_escort!(city)
     assert result['arrival_requires_both_routes']
+    assert result['arrival_requires_saved_route22_victory_before_effects']
     assert_equal [[25, 27], [24, 27]], result['endpoints']
+    arrival.pages[0].list[0].parameters[1] = 'true'
+    assert_raises(RuntimeError) { V.verify_viridian_escort!(city) }
+    arrival.pages[0].list[0].parameters[1] = 'ShatteredViridian.start!(993, 996)'
+    arrival.pages[0].list[0].code = 355
+    assert_raises(RuntimeError) { V.verify_viridian_escort!(city) }
+    arrival.pages[0].list[0].code = 111
     arrival.pages[0].list[6].code = 101
     assert_raises(RuntimeError) { V.verify_viridian_escort!(city) }
     arrival.pages[0].list[6].code = 210

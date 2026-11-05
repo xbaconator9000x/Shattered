@@ -24,6 +24,18 @@ module ShatteredPrivateViridian014
     path
   end
 
+  def write_temp!(path, bytes)
+    created = false
+    File.open(path, File::WRONLY | File::CREAT | File::EXCL, 0o600) do |file|
+      created = true
+      file.binmode
+      file.write(bytes)
+    end
+  rescue StandardError
+    File.delete(path) if created && (File.exist?(path) || File.symlink?(path))
+    raise
+  end
+
   def update!(project, source_dir)
     root = File.realpath(project)
     raise 'Refusing a symlinked private project directory' if File.symlink?(project)
@@ -66,23 +78,46 @@ module ShatteredPrivateViridian014
     check = Marshal.load(updated[0])
     raise 'Compiled archive roundtrip failed' unless check[idx][1][:version] == '0.1.4' &&
       Zlib::Inflate.inflate(check[idx][2][0][1]) == new_source
-    # All validations happen before the first write. Roll back if a filesystem
-    # write/rename fails. The caller must use a fresh staged copy, not the base.
+    # Stage every output before moving any original. Retain backups until all
+    # replacements succeed so a failed rename can restore originals atomically.
     tmp = []
+    backups = paths.map { |path| "#{path}.viridian014.bak" }
+    (paths.zip(backups)).each do |path, backup|
+      target = "#{path}.viridian014.tmp"
+      raise "Stale transaction file: #{target}" if File.exist?(target) || File.symlink?(target)
+      raise "Stale recovery file: #{backup}" if File.exist?(backup) || File.symlink?(backup)
+    end
+    backed_up = []
     begin
       paths.each_with_index do |path, i|
         target = "#{path}.viridian014.tmp"
-        raise "Stale transaction file: #{target}" if File.exist?(target)
-        File.binwrite(target, updated[i])
+        write_temp!(target, updated[i])
         tmp << target
       end
-      paths.each_with_index { |path, i| File.rename(tmp[i], path) }
-    rescue StandardError
-      paths.each_with_index { |path, i| File.binwrite(path, original[i]) }
+      paths.each_with_index do |path, i|
+        File.rename(path, backups[i])
+        backed_up << i
+        File.rename(tmp[i], path)
+      end
+    rescue StandardError => error
+      rollback_errors = []
+      backed_up.reverse_each do |i|
+        begin
+          File.delete(paths[i]) if File.exist?(paths[i]) || File.symlink?(paths[i])
+          File.rename(backups[i], paths[i])
+        rescue StandardError => rollback_error
+          rollback_errors << "#{backups[i]} (#{rollback_error.message})"
+        end
+      end
+      unless rollback_errors.empty?
+        raise "Migration failed (#{error.message}); rollback failed; recovery backups retained: " \
+          "#{rollback_errors.join(', ')}"
+      end
       raise
     ensure
-      tmp.each { |p| File.delete(p) if File.exist?(p) }
+      tmp.each { |p| File.delete(p) if File.exist?(p) || File.symlink?(p) }
     end
+    backups.each { |path| File.delete(path) if File.file?(path) && !File.symlink?(path) }
     { 'changed' => true, 'archive_sha256' => sha(updated[0]), 'version' => '0.1.4' }
   end
 end
