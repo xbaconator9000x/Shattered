@@ -147,13 +147,16 @@ class PrivateNativeCandidateTest(unittest.TestCase):
 
     def test_candidate_bootstrap_stages_converted_gate_bundle_and_private_tileset(self):
         gate_bundle = self.root / "gate.json"
+        gate_image = self.root / "ReceptionGateHNS.png"
+        gate_image.write_bytes(png_fixture(256, 32))
         gate_bundle.write_text(json.dumps({
             "format": "shattered-hns-rmxp-map",
             "format_version": 1,
-            "target": {"tileset_image": "ReceptionGateHNS.png"},
+            "target": {
+                "tileset_image": "ReceptionGateHNS.png",
+                "tileset_sha256": hashlib.sha256(gate_image.read_bytes()).hexdigest(),
+            },
         }))
-        gate_image = self.root / "ReceptionGateHNS.png"
-        gate_image.write_bytes(png_fixture(256, 32))
         dest = self.root / "candidate-with-gate-source"
 
         receipt = self.build_candidate(
@@ -162,6 +165,8 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         )
 
         self.assertTrue(receipt["hns_gate_source_staged"])
+        self.assertEqual(hashlib.sha256(gate_image.read_bytes()).hexdigest(),
+                         receipt["hns_gate_source_sha256"]["tileset"])
         self.assertFalse(receipt["hns_gate_installed"])
         self.assertTrue((dest / "SHATTERED_OFFLINE_TOOLS/Shattered HnS Gate/reception_gate.json").is_file())
         self.assertEqual(gate_image.read_bytes(),

@@ -60,7 +60,7 @@ def _rights_record(value, expected_id, expected_type, source_path):
     if not isinstance(record, dict):
         return {"status": "invalid", "reason": "rights record must be a JSON object"}
     expected_sha = record.get("archive_sha256", record.get("source_sha256"))
-    if not isinstance(record, dict) or record.get("id") != expected_id or \
+    if record.get("id") != expected_id or \
        record.get("type") != expected_type or record.get("rights_cleared") is not True or \
        not all(isinstance(record.get(key), str) and record[key].strip()
                for key in ("source", "license", "basis")):
@@ -173,6 +173,7 @@ def diagnose(*, project=None, base_archive=None, base_rights=None,
     implementation_gaps = [
         "No checked-in converter derives the Essentials/RMXP project or native event maps directly from a GBA ROM; the current HnS converters require pinned map exports and reviewed XP tile mappings.",
         "Native HnS map and initial-slice event installers require an RGSS/Essentials execution step; this diagnostic does not claim that they have been run.",
+        "Native engine provenance is not independently verified by the input diagnostic.",
         "Native game launch is not a playthrough; opening checkpoints and Save/Continue require a real interactive run and private visual evidence.",
     ]
     return {
@@ -211,7 +212,7 @@ def main(argv=None):
     parser.add_argument("--road-tilesets", help="directory of rights-cleared Victory Road PNGs")
     parser.add_argument("--route22-source", help="local reviewed Route 22 native map input")
     parser.add_argument("--viridian-source", help="local reviewed Viridian native map input")
-    parser.add_argument("--native-engine", help="local official mkxp-z executable")
+    parser.add_argument("--native-engine", help="local mkxp-z executable (the diagnostic records its hash but does not verify provenance)")
     parser.add_argument("--report", type=Path, help="write a new local JSON diagnostic")
     args = parser.parse_args(argv)
     result = diagnose(

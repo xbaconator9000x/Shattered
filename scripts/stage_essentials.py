@@ -5,6 +5,7 @@ Never modifies original. Doesn't compile plugin scripts or test Android runtime.
 """
 import argparse
 import binascii
+import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -191,18 +192,28 @@ def install_shattered_equipment(dest):
 
 
 def install_hns_gate(dest, gate_data, gate_image):
-    data = Path(gate_data)
-    image = Path(gate_image)
-    bundle = json.loads(data.read_text(encoding="utf-8"))
+    data = Path(os.path.abspath(gate_data))
+    image = Path(os.path.abspath(gate_image))
+    for path in (data, image):
+        if any(part.is_symlink() for part in (path, *path.parents)) or not path.is_file():
+            raise ValueError("HnS gate inputs must be regular files without symlinked paths")
+    data_bytes = data.read_bytes()
+    image_bytes = image.read_bytes()
+    bundle = json.loads(data_bytes.decode("utf-8"))
     if bundle.get("format") != "shattered-hns-rmxp-map" or bundle.get("format_version") != 1:
         raise ValueError("unsupported HnS reception gate bundle")
-    image_name = bundle.get("target", {}).get("tileset_image")
+    target_config = bundle.get("target")
+    if not isinstance(target_config, dict):
+        raise ValueError("invalid HnS gate target")
+    image_name = target_config.get("tileset_image")
     if not isinstance(image_name, str) or not re.fullmatch(r"[A-Za-z0-9_-]+\.png", image_name):
         raise ValueError("invalid HnS gate tileset image name")
-    image_bytes = image.read_bytes()
     width, height = png_dimensions(image_bytes)
     if width != 256 or height == 0 or height % 32:
         raise ValueError("HnS gate tileset PNG must be 256 pixels wide and a multiple of 32 high")
+    image_sha256 = hashlib.sha256(image_bytes).hexdigest()
+    if target_config.get("tileset_sha256") != image_sha256:
+        raise ValueError("HnS gate tileset image SHA-256 does not match bundle")
     plugin_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate" / "001_Import.rb"
     meta_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate" / "meta.txt"
     plugin_target = dest / "Plugins" / "Shattered HnS Gate"
@@ -222,13 +233,17 @@ def install_hns_gate(dest, gate_data, gate_image):
     if bundle_target.exists() or bundle_target.is_symlink() or \
        graphics_target.exists() or graphics_target.is_symlink():
         raise ValueError("HnS gate import would overwrite existing project files")
-    shutil.copyfile(data, bundle_target)
+    with bundle_target.open("xb") as target:
+        target.write(data_bytes)
     graphics_target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(image, graphics_target)
+    with graphics_target.open("xb") as target:
+        target.write(image_bytes)
     return {
         "plugin": str((plugin_target / "001_Import.rb").relative_to(dest)),
         "bundle": str((plugin_target / "reception_gate.json").relative_to(dest)),
         "tileset_image": str(graphics_target.relative_to(dest)),
+        "bundle_sha256": hashlib.sha256(data_bytes).hexdigest(),
+        "tileset_sha256": image_sha256,
         "native_map_generated": False,
     }
 

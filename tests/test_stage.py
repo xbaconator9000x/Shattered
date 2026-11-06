@@ -1,6 +1,7 @@
 import json
 import os
 import binascii
+import hashlib
 from pathlib import Path
 import struct
 import sys
@@ -238,16 +239,21 @@ class StagingTest(unittest.TestCase):
 
     def test_gate_bundle_stages_only_into_separate_copy(self):
         bundle = self.root / 'gate.json'
+        image = self.root / 'gate.png'
+        image.write_bytes(png_fixture(256, 32))
+        image_sha = hashlib.sha256(image.read_bytes()).hexdigest()
         bundle.write_text(json.dumps({
             'format': 'shattered-hns-rmxp-map',
             'format_version': 1,
-            'target': {'tileset_image': 'SE013_ReceptionGate.png'},
+            'target': {
+                'tileset_image': 'SE013_ReceptionGate.png',
+                'tileset_sha256': image_sha,
+            },
         }))
-        image = self.root / 'gate.png'
-        image.write_bytes(png_fixture(256, 32))
         output = self.root / 'staged'
         report = stage(self.project, output, gate_data=bundle, gate_image=image)
         self.assertFalse(report['hns_gate']['native_map_generated'])
+        self.assertEqual(image_sha, report['hns_gate']['tileset_sha256'])
         self.assertTrue((output / 'Plugins/Shattered HnS Gate/001_Import.rb').is_file())
         self.assertTrue((output / 'Plugins/Shattered HnS Gate/meta.txt').is_file())
         self.assertTrue((output / 'Plugins/Shattered HnS Gate/reception_gate.json').is_file())
@@ -256,16 +262,57 @@ class StagingTest(unittest.TestCase):
 
     def test_gate_bundle_rejects_non_xp_tileset_dimensions(self):
         bundle = self.root / 'gate.json'
+        image = self.root / 'gate.png'
+        image.write_bytes(png_fixture(128, 32))
         bundle.write_text(json.dumps({
             'format': 'shattered-hns-rmxp-map',
             'format_version': 1,
-            'target': {'tileset_image': 'SE013_ReceptionGate.png'},
+            'target': {
+                'tileset_image': 'SE013_ReceptionGate.png',
+                'tileset_sha256': hashlib.sha256(image.read_bytes()).hexdigest(),
+            },
         }))
-        image = self.root / 'gate.png'
-        image.write_bytes(png_fixture(128, 32))
         with self.assertRaisesRegex(ValueError, '256 pixels wide'):
             stage(self.project, self.root / 'staged', gate_data=bundle, gate_image=image)
         self.assertFalse((self.root / 'staged').exists())
+
+    def test_gate_bundle_rejects_mismatched_tileset_hash(self):
+        bundle = self.root / 'gate.json'
+        bundle.write_text(json.dumps({
+            'format': 'shattered-hns-rmxp-map',
+            'format_version': 1,
+            'target': {
+                'tileset_image': 'SE013_ReceptionGate.png',
+                'tileset_sha256': '0' * 64,
+            },
+        }))
+        image = self.root / 'gate.png'
+        image.write_bytes(png_fixture(256, 32))
+        with self.assertRaisesRegex(ValueError, 'SHA-256 does not match'):
+            stage(self.project, self.root / 'staged', gate_data=bundle, gate_image=image)
+        self.assertFalse((self.root / 'staged').exists())
+
+    def test_gate_bundle_rejects_symlinked_inputs(self):
+        bundle = self.root / 'gate.json'
+        bundle.write_text('{}')
+        image = self.root / 'gate.png'
+        image.write_bytes(png_fixture(256, 32))
+        for data, tileset in (
+            (self.root / 'linked-gate.json', image),
+            (bundle, self.root / 'linked-gate.png'),
+        ):
+            target = bundle if data != bundle else image
+            linked = data if data != bundle else tileset
+            try:
+                linked.symlink_to(target)
+            except (OSError, NotImplementedError):
+                self.skipTest('symlink creation unavailable')
+            try:
+                with self.assertRaisesRegex(ValueError, 'without symlinked paths'):
+                    stage(self.project, self.root / ('staged-' + linked.suffix),
+                          gate_data=data, gate_image=tileset)
+            finally:
+                linked.unlink()
 
 
 if __name__ == '__main__':
