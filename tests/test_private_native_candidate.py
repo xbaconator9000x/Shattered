@@ -3,21 +3,35 @@
 Uses synthetic minimal RXData only; never claims native engine/gameplay acceptance.
 """
 import hashlib
+import binascii
 import json
 from pathlib import Path
 import shutil
 import stat
+import struct
 import subprocess
 import sys
 import tempfile
 import unittest
 import warnings
 import zipfile
+import zlib
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from build_private_native_candidate import build, source_pin
 import build_private_native_candidate
+
+
+def png_fixture(width, height):
+    def chunk(name, data):
+        body = name + data
+        return (struct.pack(">I", len(data)) + body +
+                struct.pack(">I", binascii.crc32(body) & 0xFFFFFFFF))
+    header = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    pixels = zlib.compress((b"\x00" + b"\x00" * width * 4) * height)
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) +
+            chunk(b"IDAT", pixels) + chunk(b"IEND", b""))
 
 
 @unittest.skipUnless(shutil.which("ruby"), "Ruby is required for native archive fixture")
@@ -130,6 +144,28 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         self.assertTrue((dest / "SHATTERED_NATIVE_CANDIDATE.json").is_file())
         self.assertTrue((dest / "Data/PluginScripts.rxdata").is_file())
         self.assertTrue(self.base_zip.is_file())
+
+    def test_candidate_bootstrap_stages_converted_gate_bundle_and_private_tileset(self):
+        gate_bundle = self.root / "gate.json"
+        gate_bundle.write_text(json.dumps({
+            "format": "shattered-hns-rmxp-map",
+            "format_version": 1,
+            "target": {"tileset_image": "ReceptionGateHNS.png"},
+        }))
+        gate_image = self.root / "ReceptionGateHNS.png"
+        gate_image.write_bytes(png_fixture(256, 32))
+        dest = self.root / "candidate-with-gate-source"
+
+        receipt = self.build_candidate(
+            self.base, dest, requested_sha=self.requested_sha,
+            gate_data=gate_bundle, gate_tileset_image=gate_image
+        )
+
+        self.assertTrue(receipt["hns_gate_source_staged"])
+        self.assertFalse(receipt["hns_gate_installed"])
+        self.assertTrue((dest / "SHATTERED_OFFLINE_TOOLS/Shattered HnS Gate/reception_gate.json").is_file())
+        self.assertEqual(gate_image.read_bytes(),
+                         (dest / "Graphics/Tilesets/ReceptionGateHNS.png").read_bytes())
 
     def test_archive_bootstrap_requires_complete_sha_pinned_rights_record(self):
         dest = self.root / "candidate-from-unreviewed-archive"

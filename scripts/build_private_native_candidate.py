@@ -204,7 +204,7 @@ def _extract_base_archive_contents(archive_path, destination):
 
 
 def _build_project(project, output, requested_sha=None, linux_aliases=False,
-                   base_source=None):
+                   base_source=None, gate_data=None, gate_tileset_image=None):
     sha, verified_checkout = source_pin(requested_sha)
     base = Path(project).resolve()
     destination = Path(output).absolute()
@@ -237,7 +237,10 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
     )
     with tempfile.TemporaryDirectory(prefix=".shattered-candidate-", dir=destination.parent) as temporary:
         candidate = Path(temporary) / "project"
-        staged = stage(base, candidate, include_runtime_set=True)
+        staged = stage(
+            base, candidate, gate_data=gate_data,
+            gate_image=gate_tileset_image, include_runtime_set=True
+        )
         compiled = run_ruby(
             "compile_private_plugins.rb",
             ["--project", str(candidate), *(
@@ -263,6 +266,7 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
             "runtime_plugins": isolated["runtime_plugin_names"],
             "offline_installers_isolated": len(isolated["moved"]),
             "linux_map_alias_count": aliases["alias_count"] if aliases else None,
+            "hns_gate_source_staged": gate_data is not None,
             "hns_gate_installed": False,
             "native_pbs_compiled": False,
             "native_engine_launched": False,
@@ -281,13 +285,19 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
 
 
 def build(project, output, requested_sha=None, linux_aliases=False, *,
-          base_archive=None, rights_record=None):
+          base_archive=None, rights_record=None, gate_data=None,
+          gate_tileset_image=None):
     if (project is None) == (base_archive is None):
         raise ValueError("provide exactly one of an extracted project or a base archive")
+    if (gate_data is None) != (gate_tileset_image is None):
+        raise ValueError("--gate-data and --gate-tileset-image must be provided together")
     if base_archive is None:
         if rights_record is not None:
             raise ValueError("base rights record is only valid with --base-archive")
-        return _build_project(project, output, requested_sha, linux_aliases)
+        return _build_project(
+            project, output, requested_sha, linux_aliases,
+            gate_data=gate_data, gate_tileset_image=gate_tileset_image
+        )
     if rights_record is None:
         raise ValueError("--base-archive requires a SHA-pinned local --rights-record")
     provenance = validate_base_rights(base_archive, rights_record)
@@ -298,7 +308,10 @@ def build(project, output, requested_sha=None, linux_aliases=False, *,
         raise ValueError("candidate output parent is missing or unsafe")
     with tempfile.TemporaryDirectory(prefix=".shattered-base-", dir=destination.parent) as temporary:
         base = extract_base_archive(base_archive, Path(temporary) / "base")
-        return _build_project(base, output, requested_sha, linux_aliases, provenance)
+        return _build_project(
+            base, output, requested_sha, linux_aliases, provenance,
+            gate_data, gate_tileset_image
+        )
 
 
 def main():
@@ -310,9 +323,13 @@ def main():
     parser.add_argument("--output", required=True, help="fresh private candidate directory")
     parser.add_argument("--source-sha", help="required for source-only bundles without .git")
     parser.add_argument("--linux-map-aliases", action="store_true", help="create verified lowercase map aliases for Linux")
+    parser.add_argument("--gate-data", help="private converted HnS reception-gate JSON bundle")
+    parser.add_argument("--gate-tileset-image", help="rights-cleared 256px-wide gate tileset PNG")
     args = parser.parse_args()
     print(json.dumps(build(args.project, args.output, args.source_sha, args.linux_map_aliases,
-                           base_archive=args.base_archive, rights_record=args.rights_record), indent=2))
+                           base_archive=args.base_archive, rights_record=args.rights_record,
+                           gate_data=args.gate_data,
+                           gate_tileset_image=args.gate_tileset_image), indent=2))
 
 
 if __name__ == "__main__":

@@ -207,12 +207,22 @@ def install_hns_gate(dest, gate_data, gate_image):
     meta_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate" / "meta.txt"
     plugin_target = dest / "Plugins" / "Shattered HnS Gate"
     graphics_target = dest / "Graphics" / "Tilesets" / image_name
-    if plugin_target.exists() or graphics_target.exists():
+    if plugin_target.is_symlink() or (plugin_target.exists() and not plugin_target.is_dir()):
+        raise ValueError("HnS gate plugin destination is unsafe")
+    if plugin_target.exists():
+        for source in (plugin_source, meta_source):
+            target = plugin_target / source.name
+            if target.is_symlink() or not target.is_file() or target.read_bytes() != source.read_bytes():
+                raise ValueError("HnS gate plugin destination differs from reviewed source")
+    else:
+        plugin_target.mkdir(parents=True)
+        shutil.copyfile(plugin_source, plugin_target / "001_Import.rb")
+        shutil.copyfile(meta_source, plugin_target / "meta.txt")
+    bundle_target = plugin_target / "reception_gate.json"
+    if bundle_target.exists() or bundle_target.is_symlink() or \
+       graphics_target.exists() or graphics_target.is_symlink():
         raise ValueError("HnS gate import would overwrite existing project files")
-    plugin_target.mkdir(parents=True)
-    shutil.copyfile(plugin_source, plugin_target / "001_Import.rb")
-    shutil.copyfile(meta_source, plugin_target / "meta.txt")
-    shutil.copyfile(data, plugin_target / "reception_gate.json")
+    shutil.copyfile(data, bundle_target)
     graphics_target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(image, graphics_target)
     return {
