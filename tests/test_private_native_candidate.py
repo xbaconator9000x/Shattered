@@ -236,8 +236,15 @@ class PrivateNativeCandidateTest(unittest.TestCase):
             project = Path(args[args.index("--project") + 1])
             candidate = json.loads((project / "SHATTERED_NATIVE_CANDIDATE.json").read_text())
             report = {
+                "kind": "actual_private_essentials_native_pbs_compiler_not_gameplay_acceptance",
                 "native_compiler_completed": True,
+                "human_species_bytes_present": True,
                 "source_sha": candidate["source_sha"],
+                "engine_sha256": "1" * 64,
+                "original_scripts_sha256": "2" * 64,
+                "restored_scripts_sha256": "2" * 64,
+                "gameplay_verified": False,
+                "save_reload_verified": False,
             }
             (project / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json").write_text(json.dumps(report))
             return report
@@ -250,6 +257,8 @@ class PrivateNativeCandidateTest(unittest.TestCase):
             )
 
         self.assertTrue(receipt["native_pbs_compiled"])
+        self.assertTrue(receipt["native_pbs_engine_invoked"])
+        self.assertFalse(receipt["native_game_launched"])
         self.assertEqual(
             hashlib.sha256((destination / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json").read_bytes()).hexdigest(),
             receipt["native_pbs_report_sha256"],
@@ -272,6 +281,31 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         with patch.object(build_private_native_candidate, "run_ruby",
                           side_effect=failed_native_compile):
             with self.assertRaisesRegex(RuntimeError, "native PBS compilation failed"):
+                self.build_candidate(
+                    self.base, destination, requested_sha=self.requested_sha,
+                    native_engine=engine
+                )
+        self.assertFalse(destination.exists())
+
+    def test_optional_native_pbs_rejects_incomplete_runner_receipt(self):
+        engine = self.root / "fake-mkxp-z"
+        engine.write_text("#!/bin/sh\nexit 0\n")
+        engine.chmod(0o755)
+        destination = self.root / "candidate-pbs-incomplete-report"
+        real_run_ruby = build_private_native_candidate.run_ruby
+
+        def incomplete_native_compile(script, args):
+            if script != "compile_private_pbs_native.rb":
+                return real_run_ruby(script, args)
+            project = Path(args[args.index("--project") + 1])
+            candidate = json.loads((project / "SHATTERED_NATIVE_CANDIDATE.json").read_text())
+            report = {"native_compiler_completed": True, "source_sha": candidate["source_sha"]}
+            (project / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json").write_text(json.dumps(report))
+            return report
+
+        with patch.object(build_private_native_candidate, "run_ruby",
+                          side_effect=incomplete_native_compile):
+            with self.assertRaisesRegex(RuntimeError, "report failed candidate verification"):
                 self.build_candidate(
                     self.base, destination, requested_sha=self.requested_sha,
                     native_engine=engine

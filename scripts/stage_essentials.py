@@ -313,7 +313,12 @@ def install_hns_victory_road(dest, road_data, tileset_dir):
     if gate_plugin_target.is_symlink() or \
        (gate_plugin_target.exists() and not gate_plugin_target.is_dir()):
         raise ValueError("HnS Gate plugin destination is unsafe")
-    if not gate_plugin_target.exists():
+    if gate_plugin_target.exists():
+        for source in (gate_plugin_source / "001_Import.rb", gate_plugin_source / "meta.txt"):
+            target = gate_plugin_target / source.name
+            if target.is_symlink() or not target.is_file() or target.read_bytes() != source.read_bytes():
+                raise ValueError("HnS Gate plugin destination differs from reviewed source")
+    else:
         if not (gate_plugin_source / "001_Import.rb").is_file() or \
            not (gate_plugin_source / "meta.txt").is_file():
             raise ValueError("reviewed HnS Gate plugin source is missing")

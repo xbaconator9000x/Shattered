@@ -3,8 +3,9 @@
 
 Combines authorised local base + all reviewed Shattered source plugins, compiles
 the native PluginScripts.rxdata archive, and moves offline-only installers out
-of Essentials' debug plugin scan. Does NOT install the HnS map, compile PBS,
-launch mkxp-z, test gameplay, or make a distributable release.
+of Essentials' debug plugin scan. An optional --native-engine step compiles PBS
+inside mkxp-z. Does NOT install native maps, launch an interactive game, test
+gameplay, or make a distributable release.
 """
 import argparse
 import hashlib
@@ -267,6 +268,7 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
             raise RuntimeError("compiled native archive changed during isolation")
         aliases = prepare_linux_aliases(candidate) if linux_aliases else None
         native_pbs = None
+        native_pbs_report = None
         if native_engine is not None:
             candidate_report_path = candidate / REPORT
             candidate_report = {
@@ -278,12 +280,23 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
                 "compile_private_pbs_native.rb",
                 ["--project", str(candidate), "--engine", str(Path(native_engine).absolute())]
             )
-            if native_pbs.get("native_compiler_completed") is not True or \
-               native_pbs.get("source_sha") != sha:
-                raise RuntimeError("native PBS compiler did not verify this candidate")
             pbs_report_path = candidate / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json"
             if not pbs_report_path.is_file() or pbs_report_path.is_symlink():
                 raise RuntimeError("native PBS compiler did not write a regular report")
+            native_pbs_report = json.loads(pbs_report_path.read_text(encoding="utf-8"))
+            engine_hash = native_pbs_report.get("engine_sha256")
+            scripts_before = native_pbs_report.get("original_scripts_sha256")
+            scripts_after = native_pbs_report.get("restored_scripts_sha256")
+            if native_pbs_report != native_pbs or native_pbs_report.get("native_compiler_completed") is not True or \
+               native_pbs_report.get("kind") != "actual_private_essentials_native_pbs_compiler_not_gameplay_acceptance" or \
+               native_pbs_report.get("human_species_bytes_present") is not True or \
+               native_pbs_report.get("source_sha") != sha or \
+               not isinstance(engine_hash, str) or not re.fullmatch(r"[0-9a-f]{64}", engine_hash) or \
+               not isinstance(scripts_before, str) or not re.fullmatch(r"[0-9a-f]{64}", scripts_before) or \
+               scripts_after != scripts_before or \
+               native_pbs_report.get("gameplay_verified") is not False or \
+               native_pbs_report.get("save_reload_verified") is not False:
+                raise RuntimeError("native PBS compiler report failed candidate verification")
         receipt = {
             "kind": "private_compiled_shattered_source_candidate_not_playable_acceptance",
             "source_sha": sha,
@@ -310,9 +323,13 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
             } if road_data is not None else None,
             "hns_gate_installed": False,
             "native_pbs_compiled": native_pbs is not None,
+            "native_pbs_engine_invoked": native_pbs is not None,
             "native_pbs_report_sha256": digest(candidate / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json")
             if native_pbs is not None else None,
+            "native_pbs_engine_sha256": native_pbs_report["engine_sha256"]
+            if native_pbs_report is not None else None,
             "native_engine_launched": False,
+            "native_game_launched": False,
             "gameplay_verified": False,
             "save_reload_verified": False,
             "android_verified": False,

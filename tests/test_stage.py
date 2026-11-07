@@ -393,6 +393,21 @@ class StagingTest(unittest.TestCase):
             stage(self.project, output, road_data=bundle, road_tileset_dir=tilesets)
         self.assertFalse(output.exists())
 
+    def test_victory_road_bundle_rejects_modified_existing_gate_importer(self):
+        bundle, tilesets = self.road_fixture()
+        plugin = self.project / "Plugins" / "Shattered HnS Gate"
+        plugin.mkdir()
+        (plugin / "001_Import.rb").write_text("unreviewed")
+        (plugin / "meta.txt").write_bytes(
+            (Path(__file__).resolve().parents[1] /
+             "essentials/Plugins/Shattered HnS Gate/meta.txt").read_bytes()
+        )
+        output = self.root / "road-modified-importer"
+
+        with self.assertRaisesRegex(ValueError, "differs from reviewed source"):
+            stage(self.project, output, road_data=bundle, road_tileset_dir=tilesets)
+        self.assertFalse(output.exists())
+
 
 if __name__ == '__main__':
     unittest.main()
