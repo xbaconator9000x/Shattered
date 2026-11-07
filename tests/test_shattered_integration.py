@@ -55,6 +55,25 @@ class ShatteredIntegrationTests(unittest.TestCase):
             ):
                 integration._verify_git_refs(self.root, self.manifest, selected_prs=set())
 
+    def test_squash_merged_source_head_is_not_required_to_ancestor_pinned_main(self):
+        merged = next(pr for pr in self.manifest["pull_requests"] if pr["id"] == 10)
+        current_main = self.manifest["main"]["commit"]
+        calls = []
+
+        def git(_repo, *args, **_kwargs):
+            calls.append(args)
+
+        with mock.patch.object(integration, "_resolve_branch", return_value=current_main), \
+             mock.patch.object(integration, "_git", side_effect=git):
+            integration._verify_git_refs(self.root, self.manifest, selected_prs={merged["id"]})
+
+        self.assertIn(("merge-base", "--is-ancestor", merged["base"], merged["head"]), calls)
+        self.assertIn(("cat-file", "-e", f"{merged['head']}^{{commit}}"), calls)
+        self.assertNotIn(
+            ("merge-base", "--is-ancestor", merged["head"], self.manifest["main"]["commit"]),
+            calls,
+        )
+
     def test_wrong_stacked_branch_ancestry_fails(self):
         manifest = copy.deepcopy(self.manifest)
         # PR #16 was retargeted to main after #15 merged.

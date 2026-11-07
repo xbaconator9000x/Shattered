@@ -263,6 +263,11 @@
     },
     {
       "pr": 10,
+      "path": "scripts/resolve_hns_gate_warps.py",
+      "stage": false
+    },
+    {
+      "pr": 10,
       "path": "tests/test_hns_gate_conversion.py",
       "stage": false
     },
@@ -506,6 +511,9 @@
     },
     {
       "pr": 10,
+      "support_from_main": [
+        "development/hns_source_asset_pins.json"
+      ],
       "commands": [
         [
           "python3",
@@ -526,6 +534,9 @@
     },
     {
       "pr": 11,
+      "support_from_main": [
+        "development/plugin_manifest.json"
+      ],
       "commands": [
         [
           "ruby",

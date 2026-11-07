@@ -13,10 +13,12 @@ module ShatteredPrivateInitialSliceNative
   MARKER = 'SHATTERED_PRIVATE_INITIAL_SLICE.ok'
   REPORT = 'SHATTERED_NATIVE_INITIAL_SLICE_INSTALL_REPORT.json'
   MAP_RECEIPT = 'Data/.shattered_initial_slice.receipt.json'
+  PLAN_PATH = 'Plugins/Shattered Initial Slice Installer/initial_slice_plan.json'
   MAIN_ANCHOR = /    PluginManager\.runPlugins\r?\n    Compiler\.main/
 
   def regular!(path)
-    raise "Missing or unsafe private file: #{path}" unless File.file?(path) && !File.symlink?(path)
+    raise "Missing or unsafe private file: #{path}" unless
+      File.file?(path) && File.realpath(path) == File.expand_path(path)
     path
   end
 
@@ -41,7 +43,7 @@ module ShatteredPrivateInitialSliceNative
     injected = [
       '    PluginManager.runPlugins',
       '    pbInstallShatteredInitialSlice',
-      "    File.write(#{MARKER.inspect}, #{plan_sha256.inspect})",
+      "    File.open(#{MARKER.inspect}, 'x') { |marker| marker.write(#{plan_sha256.inspect}) }",
       '    exit',
       '    Compiler.main'
     ].join(newline)
@@ -63,7 +65,8 @@ module ShatteredPrivateInitialSliceNative
 
   def install(project, engine, timeout_seconds: 180, environment: ENV)
     raise 'Timeout must be 5..300 seconds' unless timeout_seconds.between?(5, 300)
-    raise 'Unsafe staged project root' unless File.directory?(project) && !File.symlink?(project)
+    raise 'Unsafe staged project root' unless File.directory?(project) &&
+      File.realpath(project) == File.expand_path(project)
     root = File.realpath(project)
     candidate_path = regular!(File.join(root, 'SHATTERED_NATIVE_CANDIDATE.json'))
     isolation_path = regular!(File.join(root, 'SHATTERED_RUNTIME_ISOLATION_REPORT.json'))
@@ -75,7 +78,8 @@ module ShatteredPrivateInitialSliceNative
     raise 'Native initial-slice handoff is not pending' unless
       native_install['status'] == 'native_install_pending' &&
       native_install['entrypoint'] == 'pbInstallShatteredInitialSlice'
-    plan_path = File.join(root, native_install.fetch('plan_path'))
+    raise 'Unexpected native installer plan path' unless native_install['plan_path'] == PLAN_PATH
+    plan_path = File.join(root, PLAN_PATH)
     plan_bytes = File.binread(regular!(plan_path))
     plan_sha = Digest::SHA256.hexdigest(plan_bytes)
     raise 'Native installer plan differs from staged handoff receipt' unless
@@ -92,6 +96,7 @@ module ShatteredPrivateInitialSliceNative
       digest(archive_path) == isolation.fetch('compiled_archive_sha256')
     engine_path = File.realpath(regular!(engine))
     scripts_path = regular!(File.join(root, 'Data/Scripts.rxdata'))
+    raise 'Native Scripts.rxdata exceeds installer limit' if File.size(scripts_path) > 100_000_000
     map_receipt = File.join(root, MAP_RECEIPT)
     report_path = File.join(root, REPORT)
     marker_path = File.join(root, MARKER)

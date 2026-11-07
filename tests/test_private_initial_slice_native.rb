@@ -58,7 +58,8 @@ class PrivateInitialSliceNativeTest < Minitest::Test
     modified = Marshal.load(P.instrument(@scripts, @plan_sha))
     source = Zlib::Inflate.inflate(modified.first[2])
     assert_includes source, "    pbInstallShatteredInitialSlice\n"
-    assert_includes source, "File.write(\"SHATTERED_PRIVATE_INITIAL_SLICE.ok\", \"#{@plan_sha}\")"
+    assert_includes source,
+      "File.open(\"SHATTERED_PRIVATE_INITIAL_SLICE.ok\", 'x') { |marker| marker.write(\"#{@plan_sha}\") }"
     assert_equal 1, source.scan('    Compiler.main').length
     assert_operator source.index('pbInstallShatteredInitialSlice'), :<, source.index('    Compiler.main')
   end

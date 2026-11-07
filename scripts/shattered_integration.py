@@ -425,10 +425,10 @@ def _resolve_branch(repo, branch, pr_id=None):
 def _verify_git_refs(repo, manifest, selected_prs=None):
     main = manifest["main"]
     # A reviewed source baseline is intentionally immutable. Merging this
-    # integration harness advances main, so requiring exact ref equality would
-    # make the first successful merge invalidate its own reproducible contract.
-    # Accept only fast-forward descendants of the pinned reviewed snapshot;
-    # continue exporting merged sources from the exact pinned commit below.
+    # integration harness advances main, so require only a fast-forward from
+    # the exact pinned snapshot. Merged PR heads may not be ancestors after a
+    # squash/rebase; their source is exported from the pinned main tree and
+    # checked by the source bundle's exact file hashes.
     current_main = _resolve_branch(repo, main["ref"])
     try:
         _git(repo, "merge-base", "--is-ancestor", main["commit"], current_main)
@@ -441,7 +441,6 @@ def _verify_git_refs(repo, manifest, selected_prs=None):
         _git(repo, "merge-base", "--is-ancestor", pr["base"], pr["head"])
         if pr["state"] == "merged":
             _git(repo, "cat-file", "-e", f"{pr['head']}^{{commit}}")
-            _git(repo, "merge-base", "--is-ancestor", pr["head"], main["commit"])
         else:
             if _resolve_branch(repo, pr["branch"], pr["id"]) != pr["head"]:
                 raise IntegrationError(f"PR #{pr['id']} branch no longer matches pinned head")
