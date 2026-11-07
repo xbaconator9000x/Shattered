@@ -204,7 +204,8 @@ def _extract_base_archive_contents(archive_path, destination):
 
 
 def _build_project(project, output, requested_sha=None, linux_aliases=False,
-                   base_source=None, gate_data=None, gate_tileset_image=None):
+                   base_source=None, gate_data=None, gate_tileset_image=None,
+                   road_data=None, road_tileset_dir=None, native_engine=None):
     sha, verified_checkout = source_pin(requested_sha)
     base = Path(project).resolve()
     destination = Path(output).absolute()
@@ -232,6 +233,12 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
     source_files["scripts/stage_essentials.py"] = digest(ROOT / "scripts/stage_essentials.py")
     source_files["scripts/compile_private_plugins.rb"] = digest(ROOT / "scripts/compile_private_plugins.rb")
     source_files["scripts/finalize_private_runtime.rb"] = digest(ROOT / "scripts/finalize_private_runtime.rb")
+    source_files["scripts/compile_private_pbs_native.rb"] = digest(
+        ROOT / "scripts" / "compile_private_pbs_native.rb"
+    )
+    source_files["scripts/install_hns_gate_victory_road.rb"] = digest(
+        ROOT / "scripts" / "install_hns_gate_victory_road.rb"
+    )
     source_files["scripts/prepare_linux_map_aliases.py"] = digest(
         ROOT / "scripts/prepare_linux_map_aliases.py"
     )
@@ -239,8 +246,11 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
         candidate = Path(temporary) / "project"
         staged = stage(
             base, candidate, gate_data=gate_data,
-            gate_image=gate_tileset_image, include_runtime_set=True
+            gate_image=gate_tileset_image, include_runtime_set=True,
+            road_data=road_data, road_tileset_dir=road_tileset_dir
         )
+        if (candidate / REPORT).exists() or (candidate / REPORT).is_symlink():
+            raise ValueError("base project contains a conflicting native candidate receipt")
         compiled = run_ruby(
             "compile_private_plugins.rb",
             ["--project", str(candidate), *(
@@ -256,6 +266,24 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
         if compiled["compiled_archive_sha256"] != isolated["compiled_archive_sha256"]:
             raise RuntimeError("compiled native archive changed during isolation")
         aliases = prepare_linux_aliases(candidate) if linux_aliases else None
+        native_pbs = None
+        if native_engine is not None:
+            candidate_report_path = candidate / REPORT
+            candidate_report = {
+                "source_sha": sha,
+                "compiled_plugin_archive_sha256": digest(candidate / "Data/PluginScripts.rxdata"),
+            }
+            candidate_report_path.write_text(json.dumps(candidate_report, indent=2) + "\n")
+            native_pbs = run_ruby(
+                "compile_private_pbs_native.rb",
+                ["--project", str(candidate), "--engine", str(Path(native_engine).absolute())]
+            )
+            if native_pbs.get("native_compiler_completed") is not True or \
+               native_pbs.get("source_sha") != sha:
+                raise RuntimeError("native PBS compiler did not verify this candidate")
+            pbs_report_path = candidate / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json"
+            if not pbs_report_path.is_file() or pbs_report_path.is_symlink():
+                raise RuntimeError("native PBS compiler did not write a regular report")
         receipt = {
             "kind": "private_compiled_shattered_source_candidate_not_playable_acceptance",
             "source_sha": sha,
@@ -271,8 +299,19 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
                 "bundle": staged["hns_gate"]["bundle_sha256"],
                 "tileset": staged["hns_gate"]["tileset_sha256"],
             } if gate_data is not None else None,
+            "hns_victory_road_source_staged": road_data is not None,
+            "hns_victory_road_source_sha256": {
+                "bundle": staged["hns_victory_road"]["bundle_sha256"],
+                "installer": source_files["scripts/install_hns_gate_victory_road.rb"],
+                "tilesets": {
+                    name: asset["sha256"]
+                    for name, asset in staged["hns_victory_road"]["tilesets"].items()
+                },
+            } if road_data is not None else None,
             "hns_gate_installed": False,
-            "native_pbs_compiled": False,
+            "native_pbs_compiled": native_pbs is not None,
+            "native_pbs_report_sha256": digest(candidate / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json")
+            if native_pbs is not None else None,
             "native_engine_launched": False,
             "gameplay_verified": False,
             "save_reload_verified": False,
@@ -290,17 +329,22 @@ def _build_project(project, output, requested_sha=None, linux_aliases=False,
 
 def build(project, output, requested_sha=None, linux_aliases=False, *,
           base_archive=None, rights_record=None, gate_data=None,
-          gate_tileset_image=None):
+          gate_tileset_image=None, road_data=None, road_tileset_dir=None,
+          native_engine=None):
     if (project is None) == (base_archive is None):
         raise ValueError("provide exactly one of an extracted project or a base archive")
     if (gate_data is None) != (gate_tileset_image is None):
         raise ValueError("--gate-data and --gate-tileset-image must be provided together")
+    if (road_data is None) != (road_tileset_dir is None):
+        raise ValueError("--road-data and --road-tileset-dir must be provided together")
     if base_archive is None:
         if rights_record is not None:
             raise ValueError("base rights record is only valid with --base-archive")
         return _build_project(
             project, output, requested_sha, linux_aliases,
-            gate_data=gate_data, gate_tileset_image=gate_tileset_image
+            gate_data=gate_data, gate_tileset_image=gate_tileset_image,
+            road_data=road_data, road_tileset_dir=road_tileset_dir,
+            native_engine=native_engine
         )
     if rights_record is None:
         raise ValueError("--base-archive requires a SHA-pinned local --rights-record")
@@ -314,7 +358,8 @@ def build(project, output, requested_sha=None, linux_aliases=False, *,
         base = extract_base_archive(base_archive, Path(temporary) / "base")
         return _build_project(
             base, output, requested_sha, linux_aliases, provenance,
-            gate_data, gate_tileset_image
+            gate_data, gate_tileset_image, road_data, road_tileset_dir,
+            native_engine
         )
 
 
@@ -329,11 +374,17 @@ def main():
     parser.add_argument("--linux-map-aliases", action="store_true", help="create verified lowercase map aliases for Linux")
     parser.add_argument("--gate-data", help="private converted HnS reception-gate JSON bundle")
     parser.add_argument("--gate-tileset-image", help="rights-cleared 256px-wide gate tileset PNG")
+    parser.add_argument("--road-data", help="private converted HnS Victory Road JSON bundle")
+    parser.add_argument("--road-tileset-dir", help="directory of rights-cleared Victory Road PNGs")
+    parser.add_argument("--native-engine", help="optional mkxp-z path for actual native Essentials PBS compilation")
     args = parser.parse_args()
     print(json.dumps(build(args.project, args.output, args.source_sha, args.linux_map_aliases,
                            base_archive=args.base_archive, rights_record=args.rights_record,
                            gate_data=args.gate_data,
-                           gate_tileset_image=args.gate_tileset_image), indent=2))
+                           gate_tileset_image=args.gate_tileset_image,
+                           road_data=args.road_data,
+                           road_tileset_dir=args.road_tileset_dir,
+                           native_engine=args.native_engine), indent=2))
 
 
 if __name__ == "__main__":

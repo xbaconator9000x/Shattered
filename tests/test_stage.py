@@ -314,6 +314,85 @@ class StagingTest(unittest.TestCase):
             finally:
                 linked.unlink()
 
+    def road_fixture(self, image_hashes=None):
+        source_ids = [
+            "MAP_VICTORY_ROAD_KANTO_1F_HNS",
+            "MAP_VICTORY_ROAD_KANTO_B1F_HNS",
+            "MAP_VICTORY_ROAD_KANTO_B2F_HNS",
+        ]
+        tilesets = self.root / "road-tilesets"
+        tilesets.mkdir(exist_ok=True)
+        floors = []
+        for index, source_id in enumerate(source_ids):
+            name = f"RoadFloor{index}"
+            image = tilesets / f"{name}.png"
+            image.write_bytes(png_fixture(256, 32))
+            sha = hashlib.sha256(image.read_bytes()).hexdigest()
+            floors.append({
+                "source_map_id": source_id,
+                "target": {
+                    "map_id": 300 + index,
+                    "tileset_template_id": 1,
+                    "tileset_name": name,
+                    "tileset_image": f"{name}.png",
+                    "tileset_sha256": (image_hashes or {}).get(name, sha),
+                },
+            })
+        bundle = self.root / "victory-road.json"
+        bundle.write_text(json.dumps({
+            "format": "shattered-hns-victory-road-rmxp-bundle",
+            "format_version": 1,
+            "source_repository": "PokemonHnS-Development/pokehns-expansion",
+            "source_revision": "167aa6d537b109bb229c231ddce4616974c4da71",
+            "floors": floors,
+        }))
+        return bundle, tilesets
+
+    def test_victory_road_bundle_and_all_tilesets_stage_offline(self):
+        bundle, tilesets = self.road_fixture()
+        output = self.root / "road-staged"
+        report = stage(self.project, output, road_data=bundle, road_tileset_dir=tilesets)
+
+        staged = report["hns_victory_road"]
+        self.assertFalse(staged["native_maps_installed"])
+        self.assertEqual(3, len(staged["tilesets"]))
+        self.assertTrue((output / staged["bundle"]).is_file())
+        self.assertTrue((Path(__file__).resolve().parents[1] /
+                         staged["installer_source"]).is_file())
+        for name, metadata in staged["tilesets"].items():
+            image = output / metadata["path"]
+            self.assertTrue(image.is_file())
+            self.assertEqual(metadata["sha256"], hashlib.sha256(image.read_bytes()).hexdigest())
+
+    def test_victory_road_bundle_rejects_tileset_hash_mismatch_before_publish(self):
+        bundle, tilesets = self.road_fixture({"RoadFloor1": "0" * 64})
+        output = self.root / "road-mismatch"
+        with self.assertRaisesRegex(ValueError, "SHA-256 mismatch"):
+            stage(self.project, output, road_data=bundle, road_tileset_dir=tilesets)
+        self.assertFalse(output.exists())
+
+    def test_victory_road_bundle_rejects_duplicate_map_targets(self):
+        bundle, tilesets = self.road_fixture()
+        document = json.loads(bundle.read_text())
+        document["floors"][2]["target"]["map_id"] = 301
+        bundle.write_text(json.dumps(document))
+        with self.assertRaisesRegex(ValueError, "invalid or duplicate HnS Victory Road"):
+            stage(self.project, self.root / "road-duplicate",
+                  road_data=bundle, road_tileset_dir=tilesets)
+
+    def test_victory_road_bundle_rejects_symlinked_tileset_without_publishing(self):
+        bundle, tilesets = self.road_fixture()
+        image = tilesets / "RoadFloor1.png"
+        target = self.root / "real-road.png"
+        target.write_bytes(image.read_bytes())
+        image.unlink()
+        image.symlink_to(target)
+        output = self.root / "road-symlink"
+
+        with self.assertRaisesRegex(ValueError, "missing or unsafe HnS Victory Road tileset"):
+            stage(self.project, output, road_data=bundle, road_tileset_dir=tilesets)
+        self.assertFalse(output.exists())
+
 
 if __name__ == '__main__':
     unittest.main()

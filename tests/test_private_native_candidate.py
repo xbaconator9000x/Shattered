@@ -172,6 +172,112 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         self.assertEqual(gate_image.read_bytes(),
                          (dest / "Graphics/Tilesets/ReceptionGateHNS.png").read_bytes())
 
+    def test_candidate_stages_reviewed_victory_road_tilesets_and_receipt_hashes(self):
+        source_ids = [
+            "MAP_VICTORY_ROAD_KANTO_1F_HNS",
+            "MAP_VICTORY_ROAD_KANTO_B1F_HNS",
+            "MAP_VICTORY_ROAD_KANTO_B2F_HNS",
+        ]
+        tilesets = self.root / "road-tilesets"
+        tilesets.mkdir()
+        floors = []
+        expected_hashes = {}
+        for index, source_id in enumerate(source_ids):
+            name = f"RoadFloor{index}"
+            image = tilesets / f"{name}.png"
+            image.write_bytes(png_fixture(256, 32))
+            sha = hashlib.sha256(image.read_bytes()).hexdigest()
+            expected_hashes[f"{name}.png"] = sha
+            floors.append({
+                "source_map_id": source_id,
+                "target": {
+                    "map_id": 300 + index,
+                    "tileset_template_id": 1,
+                    "tileset_name": name,
+                    "tileset_image": f"{name}.png",
+                    "tileset_sha256": sha,
+                },
+            })
+        road_bundle = self.root / "road.json"
+        road_bundle.write_text(json.dumps({
+            "format": "shattered-hns-victory-road-rmxp-bundle",
+            "format_version": 1,
+            "source_repository": "PokemonHnS-Development/pokehns-expansion",
+            "source_revision": "167aa6d537b109bb229c231ddce4616974c4da71",
+            "floors": floors,
+        }))
+        dest = self.root / "candidate-with-road-data"
+
+        receipt = self.build_candidate(
+            self.base, dest, requested_sha=self.requested_sha,
+            road_data=road_bundle, road_tileset_dir=tilesets
+        )
+
+        self.assertTrue(receipt["hns_victory_road_source_staged"])
+        self.assertEqual(expected_hashes,
+                         receipt["hns_victory_road_source_sha256"]["tilesets"])
+        self.assertFalse(receipt["hns_gate_installed"])
+        self.assertTrue((dest / "SHATTERED_OFFLINE_TOOLS/Shattered HnS Gate/victory_road.json").is_file())
+        self.assertTrue((Path(__file__).resolve().parents[1] /
+                         "scripts/install_hns_gate_victory_road.rb").is_file())
+        for name in expected_hashes:
+            self.assertTrue((dest / f"Graphics/Tilesets/{name}").is_file())
+
+    def test_optional_native_pbs_step_uses_existing_runner_and_pins_report(self):
+        engine = self.root / "fake-mkxp-z"
+        engine.write_text("#!/bin/sh\nexit 0\n")
+        engine.chmod(0o755)
+        destination = self.root / "candidate-with-pbs"
+        real_run_ruby = build_private_native_candidate.run_ruby
+
+        def fake_native_compile(script, args):
+            if script != "compile_private_pbs_native.rb":
+                return real_run_ruby(script, args)
+            project = Path(args[args.index("--project") + 1])
+            candidate = json.loads((project / "SHATTERED_NATIVE_CANDIDATE.json").read_text())
+            report = {
+                "native_compiler_completed": True,
+                "source_sha": candidate["source_sha"],
+            }
+            (project / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json").write_text(json.dumps(report))
+            return report
+
+        with patch.object(build_private_native_candidate, "run_ruby",
+                          side_effect=fake_native_compile):
+            receipt = self.build_candidate(
+                self.base, destination, requested_sha=self.requested_sha,
+                native_engine=engine
+            )
+
+        self.assertTrue(receipt["native_pbs_compiled"])
+        self.assertEqual(
+            hashlib.sha256((destination / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json").read_bytes()).hexdigest(),
+            receipt["native_pbs_report_sha256"],
+        )
+        self.assertFalse(receipt["native_engine_launched"])
+        self.assertFalse(receipt["gameplay_verified"])
+
+    def test_optional_native_pbs_failure_does_not_publish_candidate(self):
+        engine = self.root / "fake-mkxp-z"
+        engine.write_text("#!/bin/sh\nexit 9\n")
+        engine.chmod(0o755)
+        destination = self.root / "candidate-pbs-failure"
+        real_run_ruby = build_private_native_candidate.run_ruby
+
+        def failed_native_compile(script, args):
+            if script == "compile_private_pbs_native.rb":
+                raise RuntimeError("native PBS compilation failed")
+            return real_run_ruby(script, args)
+
+        with patch.object(build_private_native_candidate, "run_ruby",
+                          side_effect=failed_native_compile):
+            with self.assertRaisesRegex(RuntimeError, "native PBS compilation failed"):
+                self.build_candidate(
+                    self.base, destination, requested_sha=self.requested_sha,
+                    native_engine=engine
+                )
+        self.assertFalse(destination.exists())
+
     def test_archive_bootstrap_requires_complete_sha_pinned_rights_record(self):
         dest = self.root / "candidate-from-unreviewed-archive"
         wrong_hash = self.root / "wrong-hash-rights.json"
