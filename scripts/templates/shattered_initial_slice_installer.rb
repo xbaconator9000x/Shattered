@@ -16,6 +16,8 @@ module ShatteredInitialSlice
   RECEIPT_PATH = "Data/.shattered_initial_slice.receipt.json"
   ROLLBACK_DIR = "Data/.shattered_initial_slice.rollback"
   ROUTE22_UUID = "c4c03051-b9be-4d3c-a06c-bcde09a0e3a2"
+  EAST_DOOR_NAME = "SHATTERED_GATE:east_door"
+  EAST_DOOR_POSITION = [20, 9].freeze
   HNS_WARPS = {
     "west" => [[1, 9]],
     "east" => [[20, 9]],
@@ -202,6 +204,7 @@ module ShatteredInitialSlice
       {"x" => south["x"], "y" => south["y"]} &&
       configs["gate_story"]["expected_south_transfer"] == expected_south,
       "Gate Story south blocker/transfer differs from the imported HnS warp")
+    reviewed_east_transfer(configs, route_id)
 
     link_positions = {}
     configs["world_links"]["events"].each do |event|
@@ -487,6 +490,81 @@ module ShatteredInitialSlice
       commands[1].parameters == []
   end
 
+  def self.reviewed_east_transfer(configs, route_id)
+    warps = configs.fetch("hns_import").fetch("warps").select do |warp|
+      warp["direction"] == "east"
+    end
+    check(warps.length == 1, "HnS importer must have exactly one east exit")
+    target = warps.first.fetch("target")
+    check(target["map_id"] == route_id,
+      "HnS east exit must lead directly to the reviewed Route22 map")
+    [0, target["map_id"], target["x"], target["y"],
+      target["direction"], target["fade"]]
+  end
+
+  def self.east_door_commands(transfer)
+    [
+      RPG::EventCommand.new(111, 0, [12, "ShatteredGateStory.key_obtained?"]),
+      RPG::EventCommand.new(101, 1, ["The eastern Kanto door unlocks."]),
+      RPG::EventCommand.new(201, 1, transfer),
+      RPG::EventCommand.new(411, 0, []),
+      RPG::EventCommand.new(101, 1, ["The eastern Route 22 door is locked. You need the key."]),
+      RPG::EventCommand.new(412, 0, []),
+      RPG::EventCommand.new(0, 0, [])
+    ]
+  end
+
+  def self.east_door_matches?(event, transfer)
+    return false unless event.is_a?(RPG::Event) &&
+      event.name == EAST_DOOR_NAME &&
+      [event.x, event.y] == EAST_DOOR_POSITION &&
+      event.pages.is_a?(Array) && event.pages.length == 1
+    page = event.pages.first
+    page.trigger == 0 && page.through == false && page.always_on_top == false &&
+      page.list.is_a?(Array) &&
+      page.list.map(&:code) == [111, 101, 201, 411, 101, 412, 0] &&
+      page.list.map(&:indent) == [0, 1, 1, 0, 1, 0, 0] &&
+      page.list.map(&:parameters) == [
+        [12, "ShatteredGateStory.key_obtained?"],
+        ["The eastern Kanto door unlocks."],
+        transfer,
+        [],
+        ["The eastern Route 22 door is locked. You need the key."],
+        [],
+        []
+      ]
+  end
+
+  def self.guard_east_exit!(map, transfer)
+    check(map.respond_to?(:events) && map.events.is_a?(Hash),
+      "HnS east exit map has no native event collection")
+    check(transfer.is_a?(Array) && transfer.length == 6 &&
+      transfer.all? { |value| value.instance_of?(Integer) && value >= 0 } &&
+      transfer[0] == 0 && transfer[1] > 0,
+      "Reviewed HnS east transfer is invalid")
+    events = map.events.values
+    matches = events.select do |event|
+      event.name == "Exit east" || event.name == EAST_DOOR_NAME
+    end
+    check(matches.length == 1,
+      "HnS east exit is missing or duplicated")
+    event = matches.first
+    check([event.x, event.y] == EAST_DOOR_POSITION &&
+      events.count { |candidate| [candidate.x, candidate.y] == EAST_DOOR_POSITION } == 1,
+      "HnS east exit moved or overlaps another event")
+    return false if east_door_matches?(event, transfer)
+    check(event.name == "Exit east" &&
+      transfer_matches?(event, "Exit east", *EAST_DOOR_POSITION, transfer),
+      "HnS east exit differs from the reviewed Route22 transfer")
+    page = event.pages.first
+    event.name = EAST_DOOR_NAME
+    page.trigger = 0
+    page.list = east_door_commands(transfer)
+    check(east_door_matches?(event, transfer),
+      "Guarded HnS east door failed its structural postcondition")
+    true
+  end
+
   def self.validate_hns_import_result!(plan, hns_config, result)
     gate_id = plan["map_targets"]["reception_gate"]["id"]
     map = load_native(native_map_path(gate_id))
@@ -640,12 +718,12 @@ module ShatteredInitialSlice
     check(gate_map.width == 22 && gate_map.height == 21 && gate_map.events.is_a?(Hash),
       "Installed reception gate map has invalid geometry or events")
     remaining_warps = configs["hns_import"]["warps"].reject do |warp|
-      warp["direction"] == "south"
+      ["south", "east"].include?(warp["direction"])
     end
     expected_warp_names = remaining_warps.map { |warp| "Exit #{warp['direction']}" }.sort
     actual_warp_names = gate_map.events.values.map(&:name).grep(/\AExit /).sort
     check(actual_warp_names == expected_warp_names,
-      "Gate Story did not preserve the unblocked HnS exits")
+      "Gate Story did not preserve the remaining unguarded HnS exits")
     remaining_warps.each do |warp|
       name = "Exit #{warp['direction']}"
       matches = gate_map.events.values.select do |event|
@@ -659,6 +737,12 @@ module ShatteredInitialSlice
       ),
         "HnS exit differs from the reviewed transfer: #{name} at #{warp['x']},#{warp['y']}")
     end
+    east_transfer = reviewed_east_transfer(configs, route_id)
+    east_doors = gate_map.events.values.select { |event| event.name == EAST_DOOR_NAME }
+    check(east_doors.length == 1 &&
+      east_door_matches?(east_doors.first, east_transfer) &&
+      !gate_map.events.values.any? { |event| event.name == "Exit east" },
+      "Gate Story east door is missing, unguarded, or differs from the reviewed transfer")
 
     south = configs["hns_import"]["warps"].find { |warp| warp["direction"] == "south" }
     blocked_script = "ShatteredGateStory.blocked_johto"
@@ -817,6 +901,12 @@ module ShatteredInitialSlice
       # Gate Story reads the native Array tileset directly; never replace
       # Data/Tilesets.rxdata with a temporary Hash compatibility view.
       results << call_api("pbInstallShatteredGateStory", plan["config_paths"]["gate_story"])
+      gate_path = native_map_path(plan["map_targets"]["reception_gate"]["id"])
+      gate_map = load_native(gate_path)
+      if guard_east_exit!(gate_map,
+          reviewed_east_transfer(configs, plan["map_targets"]["route22"]["id"]))
+        save_native(gate_map, gate_path)
+      end
 
       route_config = configs["route22"].dup
       route_config["expected_map_sha256"] = file_sha(native_map_path(

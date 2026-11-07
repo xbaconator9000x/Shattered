@@ -21,6 +21,7 @@ GraphicStub = Struct.new(:character_name)
 PageStub = Struct.new(:trigger, :through, :always_on_top, :graphic, :list)
 EventStub = Struct.new(:id, :name, :x, :y, :pages, :payload)
 RPG.const_set(:Event, EventStub) unless defined?(RPG::Event)
+RPG.const_set(:EventCommand, CommandStub) unless defined?(RPG::EventCommand)
 
 def transfer_event(id, name, x, y, parameters)
   page = PageStub.new(1, false, false, GraphicStub.new(nil), [
@@ -114,13 +115,23 @@ class ShatteredNativeHandoffTest < Minitest::Test
       {"direction" => "north", "x" => 11, "y" => 1,
        "target" => {"map_id" => 204, "x" => 2, "y" => 2, "direction" => 2, "fade" => 0}}
     ]
-    @hns_warps.reject { |warp| warp["direction"] == "south" }.each do |warp|
+    @hns_warps.reject do |warp|
+      ["south", "east"].include?(warp["direction"])
+    end.each do |warp|
       target = warp["target"]
       event = transfer_event(@gate.events.length + 1, "Exit #{warp['direction']}",
         warp["x"], warp["y"],
         [0, target["map_id"], target["x"], target["y"], target["direction"], target["fade"]])
       @gate.events[event.id] = event
     end
+    east_target = @hns_warps.find { |warp| warp["direction"] == "east" }.fetch("target")
+    east = transfer_event(@gate.events.length + 1, "Exit east", 20, 9,
+      [0, east_target["map_id"], east_target["x"], east_target["y"],
+        east_target["direction"], east_target["fade"]])
+    @gate.events[east.id] = east
+    ShatteredInitialSlice.guard_east_exit!(@gate,
+      [0, east_target["map_id"], east_target["x"], east_target["y"],
+        east_target["direction"], east_target["fade"]])
     @links = [
       {"map_id" => @gate_id, "link_id" => "gate-route22", "side" => "F",
        "x" => 3, "y" => 3,
@@ -213,6 +224,58 @@ class ShatteredNativeHandoffTest < Minitest::Test
     end
     assert_raises(RuntimeError) do
       ShatteredInitialSlice.validate_route22_tiles!(map, tilesets, [[36, 18]])
+    end
+  end
+
+  def test_gate_east_exit_becomes_an_idempotent_key_guarded_route22_door
+    target = @hns_warps.find { |warp| warp["direction"] == "east" }.fetch("target")
+    transfer = [0, target["map_id"], target["x"], target["y"],
+      target["direction"], target["fade"]]
+    map = MapStub.new(22, 21, {})
+    source = transfer_event(1, "Exit east", 20, 9, transfer)
+    map.events[source.id] = source
+
+    assert ShatteredInitialSlice.guard_east_exit!(map, transfer)
+    door = map.events.fetch(1)
+    assert ShatteredInitialSlice.east_door_matches?(door, transfer)
+    assert_equal "SHATTERED_GATE:east_door", door.name
+    assert_equal [111, 101, 201, 411, 101, 412, 0],
+      door.pages.first.list.map(&:code)
+    assert_equal [0, 1, 1, 0, 1, 0, 0],
+      door.pages.first.list.map(&:indent)
+    refute ShatteredInitialSlice.guard_east_exit!(map, transfer)
+  end
+
+  def test_gate_east_exit_rejects_an_unreviewed_route22_transfer
+    target = @hns_warps.find { |warp| warp["direction"] == "east" }.fetch("target")
+    transfer = [0, target["map_id"], target["x"], target["y"],
+      target["direction"], target["fade"]]
+    map = MapStub.new(22, 21, {})
+    source = transfer_event(1, "Exit east", 20, 9, transfer)
+    map.events[source.id] = source
+
+    assert_raises(RuntimeError) do
+      ShatteredInitialSlice.guard_east_exit!(map, [0, 999, 1, 1, 2, 0])
+    end
+    assert_equal "Exit east", source.name
+    assert_equal 1, source.pages.first.trigger
+    assert_equal [201, 0], source.pages.first.list.map(&:code)
+  end
+
+  def test_installed_gate_map_rejects_an_unconditional_east_warp
+    event = @gate.events.values.find do |candidate|
+      candidate.name == ShatteredInitialSlice::EAST_DOOR_NAME
+    end
+    @gate.events[event.id] = transfer_event(event.id, "Exit east", 20, 9,
+      [0, @route_id, 1, 2, 2, 0])
+    results = [
+      @gate_id,
+      {"created" => 2, "unchanged" => 0, "changed_maps" => [@gate_id, @route_id]},
+      {"map_id" => @gate_id, "installed" => ["collapse", "aipom", "johto_block"]},
+      {"map_id" => @route_id, "installed" => 6}
+    ]
+    assert_raises(RuntimeError) do
+      ShatteredInitialSlice.validate_install_results!(@plan, @configs, results)
     end
   end
 
@@ -335,7 +398,7 @@ class ShatteredNativeHandoffTest < Minitest::Test
     error = assert_raises(RuntimeError) do
       ShatteredInitialSlice.validate_install_results!(@plan, @configs, results)
     end
-    assert_match(/unblocked HnS exits/, error.message)
+    assert_match(/remaining unguarded HnS exits/, error.message)
 
     setup
     route_key = @route.events.find { |_id, event| event.name == "SHATTERED_ROUTE22:rattata_0" }.first
