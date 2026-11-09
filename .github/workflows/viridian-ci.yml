@@ -9,6 +9,8 @@ on:
       - 'scripts/repair_private_viridian_center_arrival.rb'
       - 'scripts/upgrade_private_viridian_v013.rb'
       - 'tests/test_upgrade_private_viridian_v013.rb'
+      - 'scripts/upgrade_private_viridian_v014.rb'
+      - 'tests/test_upgrade_private_viridian_v014.rb'
       - '.github/workflows/viridian-ci.yml'
 permissions:
   contents: read
@@ -24,9 +26,11 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
           ruby -c scripts/repair_private_viridian_center_arrival.rb
           ruby -c scripts/upgrade_private_viridian_v013.rb
+          ruby -c scripts/upgrade_private_viridian_v014.rb
       - name: Saved state and native RMXP installer regression tests
         run: |
           ruby tests/test_viridian.rb
           ruby tests/test_viridian_map_restore.rb
           ruby tests/test_private_viridian_center_arrival.rb
           ruby tests/test_upgrade_private_viridian_v013.rb
+          ruby tests/test_upgrade_private_viridian_v014.rb

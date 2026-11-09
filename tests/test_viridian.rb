@@ -46,6 +46,10 @@ def save_data(value,path); File.binwrite(path, Marshal.dump(value)); end
 load File.expand_path("../essentials/Plugins/Shattered Viridian/001_Entry.rb",__dir__)
 load File.expand_path("../essentials/Plugins/Shattered Viridian/002_Install.rb",__dir__)
 
+module ShatteredRoute22
+  def self.cleared?; $route22_cleared; end
+end
+
 MovingNPC = Struct.new(:x,:y) do
   def moveto(x,y); self.x=x; self.y=y; end
 end
@@ -54,6 +58,7 @@ class ViridianStateTest < Minitest::Test
   def setup
     $PokemonGlobal=Object.new
     $game_switches=Hash.new(false)
+    $route22_cleared=true
   end
   def test_state_survives_serialization_and_reconciles_switches
     assert ShatteredViridian.start!(101,104)
@@ -82,6 +87,22 @@ class ViridianStateTest < Minitest::Test
     refute ShatteredViridian.center!(103,104)
     refute $game_switches[102]
     refute $game_switches[103]
+  end
+  def test_viridian_state_and_switches_require_route22_victory
+    $route22_cleared=false
+    refute ShatteredViridian.start!(101,104)
+    refute ShatteredViridian.arrive!(102)
+    refute ShatteredViridian.center!(103,104)
+    refute ShatteredViridian.sync!(:started=>101,:arrived=>102,:center=>103,:rain=>104)
+    guard=MovingNPC.new(10,17)
+    nidoran=MovingNPC.new(17,10)
+    $game_map=OpenStruct.new(:events=>{11=>guard,12=>nidoran})
+    refute ShatteredViridian.complete_route!(11,12,[9,16],[18,9],[10,17],[17,10],101,104)
+    refute $PokemonGlobal.instance_variable_get(:@shattered_viridian_entry)[:started]
+    refute $game_switches[101]
+    refute $game_switches[102]
+    refute $game_switches[103]
+    refute $game_switches[104]
   end
   def test_escort_only_starts_when_both_npcs_reach_destination
     guard=MovingNPC.new(10,17)
@@ -163,15 +184,22 @@ class ViridianInstallerTest < Minitest::Test
     refute entry.pages[0].through
     assert entry.pages[1].through
     assert city.events.values.find { |e| e.name.end_with?(":guard") }.pages[0].through == false
-    assert entry.pages[0].list[1].parameters[1].skippable
-    assert_match(/complete_route!/,entry.pages[0].list[4].parameters[0])
+    assert_equal [111,236,209,209,210,355,411,101,412,0],
+      entry.pages[0].list.map(&:code)
+    assert_equal [0,1,1,1,1,1,0,1,0,0],
+      entry.pages[0].list.map(&:indent)
+    assert_equal [12,"ShatteredViridian.route22_cleared?"],
+      entry.pages[0].list.first.parameters
+    assert entry.pages[0].list[2].parameters[1].skippable
+    assert_match(/complete_route!/,entry.pages[0].list[5].parameters[0])
+    assert_match(/Route 22 path is still blocked/,
+      entry.pages[0].list[7].parameters[0])
     finish=city.events.values.find { |e| e.name.end_with?(":finish") }
     refute finish.pages[1].through
     assert finish.pages[2].through
-    assert_equal [236,209,209,210,355,0], entry.pages[0].list.map(&:code)
-    assert_equal [1,6,20], entry.pages[0].list.first.parameters
-    assert_equal [3,1,0], entry.pages[0].list[1].parameters[1].list.map(&:code)
-    assert_equal [2,1,0], entry.pages[0].list[2].parameters[1].list.map(&:code)
+    assert_equal [1,6,20], entry.pages[0].list[1].parameters
+    assert_equal [3,1,0], entry.pages[0].list[2].parameters[1].list.map(&:code)
+    assert_equal [2,1,0], entry.pages[0].list[3].parameters[1].list.map(&:code)
     assert_equal 101, entry.pages[1].condition.switch1_id
     rain=city.events.values.find { |e| e.name.end_with?(":rain") }
     assert_equal 4, rain.pages[1].trigger
@@ -325,5 +353,6 @@ class ViridianInstallerTest < Minitest::Test
     text=File.read(File.expand_path("../essentials/Plugins/Shattered Viridian/meta.txt",__dir__))
     assert_match(/\AName\s*=/,text)
     assert_match(/^Essentials\s*= 21\.1$/,text)
+    assert_match(/^Version\s*=\s*0\.1\.4$/,text)
   end
 end

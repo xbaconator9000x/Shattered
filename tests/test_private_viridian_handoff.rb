@@ -6,6 +6,10 @@ require 'digest'
 require_relative '../scripts/upgrade_private_viridian_handoff'
 require_relative '../essentials/Plugins/Shattered Viridian/001_Entry'
 
+module ShatteredRoute22
+  def self.cleared?; true; end
+end
+
 class PrivateViridianHandoffTest < Minitest::Test
   def setup
     @dir = Dir.mktmpdir

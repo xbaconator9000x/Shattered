@@ -147,19 +147,20 @@ module ShatteredPrivateViridianEscort
     old_events = city.events.transform_values { |e| Marshal.dump(e) }
 
     arrival.pages[0].list = [
-      cmd(355, ['ShatteredViridian.start!(993, 996)']),
-      cmd(236, [1, 6, 20]),
-      cmd(101, ['Guard: Stay with us. Nidoran will help us reach the Center safely.']),
-      cmd(209, [GUARD, move_route(GUARD_STEPS)]),
-      cmd(210),
-      cmd(209, [NIDORAN, move_route(NIDORAN_STEPS)]),
-      cmd(210),
-      cmd(111, [12, 'ShatteredViridian.complete_route!(25, 26, [24, 20], [23, 20], [25, 27], [24, 27], 993, 996)']),
-      cmd(355, ['ShatteredViridian.arrive!(994)'], 1),
-      cmd(101, ['Guard: The Center is just ahead. Get inside before the rain worsens.'], 1),
-      cmd(411),
-      cmd(101, ['Guard: The route is blocked. We will try again when the way clears.'], 1),
-      cmd(116, [], 1),
+      cmd(111, [12, 'ShatteredViridian.start!(993, 996)']),
+      cmd(236, [1, 6, 20], 1),
+      cmd(101, ['Guard: Stay with us. Nidoran will help us reach the Center safely.'], 1),
+      cmd(209, [GUARD, move_route(GUARD_STEPS)], 1),
+      cmd(210, [], 1),
+      cmd(209, [NIDORAN, move_route(NIDORAN_STEPS)], 1),
+      cmd(210, [], 1),
+      cmd(111, [12, 'ShatteredViridian.complete_route!(25, 26, [24, 20], [23, 20], [25, 27], [24, 27], 993, 996)'], 1),
+      cmd(355, ['ShatteredViridian.arrive!(994)'], 2),
+      cmd(101, ['Guard: The Center is just ahead. Get inside before the rain worsens.'], 2),
+      cmd(411, [], 1),
+      cmd(101, ['Guard: The route is blocked. We will try again when the way clears.'], 2),
+      cmd(116, [], 2),
+      cmd(412, [], 1),
       cmd(412),
       cmd(0)
     ]

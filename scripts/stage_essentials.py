@@ -5,6 +5,7 @@ Never modifies original. Doesn't compile plugin scripts or test Android runtime.
 """
 import argparse
 import binascii
+import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -191,35 +192,163 @@ def install_shattered_equipment(dest):
 
 
 def install_hns_gate(dest, gate_data, gate_image):
-    data = Path(gate_data)
-    image = Path(gate_image)
-    bundle = json.loads(data.read_text(encoding="utf-8"))
+    data = Path(os.path.abspath(gate_data))
+    image = Path(os.path.abspath(gate_image))
+    for path in (data, image):
+        if any(part.is_symlink() for part in (path, *path.parents)) or not path.is_file():
+            raise ValueError("HnS gate inputs must be regular files without symlinked paths")
+    data_bytes = data.read_bytes()
+    image_bytes = image.read_bytes()
+    bundle = json.loads(data_bytes.decode("utf-8"))
     if bundle.get("format") != "shattered-hns-rmxp-map" or bundle.get("format_version") != 1:
         raise ValueError("unsupported HnS reception gate bundle")
-    image_name = bundle.get("target", {}).get("tileset_image")
+    target_config = bundle.get("target")
+    if not isinstance(target_config, dict):
+        raise ValueError("invalid HnS gate target")
+    image_name = target_config.get("tileset_image")
     if not isinstance(image_name, str) or not re.fullmatch(r"[A-Za-z0-9_-]+\.png", image_name):
         raise ValueError("invalid HnS gate tileset image name")
-    image_bytes = image.read_bytes()
     width, height = png_dimensions(image_bytes)
     if width != 256 or height == 0 or height % 32:
         raise ValueError("HnS gate tileset PNG must be 256 pixels wide and a multiple of 32 high")
+    image_sha256 = hashlib.sha256(image_bytes).hexdigest()
+    if target_config.get("tileset_sha256") != image_sha256:
+        raise ValueError("HnS gate tileset image SHA-256 does not match bundle")
     plugin_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate" / "001_Import.rb"
     meta_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate" / "meta.txt"
     plugin_target = dest / "Plugins" / "Shattered HnS Gate"
     graphics_target = dest / "Graphics" / "Tilesets" / image_name
-    if plugin_target.exists() or graphics_target.exists():
+    if plugin_target.is_symlink() or (plugin_target.exists() and not plugin_target.is_dir()):
+        raise ValueError("HnS gate plugin destination is unsafe")
+    if plugin_target.exists():
+        for source in (plugin_source, meta_source):
+            target = plugin_target / source.name
+            if target.is_symlink() or not target.is_file() or target.read_bytes() != source.read_bytes():
+                raise ValueError("HnS gate plugin destination differs from reviewed source")
+    else:
+        plugin_target.mkdir(parents=True)
+        shutil.copyfile(plugin_source, plugin_target / "001_Import.rb")
+        shutil.copyfile(meta_source, plugin_target / "meta.txt")
+    bundle_target = plugin_target / "reception_gate.json"
+    if bundle_target.exists() or bundle_target.is_symlink() or \
+       graphics_target.exists() or graphics_target.is_symlink():
         raise ValueError("HnS gate import would overwrite existing project files")
-    plugin_target.mkdir(parents=True)
-    shutil.copyfile(plugin_source, plugin_target / "001_Import.rb")
-    shutil.copyfile(meta_source, plugin_target / "meta.txt")
-    shutil.copyfile(data, plugin_target / "reception_gate.json")
+    with bundle_target.open("xb") as target:
+        target.write(data_bytes)
     graphics_target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(image, graphics_target)
+    with graphics_target.open("xb") as target:
+        target.write(image_bytes)
     return {
         "plugin": str((plugin_target / "001_Import.rb").relative_to(dest)),
         "bundle": str((plugin_target / "reception_gate.json").relative_to(dest)),
         "tileset_image": str(graphics_target.relative_to(dest)),
+        "bundle_sha256": hashlib.sha256(data_bytes).hexdigest(),
+        "tileset_sha256": image_sha256,
         "native_map_generated": False,
+    }
+
+
+def install_hns_victory_road(dest, road_data, tileset_dir):
+    data = Path(os.path.abspath(road_data))
+    tileset_root = Path(os.path.abspath(tileset_dir))
+    if any(part.is_symlink() for part in (data, *data.parents)) or not data.is_file():
+        raise ValueError("HnS Victory Road bundle must be a regular file without symlinked paths")
+    if tileset_root.is_symlink() or not tileset_root.is_dir():
+        raise ValueError("HnS Victory Road tileset path must be a regular directory")
+    data_bytes = data.read_bytes()
+    bundle = json.loads(data_bytes.decode("utf-8"))
+    if bundle.get("format") != "shattered-hns-victory-road-rmxp-bundle" or \
+       bundle.get("format_version") != 1 or \
+       bundle.get("source_revision") != "167aa6d537b109bb229c231ddce4616974c4da71" or \
+       bundle.get("source_repository") != "PokemonHnS-Development/pokehns-expansion":
+        raise ValueError("unsupported HnS Victory Road bundle")
+    floors = bundle.get("floors")
+    expected_sources = [
+        "MAP_VICTORY_ROAD_KANTO_1F_HNS",
+        "MAP_VICTORY_ROAD_KANTO_B1F_HNS",
+        "MAP_VICTORY_ROAD_KANTO_B2F_HNS",
+    ]
+    if not isinstance(floors, list) or len(floors) != 3 or \
+       [floor.get("source_map_id") for floor in floors if isinstance(floor, dict)] != expected_sources:
+        raise ValueError("HnS Victory Road bundle must contain the three reviewed floors in order")
+    assets = []
+    map_ids = set()
+    image_names = set()
+    for floor in floors:
+        target = floor.get("target")
+        if not isinstance(target, dict):
+            raise ValueError("invalid HnS Victory Road floor target")
+        map_id = target.get("map_id")
+        template_id = target.get("tileset_template_id")
+        tileset_name = target.get("tileset_name")
+        image_name = target.get("tileset_image")
+        image_sha = target.get("tileset_sha256")
+        if type(map_id) is not int or map_id < 1 or map_id in map_ids or \
+           type(template_id) is not int or template_id < 1 or \
+           not isinstance(tileset_name, str) or not re.fullmatch(r"[A-Za-z0-9_-]+", tileset_name) or \
+           image_name != tileset_name + ".png" or \
+           not isinstance(image_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", image_sha):
+            raise ValueError("invalid or duplicate HnS Victory Road map/tileset target")
+        if image_name in image_names:
+            raise ValueError("duplicate HnS Victory Road tileset image name")
+        map_ids.add(map_id)
+        image_names.add(image_name)
+        image_path = tileset_root / image_name
+        if any(part.is_symlink() for part in (image_path, *image_path.parents)) or \
+           not image_path.is_file():
+            raise ValueError(f"missing or unsafe HnS Victory Road tileset: {image_name}")
+        image_bytes = image_path.read_bytes()
+        width, height = png_dimensions(image_bytes)
+        if width != 256 or height == 0 or height % 32:
+            raise ValueError(f"HnS Victory Road tileset must be XP-sized: {image_name}")
+        actual_sha = hashlib.sha256(image_bytes).hexdigest()
+        if actual_sha != image_sha:
+            raise ValueError(f"HnS Victory Road tileset SHA-256 mismatch: {image_name}")
+        assets.append((image_name, image_bytes, actual_sha))
+
+    gate_plugin_source = ROOT / "essentials" / "Plugins" / "Shattered HnS Gate"
+    gate_plugin_target = dest / "Plugins" / "Shattered HnS Gate"
+    bundle_target = gate_plugin_target / "victory_road.json"
+    graphics_root = dest / "Graphics" / "Tilesets"
+    if gate_plugin_target.is_symlink() or \
+       (gate_plugin_target.exists() and not gate_plugin_target.is_dir()):
+        raise ValueError("HnS Gate plugin destination is unsafe")
+    if gate_plugin_target.exists():
+        for source in (gate_plugin_source / "001_Import.rb", gate_plugin_source / "meta.txt"):
+            target = gate_plugin_target / source.name
+            if target.is_symlink() or not target.is_file() or target.read_bytes() != source.read_bytes():
+                raise ValueError("HnS Gate plugin destination differs from reviewed source")
+    else:
+        if not (gate_plugin_source / "001_Import.rb").is_file() or \
+           not (gate_plugin_source / "meta.txt").is_file():
+            raise ValueError("reviewed HnS Gate plugin source is missing")
+        gate_plugin_target.mkdir(parents=True)
+        shutil.copyfile(gate_plugin_source / "001_Import.rb", gate_plugin_target / "001_Import.rb")
+        shutil.copyfile(gate_plugin_source / "meta.txt", gate_plugin_target / "meta.txt")
+    if graphics_root.is_symlink() or (graphics_root.exists() and not graphics_root.is_dir()):
+        raise ValueError("HnS Victory Road tileset directory is unsafe")
+    destinations = [bundle_target] + [
+        graphics_root / name for name, _contents, _sha in assets
+    ]
+    if bundle_target.exists() or bundle_target.is_symlink() or any(
+        path.exists() or path.is_symlink() for path in destinations
+    ):
+        raise ValueError("HnS Victory Road import would overwrite existing project files")
+    graphics_root.mkdir(parents=True, exist_ok=True)
+    with bundle_target.open("xb") as target:
+        target.write(data_bytes)
+    for image_name, image_bytes, _actual_sha in assets:
+        with (graphics_root / image_name).open("xb") as target:
+            target.write(image_bytes)
+    return {
+        "bundle": str(bundle_target.relative_to(dest)),
+        "bundle_sha256": hashlib.sha256(data_bytes).hexdigest(),
+        "installer_source": str((ROOT / "scripts" / "install_hns_gate_victory_road.rb").relative_to(ROOT)),
+        "tilesets": {
+            name: {"sha256": actual_sha, "path": str((graphics_root / name).relative_to(dest))}
+            for name, _contents, actual_sha in assets
+        },
+        "native_maps_installed": False,
     }
 
 
@@ -296,7 +425,8 @@ def install_shattered_runtime_set(dest):
     }
 
 def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None,
-          include_equipment=False, include_runtime_set=False):
+          include_equipment=False, include_runtime_set=False, road_data=None,
+          road_tileset_dir=None):
     project = Path(project).absolute()
     reject_symlinked_project(project)
     project = project.resolve()
@@ -309,6 +439,8 @@ def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_im
         raise ValueError('output exists; choose a fresh staging directory')
     if (gate_data is None) != (gate_image is None):
         raise ValueError("HnS gate staging requires both --gate-data and --gate-tileset-image")
+    if (road_data is None) != (road_tileset_dir is None):
+        raise ValueError("HnS Victory Road staging requires both --road-data and --road-tileset-dir")
     known = plugins_by_id()
     requested = {}
     for item in archives:
@@ -355,6 +487,13 @@ def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_im
             report["caveats"].append(
                 "Run pbInstallShatteredHNSReceptionGate in Essentials to create native map data; "
                 "engine compilation and warp/collision playtest remain required")
+        if road_data is not None:
+            report["hns_victory_road"] = install_hns_victory_road(
+                target, road_data, road_tileset_dir
+            )
+            report["caveats"].append(
+                "Run the combined HnS world installer in Essentials to create native map data; "
+                "engine compilation and warp/collision playtest remain required")
         for key, archive in requested.items():
             report['plugin_archives'][key] = safe_zip_install(archive, target, key, overwrite)
         (target / 'SHATTERED_STAGING_REPORT.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -374,9 +513,12 @@ def main():
                    help='stage in-repo equipment adapter only after validating native item/move PBS IDs')
     p.add_argument('--gate-data', help='converted SE-013 reception gate JSON bundle')
     p.add_argument('--gate-tileset-image', help='rights-cleared 256px-wide XP tileset PNG')
+    p.add_argument('--road-data', help='converted HnS Victory Road JSON bundle')
+    p.add_argument('--road-tileset-dir', help='directory containing rights-cleared floor PNGs')
     a = p.parse_args()
     print(json.dumps(stage(a.project, a.output, a.archive, a.allow_overwrite,
-                           a.gate_data, a.gate_tileset_image, a.include_equipment, a.include_runtime_set), indent=2))
+                           a.gate_data, a.gate_tileset_image, a.include_equipment,
+                           a.include_runtime_set, a.road_data, a.road_tileset_dir), indent=2))
 
 
 if __name__ == '__main__':

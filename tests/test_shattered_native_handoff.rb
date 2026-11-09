@@ -153,7 +153,7 @@ class ShatteredNativeHandoffTest < Minitest::Test
     end
     story_scripts = {
       "collapse" => "ShatteredGateStory.run_collapse(#{@story['collapse_sounds'].inspect}, #{@story['final_roar_sound'].inspect})",
-      "aipom" => "ShatteredGateStory.run_aipom(#{@story['aipom_cry'].inspect})",
+      "aipom" => "ShatteredGateStory.run_aipom(#{@story['aipom_cry'].inspect}, get_character(0))",
       "johto_block" => "ShatteredGateStory.blocked_johto"
     }
     @story["positions"].each do |name, position|

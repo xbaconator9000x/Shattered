@@ -13,6 +13,11 @@ module ShatteredViridian
     map.need_refresh = true if map && map.respond_to?(:need_refresh=)
   end
 
+  def self.route22_cleared?
+    defined?(ShatteredRoute22) && ShatteredRoute22.respond_to?(:cleared?) &&
+      ShatteredRoute22.cleared?
+  end
+
   def self.valid_switch!(id)
     raise ArgumentError, "reserved switch ID required" unless id.instance_of?(Integer) && (1..9999).include?(id)
     raise "Game switches unavailable" unless defined?($game_switches) && $game_switches
@@ -37,6 +42,7 @@ module ShatteredViridian
     valid_switch!(rain_switch)
     raise ArgumentError, "duplicate Viridian switch IDs" if started_switch == rain_switch
     value = state
+    return false unless route22_cleared?
     first = !value[:started]
     new_rain = !value[:center]
     changed = first || $game_switches[started_switch] != true ||
@@ -51,6 +57,7 @@ module ShatteredViridian
   def self.arrive!(arrived_switch)
     valid_switch!(arrived_switch)
     value = state
+    return false unless route22_cleared?
     return false unless value[:started]
     first = !value[:arrived]
     changed = first || $game_switches[arrived_switch] != true
@@ -65,6 +72,7 @@ module ShatteredViridian
     valid_switch!(rain_switch)
     raise ArgumentError, "duplicate Viridian switch IDs" if center_switch == rain_switch
     value = state
+    return false unless route22_cleared?
     # Do not grant shelter/raid access until the guard and Nidoran actually
     # reach the Center. The native first-visit event is gated on arrival 994.
     return false unless value[:started] && value[:arrived]
@@ -85,6 +93,10 @@ module ShatteredViridian
     ids.each { |id| valid_switch!(id) }
     raise ArgumentError, "switch IDs must be distinct" unless ids.uniq.length == 4
     value = state
+    unless route22_cleared?
+      ids.each { |id| $game_switches[id] = false }
+      return false
+    end
     $game_switches[switches[:started]] = value[:started]
     $game_switches[switches[:arrived]] = value[:arrived]
     $game_switches[switches[:center]] = value[:center]
@@ -117,6 +129,9 @@ module ShatteredViridian
                            guard_end, nidoran_end, started_switch, rain_switch)
     valid_switch!(started_switch)
     valid_switch!(rain_switch)
+    return false unless defined?($PokemonGlobal) && $PokemonGlobal
+    state
+    return false unless route22_cleared?
     return false unless defined?($game_map) && $game_map &&
       $game_map.respond_to?(:events)
     guard = $game_map.events[guard_id]

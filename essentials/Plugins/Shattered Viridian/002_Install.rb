@@ -119,8 +119,8 @@ module ShatteredViridian
     config
   end
 
-  def self.command(code, params = [])
-    RPG::EventCommand.new(code, 0, params)
+  def self.command(code, params = [], indent = 0)
+    RPG::EventCommand.new(code, indent, params)
   end
 
   def self.page(condition_switch = nil, trigger = 0)
@@ -177,11 +177,15 @@ module ShatteredViridian
     entry.trigger = 2 # player touch
     entry.through = false # RMXP player-touch event must have collision
     entry.list = [
-      command(236, [1, 6, 20]), # RMXP rain, power 6, 20 frames
-      command(209, [guard_id, move_route(config["guard_path"])]),
-      command(209, [nidoran_id, move_route(config["nidoran_path"])]),
-      command(210), # wait for movement; only then persist escort start
-      command(355, ["ShatteredViridian.complete_route!(#{guard_id}, #{nidoran_id}, #{config['guard_path'].first.inspect}, #{config['nidoran_path'].first.inspect}, #{config['guard_path'].last.inspect}, #{config['nidoran_path'].last.inspect}, #{started}, #{rain})"]),
+      command(111, [12, "ShatteredViridian.route22_cleared?"]),
+      command(236, [1, 6, 20], 1), # RMXP rain, power 6, 20 frames
+      command(209, [guard_id, move_route(config["guard_path"])], 1),
+      command(209, [nidoran_id, move_route(config["nidoran_path"])], 1),
+      command(210, [], 1), # wait for movement; only then persist escort start
+      command(355, ["ShatteredViridian.complete_route!(#{guard_id}, #{nidoran_id}, #{config['guard_path'].first.inspect}, #{config['nidoran_path'].first.inspect}, #{config['guard_path'].last.inspect}, #{config['nidoran_path'].last.inspect}, #{started}, #{rain})"], 1),
+      command(411),
+      command(101, ["The Route 22 path is still blocked."], 1),
+      command(412),
       command(0)
     ]
     entry_done = page(started, 2)

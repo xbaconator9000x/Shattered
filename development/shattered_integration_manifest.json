@@ -23,10 +23,10 @@
   },
   "main": {
     "ref": "main",
-    "commit": "0ee6e7e709d4a4ed1f7c50e90fbeb5389e9f1e72"
+    "commit": "a14d347207fd833ba12471adf742360a0a3b6d77"
   },
   "inspected_main": {
-    "commit": "0ee6e7e709d4a4ed1f7c50e90fbeb5389e9f1e72",
+    "commit": "a14d347207fd833ba12471adf742360a0a3b6d77",
     "merged_feature_prs": [
       6,
       10,
@@ -259,6 +259,11 @@
     {
       "pr": 10,
       "path": "scripts/convert_hns_reception_gate.py",
+      "stage": false
+    },
+    {
+      "pr": 10,
+      "path": "scripts/resolve_hns_gate_warps.py",
       "stage": false
     },
     {
@@ -506,6 +511,9 @@
     },
     {
       "pr": 10,
+      "support_from_main": [
+        "development/hns_source_asset_pins.json"
+      ],
       "commands": [
         [
           "python3",
@@ -526,6 +534,9 @@
     },
     {
       "pr": 11,
+      "support_from_main": [
+        "development/plugin_manifest.json"
+      ],
       "commands": [
         [
           "ruby",
