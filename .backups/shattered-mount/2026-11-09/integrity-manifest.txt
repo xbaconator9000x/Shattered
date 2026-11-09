@@ -1,0 +1,21 @@
+Shattered Crystal mounts source snapshot — 2026-11-09
+
+ChatGPT Library archive source files
+
+Shattered_All_Three_Mounts_Experimental_Release.zip
+size: 15365435 bytes
+sha256: 7c1724aaefb046a75c0a9920bd0210a9039fed944f64e7dee3156b418dbf665d
+contains: experimental ROM, reproducible selector patch, release notes
+
+Shattered_v039_DPE9_Crystal_Regional_Integration.zip
+size: 6179180 bytes
+sha256: 40b9c1ab0a21e4c02c8daaa984563057a4256baab868a2979aea4aef1cdd209f
+contains: v0.39/DPE9 overlay, source definitions, Crystal and regional assets
+
+GitHub-source contents in this snapshot
+- enable_crystal_profiles.py
+- dpe9-overlay/include/shattered_species.h
+- dpe9-overlay/src/shattered_crystal_data.h
+- dpe9-overlay/src/mount_profiles.h
+
+Restore guidance: use the hashes above to verify the Library archives before extracting. Apply the DPE9 overlay to the modern v0.39 source base; use enable_crystal_profiles.py only with the matching xx1.06 experimental Onix/Bullgrum/Crystal-assets ROM.
