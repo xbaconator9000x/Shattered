@@ -113,6 +113,7 @@ jobs:
             tests/test_route22.rb \
             tests/test_murkrow_rescue.rb \
             tests/test_shattered_native_handoff.rb \
+            tests/test_private_opening_synthetic_project.rb \
             tests/test_shattered_raid.rb \
             tests/test_raid_core_integration.rb \
             tests/test_private_opening_convergence.rb; do

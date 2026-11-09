@@ -757,7 +757,7 @@ module ShatteredInitialSlice
         sounds = config["collapse_sounds"][0, ShatteredGateStory::MAX_IMPACTS]
         "ShatteredGateStory.run_collapse(#{sounds.inspect}, #{config['final_roar_sound'].inspect})"
       else
-        "ShatteredGateStory.run_aipom(#{config['aipom_cry'].inspect})"
+        "ShatteredGateStory.run_aipom(#{config['aipom_cry'].inspect}, get_character(0))"
       end
       validate_story_event!(gate_map, config, name, script,
         name == "aipom" ? 0 : 1,
