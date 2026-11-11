@@ -18,7 +18,7 @@ from stage_essentials import ROOT, stage
 from prepare_linux_map_aliases import prepare as prepare_linux_aliases
 
 RUNTIME_NAMES = (
-    "Shattered Core", "Shattered Dojo", "Shattered Equipment",
+    "Shattered Companion", "Shattered Core", "Shattered Dojo", "Shattered Equipment",
     "Shattered Gate Story", "Shattered HnS Gate", "Shattered Murkrow Rescue",
     "Shattered Raid", "Shattered Route22", "Shattered Viridian",
     "Shattered World Links",
