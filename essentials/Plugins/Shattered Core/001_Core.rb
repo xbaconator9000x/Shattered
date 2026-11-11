@@ -311,6 +311,8 @@ module Shattered
       raise ArgumentError, "cannot recruit a HUMAN" if species == HUMAN_SPECIES
       existing = party.find { |pkmn| pkmn.respond_to?(:species) && pkmn.species == species }
       return existing if existing
+      raise ArgumentError, "party exceeds six members" if party.length > 6
+      raise ArgumentError, "party full; unable to add companion" if party.length >= 6
       # Shattered's early-game party is the player-character HUMAN plus one
       # active Pokémon partner. Do not silently turn that into a normal six
       # Pokémon party: the field follower, indoor hiding and automatic mount
@@ -319,8 +321,6 @@ module Shattered
       if party.any? { |pkmn| pkmn.respond_to?(:species) && !human?(pkmn) }
         raise PartnerCapacityError, "HUMAN can travel with only one Pokémon partner"
       end
-      raise ArgumentError, "party exceeds six members" if party.length > 6
-      raise ArgumentError, "party full; unable to add companion" if party.length >= 6
       raise ArgumentError, "Pokemon class unavailable" unless defined?(Pokemon)
       friend = Pokemon.new(species, level)
       party << friend
