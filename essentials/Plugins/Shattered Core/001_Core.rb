@@ -5,6 +5,7 @@ module Shattered
   HUMAN_SPECIES = :HUMAN
   STRUGGLE = :STRUGGLE
   class HumanPartyFullError < ArgumentError; end
+  class PartnerCapacityError < ArgumentError; end
   BASE_STAMINA = 60
   STAMINA_PER_10_LEVELS = 5
   STAMINA_CAP = 100
@@ -310,6 +311,14 @@ module Shattered
       raise ArgumentError, "cannot recruit a HUMAN" if species == HUMAN_SPECIES
       existing = party.find { |pkmn| pkmn.respond_to?(:species) && pkmn.species == species }
       return existing if existing
+      # Shattered's early-game party is the player-character HUMAN plus one
+      # active Pokémon partner. Do not silently turn that into a normal six
+      # Pokémon party: the field follower, indoor hiding and automatic mount
+      # rules all rely on an unambiguous partner identity. Future story swaps
+      # must explicitly remove/replace the current partner at a safe location.
+      if party.any? { |pkmn| pkmn.respond_to?(:species) && !human?(pkmn) }
+        raise PartnerCapacityError, "HUMAN can travel with only one Pokémon partner"
+      end
       raise ArgumentError, "party exceeds six members" if party.length > 6
       raise ArgumentError, "party full; unable to add companion" if party.length >= 6
       raise ArgumentError, "Pokemon class unavailable" unless defined?(Pokemon)
@@ -329,3 +338,4 @@ if defined?(EventHandlers)
   EventHandlers.add(:on_start_battle, :shattered_core_battle_hooks,
     proc { |*args| Shattered.install_battle_hooks })
 end
+
