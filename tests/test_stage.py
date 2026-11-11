@@ -50,7 +50,8 @@ class StagingTest(unittest.TestCase):
     def test_full_runtime_set_stages_all_reviewed_modules_without_modifying_source(self):
         out = self.root / 'staged'
         report = stage(self.project, out, include_runtime_set=True)
-        self.assertEqual(9, len(report['runtime_set']['staged']))
+        self.assertEqual(10, len(report['runtime_set']['staged']))
+        self.assertIn('Shattered Companion', report['runtime_set']['staged'])
         self.assertFalse(report['runtime_set']['native_compiled'])
         self.assertFalse(report['runtime_set']['gameplay_verified'])
         for name in report['runtime_set']['staged']:
