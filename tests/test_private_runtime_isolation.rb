@@ -125,7 +125,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
     end
   end
 
-  def test_actual_eight_repository_runtime_plugins_can_be_isolated
+  def test_all_declared_repository_runtime_plugins_can_be_isolated
     with_stage do |root|
       source_root = File.expand_path("../essentials/Plugins", __dir__)
       names = (COMPILER::RUNTIME_FILES.keys + COMPILER::INSTALLER_FILES.keys).uniq
@@ -134,7 +134,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
       end
       COMPILER.compile(root, names)
       receipt = ISOLATION.finalize(root)
-      assert_equal 8, receipt.fetch("runtime_plugin_names").length
+      assert_equal COMPILER::RUNTIME_FILES.length, receipt.fetch("runtime_plugin_names").length
       assert_equal 2, names.count { |name| !COMPILER::RUNTIME_FILES.key?(name) }
       assert_equal receipt, ISOLATION.finalize(root)
       Dir.glob(File.join(root, "Plugins/Shattered *", "**", "*.rb")).each do |path|
