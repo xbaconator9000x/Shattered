@@ -15,10 +15,10 @@ module ShatteredPrivatePluginCompiler
   # Never include a new .rb file silently: update this inventory and tests first.
   RUNTIME_FILES = {
     "Shattered Companion" => %w[001_Companion.rb],
-    "Shattered Core" => %w[001_Core.rb],
+    "Shattered Core" => %w[000_MapContract.rb 001_Core.rb],
     "Shattered Dojo" => %w[001_Starter.rb],
     "Shattered Equipment" => %w[001_Equipment.rb],
-    "Shattered Gate Story" => %w[001_GateStory.rb],
+    "Shattered Gate Story" => %w[001_GateStory.rb 002_Opening.rb],
     "Shattered Murkrow Rescue" => %w[001_Quest.rb],
     "Shattered Raid" => %w[001_Raid.rb],
     "Shattered Route22" => %w[001_Route22.rb],
