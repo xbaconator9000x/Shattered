@@ -43,13 +43,14 @@ class PrivatePluginCompilerTest < Minitest::Test
     with_stage do |root|
       add_staged_plugin(root, "Shattered Gate Story", {
         "001_GateStory.rb" => "module GateRuntime; end\n",
+        "002_Opening.rb" => "module OpeningRuntime; end\n",
         "002_Install.rb" => "require 'json'\nraise 'offline installer executed'\n"
       })
       report = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Gate Story"])
       assert_equal ["Shattered Gate Story"], report["added"]
       entries = Marshal.load(File.binread(File.join(root, "Data/PluginScripts.rxdata")))
-      assert_equal ["001_GateStory.rb"], entries.last[2].map(&:first)
-      refute_includes Zlib::Inflate.inflate(entries.last[2].first.last), "offline installer"
+      assert_equal ["001_GateStory.rb", "002_Opening.rb"], entries.last[2].map(&:first)
+      refute_includes entries.last[2].map { |item| Zlib::Inflate.inflate(item.last) }.join, "offline installer"
     end
   end
 
