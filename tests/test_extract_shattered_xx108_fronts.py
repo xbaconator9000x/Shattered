@@ -17,6 +17,9 @@ class ShatteredXX108FrontExtractorTests(unittest.TestCase):
 
     def test_front_decoder_preserves_palette_zero_as_transparent(self):
         palette = bytearray(32)
+        # GBA OBJ transparency is palette *index* zero, even when that entry
+        # contains a non-black RGB colour (as in the real Shattered fronts).
+        palette[0:2] = (0x7C00).to_bytes(2, "little")
         palette[2:4] = (31).to_bytes(2, "little")
         tiles = bytes([0x10]) + bytes(mod.FRONT_BYTES - 1)
         image = mod.decode_front(tiles, bytes(palette))
