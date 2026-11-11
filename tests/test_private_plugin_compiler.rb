@@ -128,7 +128,8 @@ class PrivatePluginCompilerTest < Minitest::Test
       assert_equal ["Shattered HnS Gate", "Shattered World Links"].sort,
         report["offline_only"].sort
       entries = Marshal.load(File.binread(File.join(root, "Data/PluginScripts.rxdata")))
-      assert_equal 9, entries.length # existing Hotfixes + eight Shattered runtime plugins
+      assert_equal 1 + ShatteredPrivatePluginCompiler::RUNTIME_FILES.length, entries.length
+      # Existing Hotfixes plus every explicitly declared Shattered runtime plugin.
       entries.drop(1).each do |name, _metadata, scripts|
         assert_equal ShatteredPrivatePluginCompiler::RUNTIME_FILES.fetch(name),
           scripts.map(&:first)
@@ -155,7 +156,7 @@ class PrivatePluginCompilerTest < Minitest::Test
         end
       end
       _child, status = Process.waitpid2(pid)
-      assert status.success?, "All eight source plugins must load without installer dependencies"
+      assert status.success?, "All declared source plugins must load without installer dependencies"
     end
   end
 
