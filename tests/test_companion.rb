@@ -27,6 +27,10 @@ class TestMap
   def initialize(map_id)
     @map_id = map_id
   end
+
+  def events
+    @events ||= {}
+  end
 end
 
 MapMetadataRecord = Struct.new(:outdoor_map)
@@ -51,6 +55,59 @@ module Shattered
 end
 
 load File.expand_path("../essentials/Plugins/Shattered Companion/001_Companion.rb", __dir__)
+
+# Minimal contract of Essentials' native follower API. This is intentionally
+# not a sprite mock: it proves the plugin asks the factory to own the event.
+module RPG
+  class Event
+    Page = Struct.new(:through, :graphic)
+    Graphic = Struct.new(:character_name)
+
+    attr_accessor :id, :name
+    attr_reader :pages
+
+    def initialize(_x, _y)
+      @pages = [Page.new(false, Graphic.new(nil))]
+    end
+  end
+end
+
+class Game_Event
+  attr_reader :character_name, :source
+
+  def initialize(_map_id, source, _map)
+    @source = source
+    @character_name = source.pages[0].graphic.character_name
+  end
+end
+
+class RuntimeFollowers
+  def initialize
+    @followers = {}
+  end
+
+  def add_follower(event, name = nil, _common_event_id = nil)
+    @followers[name] = event
+  end
+
+  def get_follower_by_name(name)
+    @followers[name]
+  end
+
+  def remove_follower_by_name(name)
+    @followers.delete(name)
+  end
+end
+
+class RuntimeTemp
+  attr_reader :followers
+
+  def initialize
+    @followers = RuntimeFollowers.new
+  end
+end
+
+RuntimeAvatar = Struct.new(:x, :y)
 
 class ShatteredCompanionTest < Minitest::Test
   def test_first_non_human_partner_is_party_order_safe
@@ -92,5 +149,27 @@ class ShatteredCompanionTest < Minitest::Test
     player = TestPlayer.new(Pokemon.new(:HUMAN), Pokemon.new(:VULPIX), Pokemon.new(:STARYU))
     refute ShatteredCompanion.valid_party?(player)
     assert_equal :VULPIX, ShatteredCompanion.partner(player).species
+  end
+
+  def test_native_follower_factory_receives_real_companion_event_only_with_sheet
+    old_temp, old_player = $game_temp, $game_player
+    $game_temp = RuntimeTemp.new
+    $game_player = RuntimeAvatar.new(8, 9)
+    map = TestMap.new(1)
+    player = TestPlayer.new(Pokemon.new(:HUMAN), Pokemon.new(:VULPIX))
+
+    ShatteredCompanion.stub(:character_sheet_exists?, true) do
+      assert_equal :following, ShatteredCompanion.reconcile_runtime(map, player)
+    end
+    follower = $game_temp.followers.get_follower_by_name(ShatteredCompanion::FOLLOWER_NAME)
+    refute_nil follower
+    assert_equal "POKEMON_Vulpix", follower.character_name
+    assert follower.source.pages[0].through
+
+    player.party[1] = Pokemon.new(:STARYU)
+    assert_equal :following, ShatteredCompanion.reconcile_runtime(map, player)
+    assert_nil $game_temp.followers.get_follower_by_name(ShatteredCompanion::FOLLOWER_NAME)
+  ensure
+    $game_temp, $game_player = old_temp, old_player
   end
 end
