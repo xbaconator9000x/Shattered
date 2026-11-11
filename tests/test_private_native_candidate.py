@@ -48,7 +48,7 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         dest = self.root / "candidate"
         receipt = build(self.base, dest, requested_sha=self.requested_sha, linux_aliases=True)
         self.assertEqual(9, len(receipt["runtime_plugins"]))
-            self.assertIn("Shattered Companion", receipt["runtime_plugins"])
+        self.assertIn("Shattered Companion", receipt["runtime_plugins"])
         self.assertGreaterEqual(receipt["offline_installers_isolated"], 7)
         self.assertEqual(1, receipt["linux_map_alias_count"])
         self.assertFalse(receipt["native_engine_launched"])
