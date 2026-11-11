@@ -68,9 +68,7 @@ def lz77(data: bytes, offset: int) -> bytes:
 
 
 def gba_colour(value: int) -> tuple[int, int, int, int]:
-    return tuple(((value >> shift) & 31) * 255 // 31 for shift in (0, 5, 10)) + (
-        0 if value == 0 else 255,
-    )
+    return tuple(((value >> shift) & 31) * 255 // 31 for shift in (0, 5, 10)) + (255,)
 
 
 def decode_front(tiles: bytes, palette: bytes) -> Image.Image:
@@ -87,7 +85,7 @@ def decode_front(tiles: bytes, palette: bytes) -> Image.Image:
             for x in range(8):
                 packed = tiles[base + y * 4 + x // 2]
                 index = packed & 0x0F if x % 2 == 0 else packed >> 4
-                pixels[x0 + x, y0 + y] = colours[index]
+                pixels[x0 + x, y0 + y] = (0, 0, 0, 0) if index == 0 else colours[index]
     return image
 
 
