@@ -47,6 +47,8 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Equipment/001_Equipment.rb'
           ruby tests/test_equipment.rb
           ruby tests/test_equipment_core_integration.rb
+          ruby -c 'essentials/Plugins/Shattered Companion/001_Companion.rb'
+          ruby tests/test_companion.rb
       - name: Private native RMXP inventory regression (synthetic fixtures only)
         run: |
           ruby -c scripts/audit_native_project.rb
