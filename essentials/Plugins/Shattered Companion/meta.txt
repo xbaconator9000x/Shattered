@@ -1,0 +1,4 @@
+Name       = Shattered Companion
+Version    = 0.1
+Link       =
+Credits    = Shattered project
