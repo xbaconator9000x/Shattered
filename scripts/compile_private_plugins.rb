@@ -14,6 +14,7 @@ module ShatteredPrivatePluginCompiler
   # depend on CRuby stdlib (json/digest), which mkxp-z may not provide.
   # Never include a new .rb file silently: update this inventory and tests first.
   RUNTIME_FILES = {
+    "Shattered Companion" => %w[001_Companion.rb],
     "Shattered Core" => %w[001_Core.rb],
     "Shattered Dojo" => %w[001_Starter.rb],
     "Shattered Equipment" => %w[001_Equipment.rb],
