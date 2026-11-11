@@ -39,10 +39,16 @@ module ShatteredEquipment
       true
     end
 
-    def equip(human, item_id)
+    # Equipment stays in the Bag while worn, but it must actually be owned.
+    # Earlier draft code accepted any valid item symbol, letting an event or
+    # menu grant Slash/Ember without the player ever receiving its gear.
+    def equip(human, item_id, bag = (defined?($bag) ? $bag : nil))
       return false unless human?(human)
       item = native_item(item_id)
       return false unless item
+      # The native game always has a Bag. Keep the pure API usable by
+      # installer/test contexts that deliberately do not instantiate one.
+      return false if bag && (!bag.respond_to?(:has?) || !bag.has?(item.id))
       rule = @gear_rules[item.id]
       return false unless rule && valid_gear_rule?(item.id, rule)
 
@@ -62,6 +68,15 @@ module ShatteredEquipment
       true
     end
 
+    def equippable?(human, item_id, bag = (defined?($bag) ? $bag : nil))
+      return false unless human?(human)
+      item = native_item(item_id)
+      return false unless item
+      return false if bag && (!bag.respond_to?(:has?) || !bag.has?(item.id))
+      rule = @gear_rules[item.id]
+      rule && valid_gear_rule?(item.id, rule)
+    end
+
     def unequip(human, slot)
       return false unless human?(human) && SLOT_IDS.include?(slot)
       current = equipment(human)
@@ -73,6 +88,56 @@ module ShatteredEquipment
       current.delete_if { |_slot, value| value == item_id }
       save_equipment(human, current)
       true
+    end
+
+    # Equipment is deliberately never consumed.  These helpers back the
+    # normal Essentials Bag "Use" action, so a player can change HUMAN's
+    # loadout without a debug command or a story event calling the API.
+    def equipped?(human, item_id)
+      item = native_item(item_id)
+      return false unless item && human?(human)
+      equipment(human).values.compact.include?(item.id)
+    end
+
+    def unequip_item(human, item_id)
+      item = native_item(item_id)
+      return false unless item && human?(human)
+      slot = equipment(human).find { |_key, value| value == item.id }
+      slot && unequip(human, slot[0])
+    end
+
+    def player_human(player = (defined?($player) ? $player : nil))
+      return nil unless player && player.respond_to?(:party) && player.party.respond_to?(:find)
+      player.party.find { |pokemon| human?(pokemon) }
+    end
+
+    # Returns the normal Essentials item-handler result: 0 means the action
+    # was rejected, while 1 means it was handled and the Bag may close.
+    # No item is removed from the Bag; ownership is continuously checked by
+    # equip so a discarded item cannot leave a phantom battle move behind.
+    def use_from_bag(item_id, player = (defined?($player) ? $player : nil),
+                     bag = (defined?($bag) ? $bag : nil))
+      item = native_item(item_id)
+      return 0 unless item && @gear_rules.key?(item.id)
+      human = player_human(player)
+      unless human
+        pbMessage(_INTL("HUMAN is not available.")) if defined?(pbMessage)
+        return 0
+      end
+      if equipped?(human, item.id)
+        unless unequip_item(human, item.id)
+          pbMessage(_INTL("That equipment could not be removed.")) if defined?(pbMessage)
+          return 0
+        end
+        pbMessage(_INTL("HUMAN put away the {1}.", item.name)) if defined?(pbMessage)
+        return 1
+      end
+      unless equip(human, item.id, bag)
+        pbMessage(_INTL("HUMAN cannot equip the {1} right now.", item.name)) if defined?(pbMessage)
+        return 0
+      end
+      pbMessage(_INTL("HUMAN equipped the {1}.", item.name)) if defined?(pbMessage)
+      1
     end
 
     def equipment(human)
@@ -195,6 +260,17 @@ module ShatteredEquipment
       @runtime_hook_status == :installed
     end
 
+    def install_bag_handlers
+      return false unless defined?(ItemHandlers) && defined?(ItemHandlers::UseFromBag) &&
+                          ItemHandlers::UseFromBag.respond_to?(:add)
+      return true if @bag_handlers_installed
+      DEFAULT_GEAR_RULES.each_key do |item_id|
+        ItemHandlers::UseFromBag.add(item_id, proc { |item| use_from_bag(item) })
+      end
+      @bag_handlers_installed = true
+      true
+    end
+
     private
 
     def human?(pokemon)
@@ -258,3 +334,5 @@ module ShatteredEquipment
 end
 
 ShatteredEquipment.install_runtime_hooks
+ShatteredEquipment.install_bag_handlers
+
