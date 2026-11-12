@@ -8,6 +8,7 @@ import subprocess
 import tempfile
 
 from extract_shattered_field_sprites import export
+from extract_shattered_viridian_dialogue import extract as extract_dialogue
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,6 +21,8 @@ def upgrade(candidate, rom, output, ruby="ruby"):
     with tempfile.TemporaryDirectory(prefix="shattered-rom-guard-") as temporary:
         extracted = Path(temporary) / "guard"
         export(rom, extracted)  # Validate source ROM before copying the project.
+        dialogue = Path(temporary) / 'viridian_dialogue.json'
+        extract_dialogue(rom, dialogue)
         def run(script, *args):
             result = subprocess.run([ruby, str(ROOT / "scripts" / script), *map(str, args)],
                                     check=True, capture_output=True, text=True, timeout=180)
@@ -28,11 +31,12 @@ def upgrade(candidate, rom, output, ruby="ruby"):
             runtime = run("upgrade_private_hns_candidate.rb", "--candidate", candidate,
                           "--output", output, "--source", ROOT)
             guard = run("install_private_rom_guard.rb", output, extracted)
+            chapter = run('install_private_viridian_chapter.rb', output, dialogue)
             syntax = run("audit_native_script_syntax.rb", "--project", output)
             if not syntax["syntax_pass"]:
                 raise ValueError("rebuilt native script archive failed syntax preflight")
             report = {"kind": "private_rom_guard_candidate_upgrade",
-                      "runtime_upgrade": runtime, "rom_guard": guard,
+                      "runtime_upgrade": runtime, "rom_guard": guard, "viridian_chapter": chapter,
                       "syntax_audit": syntax, "native_gameplay_verified": False}
             (output / "SHATTERED_ROM_CANDIDATE_REPORT.json").write_text(
                 json.dumps(report, indent=2) + "\n")
