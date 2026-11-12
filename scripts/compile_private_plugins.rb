@@ -16,6 +16,7 @@ module ShatteredPrivatePluginCompiler
   RUNTIME_FILES = {
     "Shattered Companion" => %w[001_Companion.rb],
     "Shattered Core" => %w[001_Core.rb],
+    "Shattered Gameplay" => %w[001_Gameplay.rb],
     "Shattered Dojo" => %w[001_Starter.rb],
     "Shattered Equipment" => %w[001_Equipment.rb],
     "Shattered Gate Story" => %w[001_GateStory.rb 002_Opening.rb],
@@ -242,3 +243,4 @@ if $PROGRAM_NAME == __FILE__
   puts JSON.pretty_generate(ShatteredPrivatePluginCompiler.compile(options[:project], options[:plugins],
     replace_pins: options[:replace_pins]))
 end
+

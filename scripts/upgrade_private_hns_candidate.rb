@@ -53,6 +53,7 @@ module ShatteredPrivateHnsUpgrade
       source = File.join(source_root, "essentials", "Plugins", name)
       target = File.join(plugins, name)
       check(File.directory?(source) && !File.symlink?(source), "Missing source plugin: #{name}")
+      FileUtils.mkdir_p(target) unless File.exist?(target)
       check(File.directory?(target) && !File.symlink?(target), "Missing candidate plugin: #{name}")
       allowed = (files + ["meta.txt"]).sort
       legacy = LEGACY_RUNTIME_FILES.fetch(name, {})
@@ -182,3 +183,4 @@ if $PROGRAM_NAME == __FILE__
     options[:candidate], options[:output], options[:source]
   ))
 end
+
