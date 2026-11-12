@@ -35,6 +35,15 @@ class PrivateHnsUpgradeTest < Minitest::Test
       ShatteredPrivatePluginCompiler::RUNTIME_FILES.each_key do |name|
         FileUtils.cp_r(File.join(source, "essentials", "Plugins", name),
                        File.join(input, "Plugins", name))
+        # Model the real finalized private candidate: offline installers do not
+        # live under Plugins, where Essentials would compile them at startup.
+        installers = ShatteredPrivatePluginCompiler::INSTALLER_FILES.fetch(name, [])
+        next if installers.empty?
+        offline = File.join(input, "SHATTERED_OFFLINE_TOOLS", name)
+        FileUtils.mkdir_p(offline)
+        installers.each do |file|
+          FileUtils.mv(File.join(input, "Plugins", name, file), File.join(offline, file))
+        end
       end
       File.binwrite(File.join(input, "Plugins", "Shattered Core", "000_MapContract.rb"),
                     REVIEWED_LEGACY_MAP_CONTRACT)
