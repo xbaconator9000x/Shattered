@@ -25,6 +25,14 @@ module ShatteredPrivateHnsUpgrade
     "Route28_hns" => 227
   }.freeze
   STORY_MAP_IDS = [16, 10, 11].freeze
+  # v14 staged the shared map identity as a loose Core script. The current
+  # compiled Gate Story runtime owns that identity; accept only this exact
+  # reviewed bridge and remove it before rebuilding the archive.
+  LEGACY_RUNTIME_FILES = {
+    "Shattered Core" => {
+      "000_MapContract.rb" => "5ca669abe5460a3dde37ac898c083477c514a4cc80bee0e611d017ffacd5a8d2"
+    }
+  }.freeze
 
   def check(condition, message)
     raise RuntimeError, message unless condition
@@ -47,9 +55,17 @@ module ShatteredPrivateHnsUpgrade
       check(File.directory?(source) && !File.symlink?(source), "Missing source plugin: #{name}")
       check(File.directory?(target) && !File.symlink?(target), "Missing candidate plugin: #{name}")
       allowed = (files + ["meta.txt"]).sort
+      legacy = LEGACY_RUNTIME_FILES.fetch(name, {})
       current = Dir.children(target).select { |file| file.end_with?(".rb") || file == "meta.txt" }.sort
-      check(current.all? { |file| allowed.include?(file) },
+      check(current.all? { |file| allowed.include?(file) || legacy.key?(file) },
         "Candidate contains unreviewed runtime file in #{name}")
+      legacy.each do |file, expected_sha|
+        legacy_path = File.join(target, file)
+        next unless File.exist?(legacy_path)
+        check(digest(legacy_path) == expected_sha,
+          "Candidate legacy runtime source differs from reviewed migration: #{name}/#{file}")
+        File.delete(legacy_path)
+      end
       allowed.each do |file|
         from = File.join(source, file)
         check(File.file?(from) && !File.symlink?(from), "Missing reviewed source: #{name}/#{file}")
