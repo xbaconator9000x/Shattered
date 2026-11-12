@@ -12,6 +12,7 @@ module ShatteredPrivateViridianChapter
            '27de759ce54ca8700766d00b474094e9edc04ccdbf3b889c9bc25eb4d8f157bf'],
     11 => ['c36da3ea1c8c40db30a3c13412b3e72273b8aa8f0f203d09ced41667a2fe2cbf'],
     12 => ['d7ddfc5e3dd62bbbc4cb37b79b4441741968cf13932d1942c725ee53c699467f'],
+    15 => ['b29055183f8cfab44986d9827ee32ee2dc81b19845b41c2db285fcdbd7c4b2b9'],
     24 => ['de5e8c8043c4005a325b62df56842c420feda8be18eccf2de2adc401c1fd0dc9']
   }.freeze
   SUPPLIES = {
@@ -40,12 +41,17 @@ module ShatteredPrivateViridianChapter
     event
   end
 
-  def install!(root, dialogue_path)
+  def install!(root, dialogue_path, training_path)
     root = File.realpath(root)
     raise 'Private staging marker required' unless File.file?(File.join(root, 'SHATTERED_STAGING_REPORT.json'))
     recovered = JSON.parse(File.read(dialogue_path))
     raise 'Dialogue is from another ROM' unless recovered['rom_sha256'] == ROM_SHA
     dialogue = recovered.fetch('dialogue')
+    training = JSON.parse(File.read(training_path))
+    raise 'Invalid recovered training curriculum' unless training['rom_sha256'] == ROM_SHA &&
+      training.fetch('classes').length == 171 &&
+      training['classes'].sum { |entry| entry.fetch('moves').length } == 5850 &&
+      training.fetch('lesson').is_a?(Array) && !training['lesson'].empty?
     required = %w[hana morning tour council request accepted reminder thanks]
     raise 'Incomplete dialogue extraction' unless required.all? { |key| dialogue[key].is_a?(Array) && !dialogue[key].empty? }
     raise 'Incomplete recovered tour' unless dialogue['tour'].length == 9
@@ -94,6 +100,8 @@ module ShatteredPrivateViridianChapter
     city_guard = maps[10].events.fetch(28)
     hana = maps[11].events.fetch(10)
     mara = maps[12].events.fetch(10)
+    ren = maps[15].events.fetch(1)
+    raise 'Ren native teacher identity drift' unless [ren.x, ren.y, ren.name] == [6, 2, 'Teacher']
     raise 'Chapter actor identity drift' unless city_guard.name == 'SHATTERED_VIRIDIAN:guard_at_center' &&
       [hana.x, hana.y, hana.name] == [4, 7, 'NPC'] &&
       [mara.x, mara.y, mara.name] == [9, 5, 'NPC']
@@ -134,11 +142,13 @@ module ShatteredPrivateViridianChapter
     hana.pages.first.list = [script_command("ShatteredViridianQuest.run_rest(#{dialogue.inspect})"), RPG::EventCommand.new]
     mara.name = 'SHATTERED_QUEST:Mara'
     mara.pages.first.list = [script_command("ShatteredViridianQuest.run_mara(#{dialogue.inspect})"), RPG::EventCommand.new]
+    ren.name = 'SHATTERED_QUEST:Ren'
+    ren.pages.first.list = [script_command('ShatteredRenTraining.run_lesson'), RPG::EventCommand.new]
     SUPPLIES.each do |resource, point|
       id = forest.events.keys.max + 1
       forest.events[id] = supply_event(id, resource, point)
     end
-    allowed = {10 => [18, 19, 28], 11 => [10], 12 => [10], 24 => []}
+    allowed = {10 => [18, 19, 28], 11 => [10], 12 => [10], 15 => [1], 24 => []}
     maps.each do |id, map|
       raise 'Chapter changed native tiles' unless Marshal.dump(map.data) == old_tiles[id]
       raise 'Chapter changed unrelated events' unless untouched[id].all? { |event_id, bytes|
@@ -167,11 +177,21 @@ module ShatteredPrivateViridianChapter
      real_description: 'Mara needs three medicinal berries, two dry wood bundles and two apricorns.'}.each { |key,value|
       list.instance_variable_set('@' + key.to_s, value) }
     items[:SHATTEREDSUPPLYLIST] = list
+    raise 'Training Manual already exists' if items.key?(:SHATTEREDTRAININGMANUAL) || originals[pbs_path].include?('[SHATTEREDTRAININGMANUAL]')
+    manual = Marshal.load(Marshal.dump(list))
+    {id: :SHATTEREDTRAININGMANUAL, real_name: 'Training Manual', real_name_plural: 'Training Manuals',
+     real_description: 'Ren\'s reference to the original HUMAN specialisation curriculum.'}.each { |key, value|
+      manual.instance_variable_set('@' + key.to_s, value) }
+    items[:SHATTEREDTRAININGMANUAL] = manual
     outputs = maps.to_h { |id, map| [File.join(root, format('Data/Map%03d.rxdata', id)), Marshal.dump(map)] }
     outputs[item_path] = Marshal.dump(items)
     outputs[system_path] = Marshal.dump(system)
+    training_output = File.join(root, 'Data/shattered_training.dat')
+    raise 'Training data already exists' if File.exist?(training_output)
+    outputs[training_output] = Marshal.dump(training)
     outputs[pbs_path] = originals[pbs_path] + "\n[CAMPINGKIT]\nName = Camping Kit\nNamePlural = Camping Kits\nPocket = 2\nPrice = 0\nFieldUse = Direct\nConsumable = true\nDescription = Single-use supplies that restore the whole party.\n"
     outputs[pbs_path] += "\n[SHATTEREDSUPPLYLIST]\nName = Supply List\nNamePlural = Supply Lists\nPocket = 8\nPrice = 0\nFieldUse = Direct\nConsumable = false\nFlags = KeyItem\nDescription = Mara needs three medicinal berries, two dry wood bundles and two apricorns.\n"
+    outputs[pbs_path] += "\n[SHATTEREDTRAININGMANUAL]\nName = Training Manual\nNamePlural = Training Manuals\nPocket = 8\nPrice = 0\nFieldUse = Direct\nConsumable = false\nFlags = KeyItem\nDescription = Ren's reference to the original HUMAN specialisation curriculum.\n"
     outputs.each do |path, bytes|
       raise 'Stale chapter recovery file' if File.exist?(path + '.chapter.tmp') || File.exist?(path + '.chapter.bak')
       next if path == pbs_path
@@ -181,23 +201,25 @@ module ShatteredPrivateViridianChapter
     begin
       outputs.each { |path, bytes| File.binwrite(path + '.chapter.tmp', bytes) }
       outputs.each_key do |path|
-        File.rename(path, path + '.chapter.bak')
+        File.rename(path, path + '.chapter.bak') if File.exist?(path)
         replaced << path
         File.rename(path + '.chapter.tmp', path)
       end
     rescue Exception
       replaced.reverse_each do |path|
         File.delete(path) if File.exist?(path)
-        File.rename(path + '.chapter.bak', path)
+        File.rename(path + '.chapter.bak', path) if File.exist?(path + '.chapter.bak')
       end
       raise
     ensure
       outputs.each_key { |path| File.delete(path + '.chapter.tmp') if File.exist?(path + '.chapter.tmp') }
     end
-    replaced.each { |path| File.delete(path + '.chapter.bak') }
+    replaced.each { |path| File.delete(path + '.chapter.bak') if File.exist?(path + '.chapter.bak') }
     report = {'chapter' => 'bunkhouse_rest_tour_mara_supply_run', 'rom_sha256' => ROM_SHA,
       'native_placement' => 'adapted to existing Essentials maps; ROM map geometry is not ported here',
       'supply_events' => SUPPLIES, 'reward' => 'CAMPINGKIT',
+      'training' => {'map' => 15, 'event' => 1, 'technique' => 'QUICKATTACK',
+        'reference_classes' => 171, 'reference_moves' => 5850},
       'files' => outputs.to_h { |path, bytes| [path.delete_prefix(root + '/'), Digest::SHA256.hexdigest(bytes)] },
       'native_gameplay_verified' => false}
     File.write(File.join(root, 'SHATTERED_VIRIDIAN_CHAPTER_REPORT.json'), JSON.pretty_generate(report) + "\n")
@@ -206,6 +228,6 @@ module ShatteredPrivateViridianChapter
 end
 
 if $PROGRAM_NAME == __FILE__
-  abort 'Usage: ruby install_private_viridian_chapter.rb PRIVATE_COPY DIALOGUE_JSON' unless ARGV.length == 2
+  abort 'Usage: ruby install_private_viridian_chapter.rb PRIVATE_COPY DIALOGUE_JSON TRAINING_JSON' unless ARGV.length == 3
   puts JSON.pretty_generate(ShatteredPrivateViridianChapter.install!(*ARGV))
 end

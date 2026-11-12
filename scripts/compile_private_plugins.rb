@@ -22,7 +22,7 @@ module ShatteredPrivatePluginCompiler
     "Shattered Murkrow Rescue" => %w[001_Quest.rb],
     "Shattered Raid" => %w[001_Raid.rb],
     "Shattered Route22" => %w[001_Route22.rb],
-    "Shattered Viridian" => %w[001_Entry.rb 003_Quest.rb]
+    "Shattered Viridian" => %w[001_Entry.rb 003_Quest.rb 004_Training.rb]
   }.freeze
   INSTALLER_FILES = {
     "Shattered Dojo" => %w[002_Install.rb],

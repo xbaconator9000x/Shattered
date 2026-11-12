@@ -9,6 +9,7 @@ import tempfile
 
 from extract_shattered_field_sprites import export
 from extract_shattered_viridian_dialogue import extract as extract_dialogue
+from extract_shattered_training import extract as extract_training
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -23,6 +24,8 @@ def upgrade(candidate, rom, output, ruby="ruby"):
         export(rom, extracted)  # Validate source ROM before copying the project.
         dialogue = Path(temporary) / 'viridian_dialogue.json'
         extract_dialogue(rom, dialogue)
+        training = Path(temporary) / 'training.json'
+        extract_training(rom, training)
         def run(script, *args):
             result = subprocess.run([ruby, str(ROOT / "scripts" / script), *map(str, args)],
                                     check=True, capture_output=True, text=True, timeout=180)
@@ -31,7 +34,7 @@ def upgrade(candidate, rom, output, ruby="ruby"):
             runtime = run("upgrade_private_hns_candidate.rb", "--candidate", candidate,
                           "--output", output, "--source", ROOT)
             guard = run("install_private_rom_guard.rb", output, extracted)
-            chapter = run('install_private_viridian_chapter.rb', output, dialogue)
+            chapter = run('install_private_viridian_chapter.rb', output, dialogue, training)
             syntax = run("audit_native_script_syntax.rb", "--project", output)
             if not syntax["syntax_pass"]:
                 raise ValueError("rebuilt native script archive failed syntax preflight")
