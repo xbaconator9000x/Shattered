@@ -593,7 +593,9 @@ class ShatteredCoreTest < Minitest::Test
     assert_equal 6, Shattered::EQUIPMENT_SLOTS.length
     assert_includes Shattered::HUMAN_MATCHUPS[:immune], :GHOST
     assert_equal [30, 55], Shattered::SPECIALISATION_LEVELS
-  end  def test_human_specialisation_progression_is_level_gated_and_persistent
+  end
+
+  def test_human_specialisation_progression_is_level_gated_and_persistent
     human = Shattered.ensure_human(@player, 29)
     assert_empty Shattered.specialisation_options(human)
     assert_raises(ArgumentError) { Shattered.choose_specialisation!(human, :FIREBREATHER) }
