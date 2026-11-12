@@ -593,5 +593,43 @@ class ShatteredCoreTest < Minitest::Test
     assert_equal 6, Shattered::EQUIPMENT_SLOTS.length
     assert_includes Shattered::HUMAN_MATCHUPS[:immune], :GHOST
     assert_equal [30, 55], Shattered::SPECIALISATION_LEVELS
+  end  def test_human_specialisation_progression_is_level_gated_and_persistent
+    human = Shattered.ensure_human(@player, 29)
+    assert_empty Shattered.specialisation_options(human)
+    assert_raises(ArgumentError) { Shattered.choose_specialisation!(human, :FIREBREATHER) }
+
+    human.level = 30
+    assert_includes Shattered.specialisation_options(human), :FIREBREATHER
+    assert_equal :FIREBREATHER, Shattered.choose_specialisation!(human, "FIREBREATHER")
+    assert_equal [:FIREBREATHER], Shattered.specialisation_options(human)
+    assert_empty Shattered.advanced_specialisation_options(human)
+
+    human.level = 55
+    assert_equal [:FLAMEMONK], Shattered.advanced_specialisation_options(human)
+    assert_raises(ArgumentError) do
+      Shattered.choose_advanced_specialisation!(human, :ASSASSIN)
+    end
+    assert_equal :FLAMEMONK, Shattered.choose_advanced_specialisation!(human, :FLAMEMONK)
+
+    loaded = Marshal.load(Marshal.dump(human))
+    assert_equal :FIREBREATHER, Shattered.specialisation_state(loaded)[:primary]
+    assert_equal :FLAMEMONK, Shattered.specialisation_state(loaded)[:advanced]
   end
+
+  def test_human_specialisation_rejects_tampered_or_duplicate_choices
+    human = Shattered.ensure_human(@player, 55)
+    assert_raises(ArgumentError) { Shattered.choose_specialisation!(human, :NOT_A_DISCIPLINE) }
+    Shattered.choose_specialisation!(human, :MARINER)
+    assert_raises(ArgumentError) { Shattered.choose_specialisation!(human, :MEDIUM) }
+    assert_equal :WATERELEMENTIST,
+      Shattered.choose_advanced_specialisation!(human, :WATERELEMENTIST)
+    assert_raises(ArgumentError) do
+      Shattered.choose_advanced_specialisation!(human, :WATERELEMENTIST)
+    end
+
+    human.instance_variable_set(Shattered::SPECIALISATION_STATE_IVAR,
+      { :version => 1, :primary => :MARINER, :advanced => :FLAMEMONK })
+    assert_raises(ArgumentError) { Shattered.specialisation_state(human) }
+  end
+
 end
