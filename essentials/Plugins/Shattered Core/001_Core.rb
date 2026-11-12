@@ -20,6 +20,17 @@ module Shattered
   }.freeze
   EQUIPMENT_SLOTS = [:head, :torso, :left_hand, :right_hand, :legs, :feet].freeze
   SPECIALISATION_LEVELS = [30, 55].freeze
+  # A first discipline is chosen at level 30. At level 55 it resolves to one
+  # of the three approved paired disciplines; choices live on the genuine
+  # HUMAN Pokémon instance and therefore survive Essentials save serialization.
+  SPECIALISATIONS = [:FIREBREATHER, :MARTIALARTIST, :ROGUE,
+                     :ALCHEMIST, :MEDIUM, :MARINER].freeze
+  ADVANCED_SPECIALISATIONS = {
+    :FIREBREATHER => :FLAMEMONK, :MARTIALARTIST => :FLAMEMONK,
+    :ROGUE => :ASSASSIN, :ALCHEMIST => :ASSASSIN,
+    :MEDIUM => :WATERELEMENTIST, :MARINER => :WATERELEMENTIST
+  }.freeze
+  SPECIALISATION_STATE_IVAR = :@shattered_specialisation
 
   class << self
     def human?(pkmn)
@@ -94,6 +105,62 @@ module Shattered
       human = ensure_human(player, level)
       @human_setup_diagnostic = nil
       human
+    end
+
+    def specialisation_state(human)
+      raise ArgumentError, "HUMAN required" unless human?(human)
+      value = human.instance_variable_get(SPECIALISATION_STATE_IVAR)
+      if value.nil?
+        value = { :version => 1, :primary => nil, :advanced => nil }
+        human.instance_variable_set(SPECIALISATION_STATE_IVAR, value)
+      end
+      valid = value.is_a?(Hash) && value[:version] == 1 &&
+        (value[:primary].nil? || SPECIALISATIONS.include?(value[:primary])) &&
+        (value[:advanced].nil? || ADVANCED_SPECIALISATIONS.value?(value[:advanced])) &&
+        (value[:advanced].nil? || value[:primary] &&
+         ADVANCED_SPECIALISATIONS[value[:primary]] == value[:advanced])
+      raise ArgumentError, "Invalid HUMAN specialisation save data" unless valid
+      value
+    end
+
+    def specialisation_options(human)
+      return [] unless human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[0]
+      state = specialisation_state(human)
+      state[:primary] ? [state[:primary]] : SPECIALISATIONS.dup
+    end
+
+    def choose_specialisation!(human, discipline)
+      raise ArgumentError, "HUMAN must reach level #{SPECIALISATION_LEVELS[0]}" unless
+        human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[0]
+      discipline = discipline.to_sym if discipline.respond_to?(:to_sym)
+      raise ArgumentError, "Unknown HUMAN discipline" unless SPECIALISATIONS.include?(discipline)
+      state = specialisation_state(human)
+      raise ArgumentError, "HUMAN discipline is already chosen" if state[:primary]
+      state[:primary] = discipline
+      discipline
+    end
+
+    def advanced_specialisation_options(human)
+      return [] unless human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[1]
+      primary = specialisation_state(human)[:primary]
+      primary ? [ADVANCED_SPECIALISATIONS.fetch(primary)] : []
+    end
+
+    def choose_advanced_specialisation!(human, discipline)
+      raise ArgumentError, "HUMAN must reach level #{SPECIALISATION_LEVELS[1]}" unless
+        human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[1]
+      state = specialisation_state(human)
+      raise ArgumentError, "Choose a HUMAN discipline first" unless state[:primary]
+      discipline = discipline.to_sym if discipline.respond_to?(:to_sym)
+      expected = ADVANCED_SPECIALISATIONS.fetch(state[:primary])
+      raise ArgumentError, "Incompatible advanced HUMAN discipline" unless discipline == expected
+      raise ArgumentError, "Advanced HUMAN discipline is already chosen" if state[:advanced]
+      state[:advanced] = discipline
+      discipline
     end
 
     def max_stamina(level)
