@@ -45,7 +45,7 @@ module ShatteredPrivateViridianChapter
     event
   end
 
-  def install!(root, dialogue_path, training_path, night_path)
+  def install!(root, dialogue_path, training_path, night_path, forest_path)
     root = File.realpath(root)
     raise 'Private staging marker required' unless File.file?(File.join(root, 'SHATTERED_STAGING_REPORT.json'))
     recovered = JSON.parse(File.read(dialogue_path))
@@ -53,8 +53,12 @@ module ShatteredPrivateViridianChapter
     dialogue = recovered.fetch('dialogue')
     training = JSON.parse(File.read(training_path))
     night = JSON.parse(File.read(night_path))
+    forest_data = JSON.parse(File.read(forest_path))
     raise 'Invalid recovered night raid' unless night['rom_sha256'] == ROM_SHA &&
       night.fetch('encounters').map { |entry| entry['id'] } == NIGHT_ACTORS.keys
+    raise 'Invalid recovered forest confrontation' unless forest_data['rom_sha256'] == ROM_SHA &&
+      forest_data.dig('foe', 'species') == 'RAIDER' && forest_data.dig('foe', 'level') == 7 &&
+      %w[choice intro won lost after].all? { |key| forest_data.dig('dialogue', key).is_a?(Array) }
     raise 'Invalid recovered training curriculum' unless training['rom_sha256'] == ROM_SHA &&
       training.fetch('classes').length == 171 &&
       training['classes'].sum { |entry| entry.fetch('moves').length } == 5850 &&
@@ -184,7 +188,26 @@ module ShatteredPrivateViridianChapter
       id = forest.events.keys.max + 1
       forest.events[id] = supply_event(id, resource, point)
     end
-    allowed = {10 => [18, 19, 28], 11 => [10], 12 => [10], 15 => [1], 24 => []}
+    # Native-map adaptation of the ROM confrontation. The guarded tile and all
+    # neighbouring actors are statically checked before any map byte is written.
+    forest_points = [[39, 60], [38, 60], [40, 60], [39, 59]]
+    raise 'Forest confrontation overlaps a supply' if (forest_points & SUPPLIES.values).any?
+    forest_points.each do |point|
+      raise "Blocked/occupied forest confrontation tile #{point.inspect}" unless
+        ShatteredNativeAudit.tile_status(forest, tilesets, *point) == 'clear' && !occupied.include?(point)
+    end
+    control = RPG::Event.new(*forest_points.first)
+    control.id = forest.events.keys.max + 1
+    control.name = 'SHATTERED_FOREST:confrontation'
+    dormant = RPG::Event::Page.new
+    dormant.through = true
+    active = RPG::Event::Page.new
+    active.condition.self_switch_valid = true
+    active.condition.self_switch_ch = 'A'
+    active.list = [script_command('ShatteredForestConfrontation.trigger'), RPG::EventCommand.new]
+    control.pages = [dormant, active]
+    forest.events[control.id] = control
+    allowed = {10 => [18, 19, 28], 11 => [10], 12 => [10], 15 => [1], 24 => [control.id]}
     maps.each do |id, map|
       raise 'Chapter changed native tiles' unless Marshal.dump(map.data) == old_tiles[id]
       raise 'Chapter changed unrelated events' unless untouched[id].all? { |event_id, bytes|
@@ -228,6 +251,9 @@ module ShatteredPrivateViridianChapter
     night_output = File.join(root, 'Data/shattered_night_raid.dat')
     raise 'Night raid data already exists' if File.exist?(night_output) || File.symlink?(night_output)
     outputs[night_output] = Marshal.dump(night)
+    forest_output = File.join(root, 'Data/shattered_forest_confrontation.dat')
+    raise 'Forest confrontation data already exists' if File.exist?(forest_output) || File.symlink?(forest_output)
+    outputs[forest_output] = Marshal.dump(forest_data)
     species_path = File.join(root, 'Data/species.dat')
     pokemon_path = File.join(root, 'PBS/pokemon.txt')
     [species_path, pokemon_path].each do |path|
@@ -319,6 +345,7 @@ module ShatteredPrivateViridianChapter
 end
 
 if $PROGRAM_NAME == __FILE__
-  abort 'Usage: ruby install_private_viridian_chapter.rb PRIVATE_COPY DIALOGUE_JSON TRAINING_JSON NIGHT_JSON' unless ARGV.length == 4
+  abort 'Usage: ruby install_private_viridian_chapter.rb PRIVATE_COPY DIALOGUE_JSON TRAINING_JSON NIGHT_JSON FOREST_JSON' unless ARGV.length == 5
   puts JSON.pretty_generate(ShatteredPrivateViridianChapter.install!(*ARGV))
 end
+

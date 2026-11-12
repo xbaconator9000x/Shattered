@@ -74,6 +74,7 @@ module ShatteredViridianNightRaid
       encounter = load_data(DATA_PATH).fetch('encounters').find { |entry| entry['id'] == id }
       raise 'Missing recovered encounter' unless encounter
       ShatteredViridianQuest.say(encounter.fetch('dialogue').fetch('intro'))
+      ShatteredChoreography.before_raid(id) if defined?(ShatteredChoreography)
       foe = Pokemon.new(encounter.fetch('species').to_sym, encounter.fetch('level'))
       foe.personalID = encounter.fetch('personality')
       foe.moves.clear
@@ -91,6 +92,7 @@ module ShatteredViridianNightRaid
         value[:rescued] << id
         value[:stage] = :cleared if value[:rescued].sort == IDS.sort
         reconcile
+        ShatteredChoreography.after_raid(id) if defined?(ShatteredChoreography)
         ShatteredViridianQuest.say(encounter.fetch('dialogue').fetch('won'))
         pbMessage('Everyone is safely inside. Return to Hana at the Center.'.dup) if value[:stage] == :cleared
         return true
@@ -136,3 +138,4 @@ if defined?(EventHandlers)
   EventHandlers.add(:on_map_or_spriteset_change, :shattered_night_continue,
     proc { |*args| ShatteredViridianNightRaid.reconcile })
 end
+
