@@ -21,7 +21,7 @@ class PrivateHnsUpgradeTest < Minitest::Test
         },
         "new_game" => [223, 11, 14]
       ))
-      [223, 16, 10, 11].each { |id| File.binwrite(File.join(input, "Data/Map%03d.rxdata" % id), "map-#{id}") }
+      [223, 224, 225, 226, 227, 16, 10, 11].each { |id| File.binwrite(File.join(input, "Data/Map%03d.rxdata" % id), "map-#{id}") }
       original = [["v21.1 Hotfixes", { :name => "v21.1 Hotfixes",
         :version => "1.0.3", :essentials => ["21.1"] },
         [["Hotfix.rb", Zlib::Deflate.deflate("HOTFIX_TEST = true\n")]]]]
@@ -37,10 +37,11 @@ class PrivateHnsUpgradeTest < Minitest::Test
 
   def test_rebuilds_runtime_without_changing_installed_maps
     with_candidate do |root, input, source|
-      map_before = Digest::SHA256.file(File.join(input, "Data/Map223.rxdata")).hexdigest
+      maps_before = ShatteredPrivateHnsUpgrade.installed_map_digests!(input)
       output = File.join(root, "v15")
       report = ShatteredPrivateHnsUpgrade.upgrade(input, output, source)
-      assert_equal map_before, Digest::SHA256.file(File.join(output, "Data/Map223.rxdata")).hexdigest
+      assert_equal maps_before, ShatteredPrivateHnsUpgrade.installed_map_digests!(output)
+      assert_equal maps_before, report["preserved_native_map_sha256"]
       assert_equal [223, 224, 225, 226, 227], report["preserved_hns_maps"]
       archive = Marshal.load(File.binread(File.join(output, "Data/PluginScripts.rxdata")))
       assert_equal ["v21.1 Hotfixes"], archive.take(1).map(&:first)
