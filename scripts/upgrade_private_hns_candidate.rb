@@ -15,6 +15,16 @@ module ShatteredPrivateHnsUpgrade
   module_function
   COMPILER = ShatteredPrivatePluginCompiler
   REPORT = "SHATTERED_HNS_RUNTIME_UPGRADE_REPORT.json"
+  # Every native map that makes up the installed initial slice. The upgrade
+  # must never turn a compiled-runtime refresh into an unreviewed map mutation.
+  HNS_MAPS = {
+    "ReceptionGate_hns" => 223,
+    "VictoryRoadKanto_B2F_hns" => 224,
+    "Route26North_hns" => 225,
+    "Route26_hns" => 226,
+    "Route28_hns" => 227
+  }.freeze
+  STORY_MAP_IDS = [16, 10, 11].freeze
 
   def check(condition, message)
     raise RuntimeError, message unless condition
@@ -48,26 +58,32 @@ module ShatteredPrivateHnsUpgrade
     end
   end
 
+  def native_map_path(id)
+    format("Data/Map%03d.rxdata", id)
+  end
+
+  def installed_map_digests!(root)
+    review = JSON.parse(File.read(regular(File.join(root, "SHATTERED_HNS_REVIEW_IMPORT.json"))))
+    check(review["maps"].is_a?(Hash) && HNS_MAPS.all? { |name, id| review["maps"][name] == id } &&
+          review["new_game"].is_a?(Array) && review["new_game"][0] == HNS_MAPS["ReceptionGate_hns"],
+      "Candidate does not contain the reviewed H&S opening map set")
+    ids = HNS_MAPS.values + STORY_MAP_IDS
+    ids.each_with_object({}) do |id, result|
+      path = File.join(root, native_map_path(id))
+      result[native_map_path(id)] = digest(path)
+    end
+  end
+
   def validate_candidate!(root)
     check(File.directory?(root) && !File.symlink?(root), "Unsafe candidate directory")
-    %w[
-      SHATTERED_STAGING_REPORT.json
-      SHATTERED_NATIVE_CANDIDATE.json
-      SHATTERED_HNS_REVIEW_IMPORT.json
-      Data/PluginScripts.rxdata
-      Data/Map223.rxdata
-      Data/Map016.rxdata
-      Data/Map010.rxdata
-      Data/Map011.rxdata
-    ].each { |path| regular(File.join(root, path)) }
-    review = JSON.parse(File.read(File.join(root, "SHATTERED_HNS_REVIEW_IMPORT.json")))
-    check(review.dig("maps", "ReceptionGate_hns") == 223 &&
-          review.dig("maps", "VictoryRoadKanto_B2F_hns") == 224 &&
-          review["new_game"].is_a?(Array) && review["new_game"][0] == 223,
-      "Candidate does not contain the reviewed H&S opening map set")
+    %w[SHATTERED_STAGING_REPORT.json SHATTERED_NATIVE_CANDIDATE.json
+       SHATTERED_HNS_REVIEW_IMPORT.json Data/PluginScripts.rxdata].each do |path|
+      regular(File.join(root, path))
+    end
+    maps = installed_map_digests!(root)
     archive = Marshal.load(File.binread(File.join(root, "Data/PluginScripts.rxdata")))
     COMPILER.validate_existing!(archive)
-    archive
+    [archive, maps]
   end
 
   def rebuild_archive!(root, prior)
@@ -106,21 +122,24 @@ module ShatteredPrivateHnsUpgrade
     check(File.directory?(File.join(source_root, "essentials", "Plugins")),
       "Source root is not a Shattered checkout")
     # Validate original before any copied bytes are changed.
-    prior = validate_candidate!(input)
+    prior, map_digests = validate_candidate!(input)
     FileUtils.cp_r(input, output)
     begin
-      copied_prior = validate_candidate!(output)
-      check(Marshal.dump(prior) == Marshal.dump(copied_prior),
-        "Candidate archive changed during copy")
+      copied_prior, copied_maps = validate_candidate!(output)
+      check(Marshal.dump(prior) == Marshal.dump(copied_prior) && map_digests == copied_maps,
+        "Candidate data changed during copy")
       copy_runtime_sources!(source_root, output)
       backup, entries = rebuild_archive!(output, copied_prior)
+      check(map_digests == installed_map_digests!(output),
+        "Runtime upgrade unexpectedly changed an installed native map")
       report = {
         "kind" => "private_hns_candidate_runtime_upgrade_not_gameplay_acceptance",
         "source_runtime_plugins" => COMPILER::RUNTIME_FILES.keys,
         "prior_archive_sha256" => Digest::SHA256.file(backup).hexdigest,
         "compiled_archive_sha256" => digest(File.join(output, "Data", "PluginScripts.rxdata")),
-        "preserved_hns_maps" => [223, 224, 225, 226, 227],
-        "preserved_story_maps" => [16, 10, 11],
+        "preserved_hns_maps" => HNS_MAPS.values,
+        "preserved_story_maps" => STORY_MAP_IDS,
+        "preserved_native_map_sha256" => map_digests,
         "native_engine_launched" => false,
         "gameplay_verified" => false,
         "save_reload_verified" => false
