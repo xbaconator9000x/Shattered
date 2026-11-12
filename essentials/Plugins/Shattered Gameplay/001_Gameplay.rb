@@ -10,12 +10,16 @@ module ShatteredGameplay
   def data
     @data ||= load_data(DATA_PATH)
   rescue Errno::ENOENT
+    # v18 stored curriculum independently. Keeping this fallback makes old
+    # saves usable until the next private rebuild emits the combined payload.
+    @data ||= load_data("Data/shattered_training.dat")
+  rescue Errno::ENOENT
     nil
   end
 
   def training
     value = data
-    value && value["training"]
+    value && (value["training"] || value)
   end
 
   def state(human)
@@ -124,18 +128,42 @@ module ShatteredGameplay
   def mount_sheet(pokemon)
     return nil unless pokemon && data && data["mounts"]
     entry = data["mounts"][pokemon.species.to_s]
-    entry && entry["sheet"]
+    entry && (entry["composite"] || entry["sheet"])
   end
 
-  # A mount changes field presentation only; collision and movement remain the
-  # native Game_Player implementation. A missing private sheet deliberately
-  # leaves the player graphic untouched.
+  # A private build supplies an already-composited rider/mount character set.
+  # Do not substitute an unmounted character sheet: collision and movement
+  # remain the native Game_Player implementation and a missing composite is a
+  # deliberate fail-closed dismount.
   def reconcile_mount(player = (defined?($game_player) ? $game_player : nil))
-    return false unless player && defined?(ShatteredCompanion) && ShatteredCompanion.mounted?
-    sheet = mount_sheet(ShatteredCompanion.partner)
-    return false unless sheet && File.file?(File.join("Graphics", "Characters", sheet + ".png"))
-    player.character_name = sheet if player.respond_to?(:character_name=)
+    return false unless player && player.respond_to?(:character_name) && player.respond_to?(:character_name=)
+    mounted = defined?(ShatteredCompanion) && ShatteredCompanion.mounted?
+    if !mounted
+      base = player.instance_variable_get(:@shattered_gameplay_base_charset)
+      player.character_name = base if base && !base.empty?
+      player.remove_instance_variable(:@shattered_gameplay_base_charset) if base
+      return false
+    end
+    base = player.character_name
+    base = player.instance_variable_get(:@shattered_gameplay_base_charset) if base.to_s.start_with?("SHATTERED_RIDE_")
+    player.instance_variable_set(:@shattered_gameplay_base_charset, base)
+    species = ShatteredCompanion.partner.species.to_s.upcase
+    sheet = "SHATTERED_RIDE_#{species}_#{base}"
+    return false unless File.file?(File.join("Graphics", "Characters", sheet + ".png"))
+    player.character_name = sheet
     true
+  end
+end
+
+if defined?(Game_Player) && Game_Player.method_defined?(:set_movement_type) &&
+   !Game_Player.method_defined?(:shattered_gameplay_set_movement_type)
+  class Game_Player
+    alias shattered_gameplay_set_movement_type set_movement_type
+    def set_movement_type(*args)
+      result = shattered_gameplay_set_movement_type(*args)
+      ShatteredGameplay.reconcile_mount(self)
+      result
+    end
   end
 end
 
