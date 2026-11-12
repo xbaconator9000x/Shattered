@@ -10,7 +10,7 @@ require_relative 'install_private_viridian_beedrill'
 
 module ShatteredPrivateOpeningConvergence
   SOURCES = {
-    'Shattered Core' => ['001_Core.rb', '02f2b0c59667b4a7146d49777c7d2d5b12ae9aad', '0.2.4'],
+    'Shattered Core' => ['001_Core.rb', 'e028a7c568f3dc84289b7fc3ca6bb94a589ef23e', '0.2.4'],
     'Shattered Gate Story' => ['001_GateStory.rb', '3eccf46f9e7b32dcfcde1ab59ee204c9cd74bc3c', '0.2.4'],
     'Shattered Route22' => ['001_Route22.rb', '57819f23ee4a397b78a5ca5c983c18a87d3e9f67', '0.1.6'],
     'Shattered Murkrow Rescue' => ['001_Quest.rb', '30d370ddfe30edd94860f9de654dbeb718b93fa7', '0.1.3'],
