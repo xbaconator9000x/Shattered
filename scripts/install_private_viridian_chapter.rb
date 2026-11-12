@@ -246,11 +246,20 @@ module ShatteredPrivateViridianChapter
     outputs[item_path] = Marshal.dump(items)
     outputs[system_path] = Marshal.dump(system)
     training_output = File.join(root, 'Data/shattered_training.dat')
-    raise 'Training data already exists' if File.exist?(training_output)
-    outputs[training_output] = Marshal.dump(training)
+    expected_training = Marshal.dump(training)
+    if File.exist?(training_output)
+      raise 'Existing training data differs from recovered ROM data' unless File.binread(training_output) == expected_training
+    else
+      outputs[training_output] = expected_training
+    end
     night_output = File.join(root, 'Data/shattered_night_raid.dat')
-    raise 'Night raid data already exists' if File.exist?(night_output) || File.symlink?(night_output)
-    outputs[night_output] = Marshal.dump(night)
+    raise 'Unsafe existing night raid data' if File.symlink?(night_output)
+    expected_night = Marshal.dump(night)
+    if File.exist?(night_output)
+      raise 'Existing night raid data differs from recovered ROM data' unless File.binread(night_output) == expected_night
+    else
+      outputs[night_output] = expected_night
+    end
     forest_output = File.join(root, 'Data/shattered_forest_confrontation.dat')
     raise 'Forest confrontation data already exists' if File.exist?(forest_output) || File.symlink?(forest_output)
     outputs[forest_output] = Marshal.dump(forest_data)
