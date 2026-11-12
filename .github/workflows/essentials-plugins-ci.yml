@@ -70,6 +70,7 @@ jobs:
           ruby tests/test_viridian_map_restore.rb
           ruby tests/test_viridian_quest.rb
           ruby tests/test_ren_training.rb
+          ruby tests/test_viridian_night_raid.rb
           python3 -m unittest discover -s tests -p test_extract_training.py
           ruby -c scripts/install_private_viridian_chapter.rb
           ruby -c scripts/repair_private_viridian_center_arrival.rb

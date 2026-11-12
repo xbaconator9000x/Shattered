@@ -37,6 +37,10 @@ module Shattered
       defined?(Pokemon) && pkmn.is_a?(Pokemon) && pkmn.species == HUMAN_SPECIES
     end
 
+    def human_combatant?(pkmn)
+      human?(pkmn) || (defined?(Pokemon) && pkmn.is_a?(Pokemon) && pkmn.species == :RAIDER)
+    end
+
     # Uses Essentials' genuine HUMAN species rather than a battle engine replacement.
     def ensure_human(player = $player, level = 5)
       raise ArgumentError, "player party unavailable" unless player && player.respond_to?(:party)
@@ -288,7 +292,7 @@ module Shattered
         def pbCalcTypeMod(move_type, user, target)
           # Shadow moves retain the engine's special effectiveness rule.
           if move_type != :SHADOW && target && target.respond_to?(:pokemon) &&
-             Shattered.human?(target.pokemon)
+             Shattered.human_combatant?(target.pokemon)
             return Shattered.human_type_multiplier(move_type)
           end
           shattered_core_original_pb_calc_type_mod(move_type, user, target)
@@ -304,6 +308,13 @@ module Shattered
       battler_class = Battle::Battler
       return true if battler_class.method_defined?(:shattered_core_original_pb_try_use_move)
       battler_class.class_eval do
+        # Enemy HUMANs use their own native move PP. Shared stamina belongs
+        # only to the player, never to a raider on the opposing side.
+        def shattered_player_human?
+          Shattered.human?(instance_variable_get(:@pokemon)) &&
+            (!respond_to?(:pbOwnedByPlayer?) || pbOwnedByPlayer?)
+        end
+
         alias_method :shattered_core_original_pb_can_choose_move, :pbCanChooseMove?
         alias_method :shattered_core_original_pb_try_use_move, :pbTryUseMove
         alias_method :shattered_core_original_pb_reduce_pp, :pbReducePP
@@ -316,7 +327,7 @@ module Shattered
           # shared stamina can pay for it. Borrow one PP ONLY while running the
           # original legality checks (Disable, Encore, etc.), then restore it.
           # Never borrow PP for a companion, an unmapped technique or Struggle.
-          borrow_pp = Shattered.human?(human) && move.respond_to?(:pp) &&
+          borrow_pp = shattered_player_human? && move.respond_to?(:pp) &&
             move.respond_to?(:pp=) && move.pp == 0 &&
             move.id != Shattered::STRUGGLE &&
             Shattered.can_spend_stamina?(human, move.id)
@@ -330,7 +341,7 @@ module Shattered
             move.pp = original_pp if borrow_pp
           end
           return false unless allowed
-          return true unless Shattered.human?(human)
+          return true unless shattered_player_human?
           return true if Shattered.can_spend_stamina?(human, move.id)
           if showMessages
             message = _INTL("HUMAN doesn't have enough stamina to use {1}!", move.name)
@@ -344,12 +355,12 @@ module Shattered
         end
 
         def pbReducePP(move)
-          return true if Shattered.human?(instance_variable_get(:@pokemon))
+          return true if shattered_player_human?
           shattered_core_original_pb_reduce_pp(move)
         end
 
         def pbReducePPOther(move)
-          return true if Shattered.human?(instance_variable_get(:@pokemon))
+          return true if shattered_player_human?
           shattered_core_original_pb_reduce_pp_other(move)
         end
 
@@ -358,7 +369,7 @@ module Shattered
           result = shattered_core_original_pb_try_use_move(
             choice, move, specialUsage, skipAccuracyCheck
           )
-          return result unless result && Shattered.human?(human)
+          return result unless result && shattered_player_human?
           used_move = choice[2] || move
           return result if Shattered.spend_stamina(human, used_move.id)
           @lastMoveFailed = true

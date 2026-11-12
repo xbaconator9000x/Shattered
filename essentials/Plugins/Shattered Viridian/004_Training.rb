@@ -30,6 +30,7 @@ module ShatteredRenTraining
 
   def run_lesson
     return false unless ShatteredViridianQuest.state[:stage] == :supplied
+    return false unless defined?(ShatteredViridianNightRaid) && ShatteredViridianNightRaid.state[:stage] == :rested
     pokemon = human
     return false unless pokemon
     value = state

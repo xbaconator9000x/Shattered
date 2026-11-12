@@ -3,7 +3,7 @@
 require 'json'
 require 'digest'
 require_relative 'private_rgss_writer'
-module GameData; class Item; end; end
+module GameData; class Item; end; class Species; end; end
 
 module ShatteredPrivateViridianChapter
   ROM_SHA = 'e8664a1475126a1f37358c98e55c5236d55622306b127c81c9c46d43b6e415e2'
@@ -19,6 +19,10 @@ module ShatteredPrivateViridianChapter
     'berry_1' => [31, 55], 'berry_2' => [38, 56], 'berry_3' => [40, 58],
     'wood_1' => [42, 60], 'wood_2' => [36, 62],
     'apricorn_1' => [30, 60], 'apricorn_2' => [37, 55]
+  }.freeze
+  NIGHT_ACTORS = {
+    'ren' => [26, 12], 'cook' => [26, 19], 'saff' => [21, 22],
+    'mara' => [35, 20], 'resident' => [31, 11]
   }.freeze
   module_function
 
@@ -41,13 +45,16 @@ module ShatteredPrivateViridianChapter
     event
   end
 
-  def install!(root, dialogue_path, training_path)
+  def install!(root, dialogue_path, training_path, night_path)
     root = File.realpath(root)
     raise 'Private staging marker required' unless File.file?(File.join(root, 'SHATTERED_STAGING_REPORT.json'))
     recovered = JSON.parse(File.read(dialogue_path))
     raise 'Dialogue is from another ROM' unless recovered['rom_sha256'] == ROM_SHA
     dialogue = recovered.fetch('dialogue')
     training = JSON.parse(File.read(training_path))
+    night = JSON.parse(File.read(night_path))
+    raise 'Invalid recovered night raid' unless night['rom_sha256'] == ROM_SHA &&
+      night.fetch('encounters').map { |entry| entry['id'] } == NIGHT_ACTORS.keys
     raise 'Invalid recovered training curriculum' unless training['rom_sha256'] == ROM_SHA &&
       training.fetch('classes').length == 171 &&
       training['classes'].sum { |entry| entry.fetch('moves').length } == 5850 &&
@@ -142,6 +149,35 @@ module ShatteredPrivateViridianChapter
     hana.pages.first.list = [script_command("ShatteredViridianQuest.run_rest(#{dialogue.inspect})"), RPG::EventCommand.new]
     mara.name = 'SHATTERED_QUEST:Mara'
     mara.pages.first.list = [script_command("ShatteredViridianQuest.run_mara(#{dialogue.inspect})"), RPG::EventCommand.new]
+    city = maps[10]
+    graphics = {
+      'ren' => ren.pages.first.graphic, 'cook' => city.events.fetch(13).pages.first.graphic,
+      'saff' => city.events.fetch(14).pages.first.graphic,
+      'mara' => mara.pages.first.graphic, 'resident' => city.events.fetch(15).pages.first.graphic
+    }
+    occupied_city = city.events.values.map { |event| [event.x, event.y] }
+    NIGHT_ACTORS.each do |actor, point|
+      raise 'Blocked/occupied night actor' unless
+        ShatteredNativeAudit.tile_status(city, tilesets, *point) == 'clear' && !occupied_city.include?(point)
+      raise 'Night actor has no clear approach' unless [[-1,0],[1,0],[0,-1],[0,1]].any? { |dx, dy|
+        xy = [point[0]+dx, point[1]+dy]
+        ShatteredNativeAudit.tile_status(city, tilesets, *xy) == 'clear' &&
+          !occupied_city.include?(xy) && !NIGHT_ACTORS.values.include?(xy) }
+      event = RPG::Event.new(*point)
+      event.id = city.events.keys.max + 1
+      event.name = 'SHATTERED_NIGHT:' + actor
+      dormant = RPG::Event::Page.new
+      dormant.through = true
+      active = RPG::Event::Page.new
+      active.condition.self_switch_valid = true
+      active.condition.self_switch_ch = 'A'
+      active.graphic = Marshal.load(Marshal.dump(graphics.fetch(actor)))
+      active.list = [script_command("ShatteredViridianNightRaid.trigger(#{actor.inspect})"), RPG::EventCommand.new]
+      event.pages = [dormant, active]
+      sprite = active.graphic.character_name
+      raise 'Missing native night victim sheet' unless File.file?(File.join(root, 'Graphics/Characters', sprite + '.png'))
+      city.events[event.id] = event
+    end
     ren.name = 'SHATTERED_QUEST:Ren'
     ren.pages.first.list = [script_command('ShatteredRenTraining.run_lesson'), RPG::EventCommand.new]
     SUPPLIES.each do |resource, point|
@@ -189,12 +225,64 @@ module ShatteredPrivateViridianChapter
     training_output = File.join(root, 'Data/shattered_training.dat')
     raise 'Training data already exists' if File.exist?(training_output)
     outputs[training_output] = Marshal.dump(training)
+    night_output = File.join(root, 'Data/shattered_night_raid.dat')
+    raise 'Night raid data already exists' if File.exist?(night_output) || File.symlink?(night_output)
+    outputs[night_output] = Marshal.dump(night)
+    species_path = File.join(root, 'Data/species.dat')
+    pokemon_path = File.join(root, 'PBS/pokemon.txt')
+    [species_path, pokemon_path].each do |path|
+      raise 'Missing/unsafe species registry' unless File.file?(path) && !File.symlink?(path)
+      originals[path] = File.binread(path)
+    end
+    species = Marshal.load(originals[species_path])
+    raise 'Raider species already exists' if species.key?(:RAIDER) || originals[pokemon_path].include?('[RAIDER]')
+    raider = Marshal.load(Marshal.dump(species.fetch(:HUMAN)))
+    source_raider = night.fetch('raider')
+    raise 'Unknown raider typing' unless source_raider.fetch('types') == [9, 9]
+    stat_ids = [:HP, :ATTACK, :DEFENSE, :SPEED, :SPECIAL_ATTACK, :SPECIAL_DEFENSE]
+    raider_stats = stat_ids.zip(source_raider.fetch('base_stats')).to_h
+    # QMARKS is the native Gen III slot 9. No Normal STAB is invented for
+    # the source HUMAN type; Core supplies the recovered defensive chart.
+    {id: :RAIDER, species: :RAIDER, real_name: 'Raider', types: [:QMARKS],
+     base_stats: raider_stats, base_exp: source_raider.fetch('base_exp'),
+     evs: stat_ids.to_h { |stat| [stat, 0] }, growth_rate: :Slow,
+     abilities: [source_raider.fetch('ability').to_sym], hidden_abilities: [],
+     catch_rate: 0, happiness: 0, moves: [], tutor_moves: [], egg_moves: [],
+     evolutions: [], offspring: [], real_pokedex_entry: 'A human raider attacking the settlement.'}.each { |key, value|
+      raider.instance_variable_set('@' + key.to_s, value) }
+    species[:RAIDER] = raider
+    beedrill = species.fetch(:BEEDRILL)
+    beedrill.instance_variable_set(:@base_stats, stat_ids.zip(night.fetch('beedrill').fetch('base_stats')).to_h)
+    beedrill.instance_variable_set(:@base_exp, night.fetch('beedrill').fetch('base_exp'))
+    outputs[species_path] = Marshal.dump(species)
+    pbs_stats = ->(stats) { [stats[0], stats[1], stats[2], stats[3], stats[4], stats[5]].join(',') }
+    pokemon_text = originals[pokemon_path].dup
+    # Update only Beedrill's source base stats/experience; leave its existing
+    # learnset, evolutions and every unrelated species unchanged.
+    changed = false
+    pokemon_text.sub!(/\[BEEDRILL\].*?(?=\n\[|\z)/m) do |block|
+      changed = true
+      block.sub(/^BaseStats = [^\r\n]+/, 'BaseStats = ' + pbs_stats.call(night['beedrill']['base_stats']))
+        .sub(/^BaseExp = [^\r\n]+/, 'BaseExp = ' + night['beedrill']['base_exp'].to_s)
+    end
+    raise 'Missing native Beedrill PBS' unless changed
+    pokemon_text += "\n[RAIDER]\nName = Raider\nTypes = QMARKS\nBaseStats = #{pbs_stats.call(source_raider['base_stats'])}\nGenderRatio = Genderless\nGrowthRate = Slow\nBaseExp = #{source_raider['base_exp']}\nCatchRate = 0\nHappiness = 0\nAbilities = #{source_raider['ability']}\nEggGroups = Undiscovered\nHatchSteps = 5120\nHeight = 1.8\nWeight = 85.0\nColor = Brown\nShape = Bipedal\nCategory = Human\nPokedex = A human raider attacking the settlement.\n"
+    outputs[pokemon_path] = pokemon_text
+    %w[RAIDER BEEDRILL].each do |name|
+      source = File.join(File.dirname(night_path), File.basename(night_path, '.json'), name + '.png')
+      raise 'Unverified recovered opponent sprite' unless File.file?(source) && !File.symlink?(source) &&
+        Digest::SHA256.file(source).hexdigest == night.fetch('asset_sha256').fetch(name + '.png')
+      target = File.join(root, 'Graphics/Pokemon/Front', name + '.png')
+      raise 'Unsafe opponent sprite destination' if File.symlink?(target)
+      originals[target] = File.binread(target) if File.exist?(target)
+      outputs[target] = File.binread(source)
+    end
     outputs[pbs_path] = originals[pbs_path] + "\n[CAMPINGKIT]\nName = Camping Kit\nNamePlural = Camping Kits\nPocket = 2\nPrice = 0\nFieldUse = Direct\nConsumable = true\nDescription = Single-use supplies that restore the whole party.\n"
     outputs[pbs_path] += "\n[SHATTEREDSUPPLYLIST]\nName = Supply List\nNamePlural = Supply Lists\nPocket = 8\nPrice = 0\nFieldUse = Direct\nConsumable = false\nFlags = KeyItem\nDescription = Mara needs three medicinal berries, two dry wood bundles and two apricorns.\n"
     outputs[pbs_path] += "\n[SHATTEREDTRAININGMANUAL]\nName = Training Manual\nNamePlural = Training Manuals\nPocket = 8\nPrice = 0\nFieldUse = Direct\nConsumable = false\nFlags = KeyItem\nDescription = Ren's reference to the original HUMAN specialisation curriculum.\n"
     outputs.each do |path, bytes|
       raise 'Stale chapter recovery file' if File.exist?(path + '.chapter.tmp') || File.exist?(path + '.chapter.bak')
-      next if path == pbs_path
+      next if path == pbs_path || path == pokemon_path || path.end_with?('.png')
       raise 'Native chapter roundtrip failed' unless Marshal.dump(Marshal.load(bytes)) == bytes
     end
     replaced = []
@@ -220,6 +308,9 @@ module ShatteredPrivateViridianChapter
       'supply_events' => SUPPLIES, 'reward' => 'CAMPINGKIT',
       'training' => {'map' => 15, 'event' => 1, 'technique' => 'QUICKATTACK',
         'reference_classes' => 171, 'reference_moves' => 5850},
+      'night_raid' => {'native_actors' => NIGHT_ACTORS,
+        'placement' => 'Victim interactions adapted to native Essentials geometry and existing NPC sheets',
+        'encounters' => night['encounters'].map { |entry| entry.reject { |key, _| key == 'dialogue' } }},
       'files' => outputs.to_h { |path, bytes| [path.delete_prefix(root + '/'), Digest::SHA256.hexdigest(bytes)] },
       'native_gameplay_verified' => false}
     File.write(File.join(root, 'SHATTERED_VIRIDIAN_CHAPTER_REPORT.json'), JSON.pretty_generate(report) + "\n")
@@ -228,6 +319,6 @@ module ShatteredPrivateViridianChapter
 end
 
 if $PROGRAM_NAME == __FILE__
-  abort 'Usage: ruby install_private_viridian_chapter.rb PRIVATE_COPY DIALOGUE_JSON TRAINING_JSON' unless ARGV.length == 3
+  abort 'Usage: ruby install_private_viridian_chapter.rb PRIVATE_COPY DIALOGUE_JSON TRAINING_JSON NIGHT_JSON' unless ARGV.length == 4
   puts JSON.pretty_generate(ShatteredPrivateViridianChapter.install!(*ARGV))
 end

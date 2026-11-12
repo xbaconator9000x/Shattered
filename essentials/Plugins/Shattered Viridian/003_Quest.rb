@@ -162,6 +162,9 @@ module ShatteredViridianQuest
 
   def run_rest(dialogue)
     return false unless sheltered?
+    if state[:stage] == :supplied && defined?(ShatteredViridianNightRaid)
+      return ShatteredViridianNightRaid.run_rest
+    end
     return false unless state[:stage] == :shelter
     say(dialogue.fetch('hana'))
     return false unless pbConfirmMessage('Lie down and rest?'.dup)

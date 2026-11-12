@@ -8,6 +8,9 @@ module ShatteredViridianQuest
   def self.state; {stage: $chapter_stage}; end
   def self.say(lines); lines.each { |line| pbMessage(line) }; end
 end
+module ShatteredViridianNightRaid
+  def self.state; {stage: $night_stage}; end
+end
 def pbMessage(text, commands = nil, _cancel = nil)
   $messages << text
   commands ? $choices.shift : nil
@@ -36,6 +39,7 @@ class RenTrainingTest < Minitest::Test
   def setup
     $PokemonGlobal = Object.new
     $chapter_stage = :supplied
+    $night_stage = :rested
     @human = OpenStruct.new(species: :HUMAN, egg?: false, moves: [])
     $player = OpenStruct.new(party: [OpenStruct.new(species: :AIPOM, egg?: false, moves: []), @human])
     $bag = Bag.new
@@ -80,6 +84,10 @@ class RenTrainingTest < Minitest::Test
     assert_equal 0, $learn_calls
   end
   def test_prerequisite_and_missing_human
+    $night_stage = :active
+    refute Q.run_lesson
+    assert_empty $bag.items
+    $night_stage = :rested
     $chapter_stage = :supplies
     refute Q.run_lesson
     assert_empty $bag.items
