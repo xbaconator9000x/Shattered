@@ -87,7 +87,8 @@ module ShatteredForestConfrontation
     visible = available? && !state[:resolved]
     changed = false
     $game_map.events.each do |id, event|
-      next unless event.name.to_s.start_with?(EVENT_PREFIX)
+      name = event.name.to_s
+      next unless name.start_with?(EVENT_PREFIX) || name.start_with?(ACTOR_PREFIX)
       key = [MAP_ID, id, "A"]
       changed ||= $game_self_switches[key] != visible
       $game_self_switches[key] = visible

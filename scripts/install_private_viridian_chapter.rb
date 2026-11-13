@@ -188,15 +188,32 @@ module ShatteredPrivateViridianChapter
       id = forest.events.keys.max + 1
       forest.events[id] = supply_event(id, resource, point)
     end
-    # Native-map adaptation of the ROM confrontation. The guarded tile and all
-    # neighbouring actors are statically checked before any map byte is written.
-    forest_points = [[39, 60], [38, 60], [40, 60], [39, 59]]
+    # Native-map adaptation of the ROM confrontation. The actors begin one
+    # clear tile away, then the runtime can move them to the three adjacent
+    # staging tiles. They reuse only verified character sheets already present
+    # in the private candidate; this installer never invents or imports art.
+    forest_control = [39, 60]
+    forest_actors = {
+      'left' => { at: [37, 60], approach: [38, 60] },
+      'right' => { at: [41, 60], approach: [40, 60] },
+      'top' => { at: [39, 58], approach: [39, 59] }
+    }
+    forest_points = [forest_control] + forest_actors.values.flat_map { |actor| [actor[:at], actor[:approach]] }
     raise 'Forest confrontation overlaps a supply' if (forest_points & SUPPLIES.values).any?
+    raise 'Forest confrontation has duplicate actor tiles' unless forest_points.uniq.length == forest_points.length
     forest_points.each do |point|
       raise "Blocked/occupied forest confrontation tile #{point.inspect}" unless
         ShatteredNativeAudit.tile_status(forest, tilesets, *point) == 'clear' && !occupied.include?(point)
     end
-    control = RPG::Event.new(*forest_points.first)
+    actor_graphics = forest.events.values.filter_map do |event|
+      graphic = event.pages.first.graphic
+      name = graphic.character_name.to_s
+      next if name.empty? || name == 'Object ball'
+      next unless File.file?(File.join(root, 'Graphics/Characters', name + '.png'))
+      Marshal.load(Marshal.dump(graphic))
+    end
+    raise 'Forest map has no verified native character sheet for staging actors' if actor_graphics.empty?
+    control = RPG::Event.new(*forest_control)
     control.id = forest.events.keys.max + 1
     control.name = 'SHATTERED_FOREST:confrontation'
     dormant = RPG::Event::Page.new
@@ -207,7 +224,24 @@ module ShatteredPrivateViridianChapter
     active.list = [script_command('ShatteredForestConfrontation.trigger'), RPG::EventCommand.new]
     control.pages = [dormant, active]
     forest.events[control.id] = control
-    allowed = {10 => [18, 19, 28], 11 => [10], 12 => [10], 15 => [1], 24 => [control.id]}
+    forest_actor_ids = []
+    forest_actors.each_with_index do |(name, actor), index|
+      event = RPG::Event.new(*actor.fetch(:at))
+      event.id = forest.events.keys.max + 1
+      event.name = 'SHATTERED_FOREST_ACTOR:' + name
+      hidden = RPG::Event::Page.new
+      hidden.through = true
+      visible = RPG::Event::Page.new
+      visible.condition.self_switch_valid = true
+      visible.condition.self_switch_ch = 'A'
+      visible.through = true
+      visible.graphic = Marshal.load(Marshal.dump(actor_graphics[index % actor_graphics.length]))
+      visible.list = [RPG::EventCommand.new]
+      event.pages = [hidden, visible]
+      forest.events[event.id] = event
+      forest_actor_ids << event.id
+    end
+    allowed = {10 => [18, 19, 28], 11 => [10], 12 => [10], 15 => [1], 24 => [control.id] + forest_actor_ids}
     maps.each do |id, map|
       raise 'Chapter changed native tiles' unless Marshal.dump(map.data) == old_tiles[id]
       raise 'Chapter changed unrelated events' unless untouched[id].all? { |event_id, bytes|
@@ -345,7 +379,10 @@ module ShatteredPrivateViridianChapter
         'reference_classes' => 171, 'reference_moves' => 5850},
       'night_raid' => {'native_actors' => NIGHT_ACTORS,
         'placement' => 'Victim interactions adapted to native Essentials geometry and existing NPC sheets',
-        'encounters' => night['encounters'].map { |entry| entry.reject { |key, _| key == 'dialogue' } }},
+        'encounters' => night['encounters'].map { |entry| entry.reject { |key, _| key == 'dialogue' }}},
+      'forest_confrontation' => {'control' => forest_control,
+        'staging_actors' => forest_actors.transform_values { |actor| actor[:at] },
+        'placement' => 'Native Essentials geometry with existing candidate character sheets; source cinematic routes are not asserted'},
       'files' => outputs.to_h { |path, bytes| [path.delete_prefix(root + '/'), Digest::SHA256.hexdigest(bytes)] },
       'native_gameplay_verified' => false}
     File.write(File.join(root, 'SHATTERED_VIRIDIAN_CHAPTER_REPORT.json'), JSON.pretty_generate(report) + "\n")
