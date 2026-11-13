@@ -4,6 +4,7 @@
 module ShatteredForestConfrontation
   MAP_ID = 24
   EVENT_PREFIX = "SHATTERED_FOREST:"
+  ACTOR_PREFIX = "SHATTERED_FOREST_ACTOR:"
   OUTCOME_VARIABLE = 991
   IVAR = :@shattered_forest_confrontation
   DATA_PATH = "Data/shattered_forest_confrontation.dat"
@@ -49,6 +50,8 @@ module ShatteredForestConfrontation
       payload = load_data(DATA_PATH)
       foe_data = payload.fetch("foe")
       dialogue = payload.fetch("dialogue")
+      play_choreography(:approach)
+      Array(dialogue["choice"]).each { |line| pbMessage(line) }
       Array(dialogue["intro"]).each { |line| pbMessage(line) }
       foe = Pokemon.new(foe_data.fetch("species").to_sym, foe_data.fetch("level"))
       foe.personalID = foe_data.fetch("personality")
@@ -68,6 +71,8 @@ module ShatteredForestConfrontation
       state[:won] = decision == 1
       reconcile
       Array(dialogue[decision == 1 ? "won" : "lost"]).each { |line| pbMessage(line) }
+      play_choreography(decision == 1 ? :retreat : :aftermath)
+      Array(dialogue["after"]).each { |line| pbMessage(line) }
       true
     ensure
       $game_temp.clear_battle_rules if defined?($game_temp) && $game_temp &&
@@ -89,6 +94,28 @@ module ShatteredForestConfrontation
     end
     $game_map.need_refresh = true if changed
     true
+  end
+
+  # The private installer gives the optional staging actors these names.  The
+  # actual event movement API belongs to Essentials; this small adapter only
+  # asks existing actors to take a bounded, collision-aware step.  A map built
+  # without the optional actors still presents the battle safely.
+  def play_choreography(phase)
+    return false unless defined?($game_map) && $game_map && $game_map.map_id == MAP_ID
+    actors = $game_map.events.values.select { |event| event.name.to_s.start_with?(ACTOR_PREFIX) }
+    return false if actors.empty?
+    directions = case phase
+                 when :approach then [4, 6, 2]
+                 when :retreat then [6, 6, 4]
+                 else [2, 4, 6]
+                 end
+    actors.each_with_index do |actor, index|
+      next unless actor.respond_to?(:move_straight)
+      actor.move_straight(directions[index % directions.length])
+    end
+    true
+  rescue StandardError
+    false
   end
 end
 

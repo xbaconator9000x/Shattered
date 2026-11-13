@@ -107,6 +107,24 @@ module ShatteredGameplay
     path
   end
 
+  # Event-facing selection, intentionally separate from the rules methods
+  # above.  Maps can call this directly at a trainer or trial NPC without
+  # carrying a cached class id in switches.  Cancelling leaves the save state
+  # untouched, and requirements are rechecked immediately before the commit.
+  def choose_primary_interactive!(human)
+    options = primary_choices(human)
+    return false if options.empty? || !defined?(pbShowCommands)
+    labels = options.map do |id|
+      record = class_record(id) || {}
+      record["name"].to_s.empty? ? "Path #{id}" : record["name"].to_s
+    end
+    selection = pbShowCommands(nil, labels, -1)
+    return false unless selection.is_a?(Integer) && selection.between?(0, options.length - 1)
+    choose_primary!(human, options[selection])
+  rescue ArgumentError
+    false
+  end
+
   def advanced_choices(human)
     return [] unless human.level.to_i >= 55
     current = class_record(class_id_for(human)); return [] unless current
@@ -123,6 +141,20 @@ module ShatteredGameplay
     state(human)[:class_id] = target; state(human)[:secondary_id] = path
     human.calc_stats if human.respond_to?(:calc_stats)
     target
+  end
+
+  def choose_advanced_interactive!(human)
+    options = advanced_choices(human)
+    return false if options.empty? || !defined?(pbShowCommands)
+    labels = options.map do |id|
+      record = class_record(id) || {}
+      record["name"].to_s.empty? ? "Path #{id}" : record["name"].to_s
+    end
+    selection = pbShowCommands(nil, labels, -1)
+    return false unless selection.is_a?(Integer) && selection.between?(0, options.length - 1)
+    choose_advanced!(human, options[selection])
+  rescue ArgumentError
+    false
   end
 
   def mount_sheet(pokemon)
@@ -142,6 +174,7 @@ module ShatteredGameplay
       base = player.instance_variable_get(:@shattered_gameplay_base_charset)
       player.character_name = base if base && !base.empty?
       player.remove_instance_variable(:@shattered_gameplay_base_charset) if base
+      restore_mount_speed(player)
       return false
     end
     base = player.character_name
@@ -151,6 +184,29 @@ module ShatteredGameplay
     sheet = "SHATTERED_RIDE_#{species}_#{base}"
     return false unless File.file?(File.join("Graphics", "Characters", sheet + ".png"))
     player.character_name = sheet
+    apply_mount_speed(player)
+    true
+  end
+
+  # Movement is deliberately tied to the same private composite gate as the
+  # sprite.  A missing rider sheet never grants invisible speed or collision
+  # changes.  Essentials clamps movement speed elsewhere; this merely applies
+  # one predictable field-speed increment and restores the exact prior value
+  # on indoor transfer, dismount, party change and Continue.
+  def apply_mount_speed(player)
+    return false unless player.respond_to?(:move_speed) && player.respond_to?(:move_speed=)
+    return true if player.instance_variable_defined?(:@shattered_gameplay_base_speed)
+    base = player.move_speed.to_i
+    player.instance_variable_set(:@shattered_gameplay_base_speed, base)
+    player.move_speed = [base + 1, 6].min
+    true
+  end
+
+  def restore_mount_speed(player)
+    return false unless player.instance_variable_defined?(:@shattered_gameplay_base_speed)
+    base = player.instance_variable_get(:@shattered_gameplay_base_speed)
+    player.move_speed = base if player.respond_to?(:move_speed=)
+    player.remove_instance_variable(:@shattered_gameplay_base_speed)
     true
   end
 end
