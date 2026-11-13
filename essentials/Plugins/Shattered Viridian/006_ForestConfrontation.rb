@@ -103,11 +103,12 @@ module ShatteredForestConfrontation
   def play_choreography(phase)
     return false unless defined?($game_map) && $game_map && $game_map.map_id == MAP_ID
     actors = $game_map.events.values.select { |event| event.name.to_s.start_with?(ACTOR_PREFIX) }
+              .sort_by { |event| event.name.to_s }
     return false if actors.empty?
     directions = case phase
-                 when :approach then [4, 6, 2]
-                 when :retreat then [6, 6, 4]
-                 else [2, 4, 6]
+                 when :approach then [6, 4, 2]
+                 when :retreat then [4, 6, 8]
+                 else [4, 6, 8]
                  end
     actors.each_with_index do |actor, index|
       next unless actor.respond_to?(:move_straight)
