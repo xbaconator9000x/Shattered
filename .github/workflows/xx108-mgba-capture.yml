@@ -15,40 +15,25 @@ jobs:
       ROM_NAME: Shattered_xx1.08_crystal_body.gba
       ROM_SHA256: 262ad3fe92e2ec204bc10ad8e39a8eecf9d186472d3eadc7153486da4c7d1e87
     steps:
+      - uses: actions/checkout@v4
+
       - name: Download the private xx1.08 test input
         run: |
           mkdir -p rom evidence
-          gh release download xx1.08-crystal-body-test \
-            --repo "$GITHUB_REPOSITORY" \
-            --pattern "$ROM_NAME" \
-            --dir rom
+          gh release download xx1.08-crystal-body-test --repo "$GITHUB_REPOSITORY" --pattern "$ROM_NAME" --dir rom
           echo "$ROM_SHA256  rom/$ROM_NAME" | sha256sum --check --strict
 
-      - name: Install mGBA and the headless X display
+      - name: Install mGBA native headers and image conversion
         run: |
           sudo apt-get update
-          sudo apt-get install --yes mgba-sdl imagemagick xvfb
-          dpkg -L mgba-sdl | tee evidence/mgba-package-files.txt
+          sudo apt-get install --yes libmgba-dev imagemagick
 
-      - name: Run mGBA and capture its actual display
+      - name: Capture mGBA's native framebuffer
         run: |
           set -euxo pipefail
-          MGBA_BIN="$(find /usr -type f -executable \( -iname 'mgba*' -o -iname 'mGBA*' \) -print -quit)"
-          test -n "$MGBA_BIN"
-          printf '%s\n' "$MGBA_BIN" | tee evidence/mgba-binary.txt
-          Xvfb :99 -screen 0 1024x768x24 >evidence/xvfb.log 2>&1 &
-          XVFB_PID=$!
-          export DISPLAY=:99
-          "$MGBA_BIN" -f "rom/$ROM_NAME" >evidence/mgba.log 2>&1 &
-          MGBA_PID=$!
-          trap 'kill $MGBA_PID $XVFB_PID || true' EXIT
-          sleep 8
-          kill -0 "$MGBA_PID"
-          for n in 1 2 3 4 5 6; do
-            import -display :99 -window root "evidence/frame-$n.png"
-            sleep 1
-          done
-          convert -delay 100 -loop 0 evidence/frame-*.png evidence/mgba-boot.gif
+          gcc -O2 development/mgba_ci_boot_capture.c -lmgba -o evidence/mgba_ci_boot_capture
+          evidence/mgba_ci_boot_capture "rom/$ROM_NAME" evidence/boot-060.ppm | tee evidence/mgba-native.log
+          convert -resize 480x320 -delay 100 -loop 0 evidence/boot-060.ppm evidence/boot-180.ppm evidence/boot-360.ppm evidence/mgba-boot.gif
           identify evidence/mgba-boot.gif | tee evidence/identify.txt
 
       - name: Upload the native mGBA evidence
