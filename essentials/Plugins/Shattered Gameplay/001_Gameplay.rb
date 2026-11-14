@@ -72,6 +72,27 @@ module ShatteredGameplay
     state(human)[:known].include?(move.to_sym)
   end
 
+  # The private extractor stores the authentic level-up table as
+  # [level, source_id, display_name] tuples under "moves". Earlier adapter
+  # code expected an abandoned "curriculum"/"move_data" schema, which meant
+  # an otherwise valid private payload could never grant study progress or
+  # satisfy a specialisation requirement. Keep the conversion here, at the
+  # trust boundary, rather than duplicating ROM data in source.
+  def curriculum_entries(record)
+    Array(record && (record["moves"] || record["curriculum"])).filter_map do |entry|
+      next unless entry.is_a?(Array) && entry.length >= 2 && entry[0].to_i.between?(1, 100)
+      name = entry[2] || entry[1]
+      id = move_id(name)
+      next unless id
+      { :level => entry[0].to_i, :id => id }
+    end
+  end
+
+  def move_id(value)
+    text = value.to_s.upcase.gsub(/[^A-Z0-9]/, "")
+    text.empty? ? nil : text.to_sym
+  end
+
   def unlock!(human, move)
     value = state(human); move = move.to_sym
     value[:known] << move unless value[:known].include?(move)
@@ -82,7 +103,8 @@ module ShatteredGameplay
     raise ArgumentError, "HUMAN must be level 20" unless human.level.to_i >= 20
     record = class_record(class_id_for(human))
     return [] unless record
-    Array(record["curriculum"]).map { |entry| unlock!(human, entry[1].to_sym) }
+    curriculum_entries(record).select { |entry| entry[:level] <= human.level.to_i }
+                              .map { |entry| unlock!(human, entry[:id]) }
   end
 
   def primary_choices(human)
@@ -101,14 +123,27 @@ module ShatteredGameplay
   end
 
   def qualifying_moves(human, path)
-    moves = state(human)[:known]
     record = class_record(path)
     return [] unless record
     type = Array(record["types"])[1]
-    moves.select do |move|
-      info = training && training["move_data"] && training["move_data"][move.to_s]
-      info && info["type"] == type
-    end
+    state(human)[:known].select { |move| move_type_id(move) == type }
+  end
+
+  # Essentials' move registry is authoritative for elemental typing. The ROM
+  # curriculum carries source move IDs/names, but not a second conflicting
+  # type chart. Unknown or modded moves simply do not qualify.
+  def move_type_id(move)
+    return nil unless defined?(GameData::Move)
+    entry = if GameData::Move.respond_to?(:try_get)
+              GameData::Move.try_get(move)
+            elsif GameData::Move.respond_to?(:get)
+              GameData::Move.get(move)
+            end
+    return nil unless entry
+    value = entry.respond_to?(:type) ? entry.type : nil
+    value.respond_to?(:id) ? value.id : value
+  rescue StandardError
+    nil
   end
 
   def can_choose_primary?(human, path)
