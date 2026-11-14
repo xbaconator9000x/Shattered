@@ -181,6 +181,24 @@ module ShatteredGameplay
     value.to_s.upcase.gsub(/[^A-Z0-9]/, "")
   end
 
+  # Curriculum type slots are the source ROM's numeric enum. Convert them at
+  # the data boundary before calling Essentials' registry: passing (for
+  # example) 9 straight to GameData::Type.get selects an unrelated engine type
+  # in projects whose type IDs do not match the ROM enum.
+  def essentials_type_id(value)
+    return nil unless defined?(GameData::Type)
+    key = type_key(value)
+    return nil if key.nil? || key.empty?
+    entry = if GameData::Type.respond_to?(:try_get)
+              GameData::Type.try_get(key.to_sym)
+            elsif GameData::Type.respond_to?(:get)
+              GameData::Type.get(key.to_sym)
+            end
+    entry && (entry.respond_to?(:id) ? entry.id : entry)
+  rescue StandardError
+    nil
+  end
+
   def move_type_id(move)
     return nil unless defined?(GameData::Move)
     entry = if GameData::Move.respond_to?(:try_get)
@@ -384,8 +402,9 @@ if defined?(Pokemon)
 
       def types
         record = shattered_gameplay_record
-        if record && record["types"].is_a?(Array) && defined?(GameData::Type)
-          return record["types"].map { |type| GameData::Type.get(type).id }
+        if record && record["types"].is_a?(Array)
+          ids = record["types"].map { |type| ShatteredGameplay.essentials_type_id(type) }
+          return ids if ids.none?(&:nil?)
         end
         return shattered_gameplay_types if respond_to?(:shattered_gameplay_types)
         []
