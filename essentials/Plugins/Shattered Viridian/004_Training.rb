@@ -43,6 +43,9 @@ module ShatteredRenTraining
       pbMessage('Ren gave you the Training Manual. You can read it from your Bag.'.dup)
     end
     if value[:lesson]
+      if defined?(ShatteredGameplay) && pokemon.level.to_i >= 30
+        ShatteredGameplay.offer_specialisation!(pokemon)
+      end
       pbMessage('Your Quick Attack lesson is complete. Keep practising, and read the manual from your Bag.'.dup)
       return true
     end
@@ -55,6 +58,9 @@ module ShatteredRenTraining
     return false unless knows_quick_attack?(pokemon)
     value[:lesson] = true
     pbMessage('Quick Attack lesson complete.'.dup)
+    if defined?(ShatteredGameplay) && pokemon.level.to_i >= 30
+      ShatteredGameplay.offer_specialisation!(pokemon)
+    end
     true
   end
 
