@@ -1,0 +1,33 @@
+name: Crystal Body native mGBA runtime
+
+on:
+  push:
+    branches: [feature/xx108-crystal-body-native-runtime-test]
+  pull_request:
+    paths:
+      - development/crystal-body-remap/mgba_crystal_body_runtime_test.c
+      - .github/workflows/crystal-body-native-mgba.yml
+
+permissions:
+  contents: read
+
+jobs:
+  native-handler:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ROM_NAME: Shattered_xx1.08_crystal_body.gba
+      ROM_SHA256: 262ad3fe92e2ec204bc10ad8e39a8eecf9d186472d3eadc7153486da4c7d1e87
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact private test ROM
+        run: |
+          mkdir -p rom
+          gh release download xx1.08-crystal-body-test --repo "${{ github.repository }}" --pattern "$ROM_NAME" --dir rom
+          echo "$ROM_SHA256  rom/$ROM_NAME" | sha256sum --check -
+      - name: Execute handler on mGBA's GBA CPU
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmgba-dev
+          gcc -O2 development/crystal-body-remap/mgba_crystal_body_runtime_test.c -lmgba -o crystal-body-native-test
+          ./crystal-body-native-test "rom/$ROM_NAME"
