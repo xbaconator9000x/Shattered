@@ -90,7 +90,7 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         self.assertTrue((self.root / "candidate").exists())
         self.assertEqual("existing", (collision / "meta.txt").read_text())
 
-    def test_rebuild_discards_only_stale_shattered_runtime_outputs
+    def test_rebuild_discards_only_stale_shattered_runtime_outputs(self):
         (self.base / "SHATTERED_NATIVE_COMPILE_REPORT.json").write_text("{}")
         (self.base / "SHATTERED_RUNTIME_ISOLATION_REPORT.json").write_text("{}")
         tools = self.base / "SHATTERED_OFFLINE_TOOLS" / "Shattered Core"
