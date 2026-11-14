@@ -21,6 +21,7 @@ class StageEssentialsTests(unittest.TestCase):
             (dest / "Plugins").mkdir()
             report = stage_essentials.install_shattered_runtime_set(dest)
             self.assertIn("Shattered Companion", report["staged"])
+            self.assertIn("Shattered Gameplay", report["staged"])
             self.assertTrue(
                 (dest / "Plugins" / "Shattered Companion" / "001_Companion.rb").is_file()
             )
