@@ -295,11 +295,8 @@ module ShatteredGameplay
   def reconcile_mount(player = (defined?($game_player) ? $game_player : nil))
     return false unless player && player.respond_to?(:character_name) && player.respond_to?(:character_name=)
     mounted = defined?(ShatteredCompanion) && ShatteredCompanion.mounted?
-    if !mounted
-      base = player.instance_variable_get(:@shattered_gameplay_base_charset)
-      player.character_name = base if base && !base.empty?
-      player.remove_instance_variable(:@shattered_gameplay_base_charset) if base
-      restore_mount_speed(player)
+    unless mounted
+      restore_mount_presentation(player)
       return false
     end
     base = player.character_name
@@ -307,7 +304,12 @@ module ShatteredGameplay
     player.instance_variable_set(:@shattered_gameplay_base_charset, base)
     species = ShatteredCompanion.partner.species.to_s.upcase
     sheet = "SHATTERED_RIDE_#{species}_#{base}"
-    return false unless File.file?(File.join("Graphics", "Characters", sheet + ".png"))
+    unless File.file?(File.join("Graphics", "Characters", sheet + ".png"))
+      # The party may have changed while already mounted. A missing composite
+      # is a fail-closed dismount, never a stale rider sheet or speed bonus.
+      restore_mount_presentation(player)
+      return false
+    end
     player.character_name = sheet
     apply_mount_speed(player)
     true
@@ -325,6 +327,15 @@ module ShatteredGameplay
     player.instance_variable_set(:@shattered_gameplay_base_speed, base)
     player.move_speed = [base + 1, 6].min
     true
+  end
+
+  def restore_mount_presentation(player)
+    base = player.instance_variable_get(:@shattered_gameplay_base_charset)
+    if base && !base.empty? && player.respond_to?(:character_name=)
+      player.character_name = base
+    end
+    player.remove_instance_variable(:@shattered_gameplay_base_charset) if base
+    restore_mount_speed(player)
   end
 
   def restore_mount_speed(player)
@@ -394,4 +405,5 @@ end
 if defined?(EventHandlers)
   EventHandlers.add(:on_game_map_setup, :shattered_gameplay_mount, proc { |*_| ShatteredGameplay.reconcile_mount })
   EventHandlers.add(:on_map_or_spriteset_change, :shattered_gameplay_mount_continue, proc { |*_| ShatteredGameplay.reconcile_mount })
+  EventHandlers.add(:on_player_step_taken, :shattered_gameplay_mount_step, proc { |*_| ShatteredGameplay.reconcile_mount })
 end
