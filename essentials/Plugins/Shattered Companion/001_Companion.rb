@@ -159,4 +159,8 @@ if defined?(EventHandlers)
     proc { |*args| ShatteredCompanion.reconcile_runtime })
   EventHandlers.add(:on_map_or_spriteset_change, :shattered_companion_continue,
     proc { |*args| ShatteredCompanion.reconcile_runtime })
+  # Party changes can occur away from a transfer (captures, storage and scripts).
+  # Reconcile on the next native step so an old field follower never lingers.
+  EventHandlers.add(:on_player_step_taken, :shattered_companion_party_refresh,
+    proc { |*args| ShatteredCompanion.reconcile_runtime })
 end
