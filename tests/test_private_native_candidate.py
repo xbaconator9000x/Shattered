@@ -90,6 +90,19 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         self.assertTrue((self.root / "candidate").exists())
         self.assertEqual("existing", (collision / "meta.txt").read_text())
 
+    def test_rebuild_discards_only_stale_shattered_runtime_outputs
+        (self.base / "SHATTERED_NATIVE_COMPILE_REPORT.json").write_text("{}")
+        (self.base / "SHATTERED_RUNTIME_ISOLATION_REPORT.json").write_text("{}")
+        tools = self.base / "SHATTERED_OFFLINE_TOOLS" / "Shattered Core"
+        tools.mkdir(parents=True)
+        (tools / "old.rb").write_text("old private tool")
+        receipt = build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
+        self.assertIn("Shattered Core", receipt["runtime_plugins"])
+        report = (self.root / "candidate" / "SHATTERED_RUNTIME_ISOLATION_REPORT.json").read_text()
+        self.assertIn("private_runtime_plugin_isolation", report)
+        self.assertEqual("{}", (self.base / "SHATTERED_NATIVE_COMPILE_REPORT.json").read_text())
+        self.assertTrue((self.base / "SHATTERED_OFFLINE_TOOLS/Shattered Core/old.rb").is_file())
+
     def test_requested_commit_cannot_disagree_with_checkout(self):
         try:
             _sha, verified = source_pin()
