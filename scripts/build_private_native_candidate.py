@@ -11,6 +11,7 @@ import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import tempfile
 
@@ -25,6 +26,11 @@ RUNTIME_NAMES = (
     "Shattered World Links",
 )
 REPORT = "SHATTERED_NATIVE_CANDIDATE.json"
+STALE_RECEIPTS = (
+    "SHATTERED_NATIVE_COMPILE_REPORT.json",
+    "SHATTERED_RUNTIME_ISOLATION_REPORT.json",
+    REPORT,
+)
 
 
 def digest(path):
@@ -39,6 +45,28 @@ def install_available_mount_composites(candidate):
     if not onix.is_file() or not any(path.is_file() for path in players):
         return None
     return build_mount_composites(candidate)
+
+
+def reset_prior_runtime_outputs(candidate):
+    """Remove only generated Shattered outputs from a transient rebuild stage."""
+    for name in STALE_RECEIPTS:
+        path = candidate / name
+        if path.is_symlink():
+            raise ValueError(f"unsafe stale runtime receipt: {name}")
+        if path.exists():
+            if not path.is_file():
+                raise ValueError(f"stale runtime receipt is not a file: {name}")
+            path.unlink()
+    offline = candidate / "SHATTERED_OFFLINE_TOOLS"
+    if offline.is_symlink():
+        raise ValueError("unsafe stale offline tools directory")
+    if offline.exists():
+        if not offline.is_dir():
+            raise ValueError("stale offline tools path is not a directory")
+        for path in offline.rglob("*"):
+            if path.is_symlink():
+                raise ValueError("symlink in stale offline tools directory")
+        shutil.rmtree(offline)
 
 
 def source_pin(requested=None):
@@ -119,10 +147,11 @@ def build(project, output, requested_sha=None, linux_aliases=False):
         # A prior private Shattered candidate is a supported rebuild base. Replace
         # only reviewed runtime-plugin directories in the transient staging copy.
         staged = stage(base, candidate, include_runtime_set=True, replace_runtime_set=True)
+        reset_prior_runtime_outputs(candidate)
         mounts = install_available_mount_composites(candidate)
         compiled = run_ruby(
             "compile_private_plugins.rb",
-            ["--project", str(candidate), *(
+            ["--project", str(candidate), "--rebuild-existing", *(
                 item for name in RUNTIME_NAMES for item in ("--plugin", name)
             )]
         )
