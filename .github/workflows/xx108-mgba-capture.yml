@@ -32,13 +32,19 @@ jobs:
       - name: Run mGBA and capture its actual display
         run: |
           set -euxo pipefail
+          MGBA_BIN="$(command -v mgba-sdl || true)"
+          if [ -z "$MGBA_BIN" ] && [ -x /usr/games/mgba-sdl ]; then
+            MGBA_BIN=/usr/games/mgba-sdl
+          fi
+          test -n "$MGBA_BIN"
           Xvfb :99 -screen 0 1024x768x24 >evidence/xvfb.log 2>&1 &
           XVFB_PID=$!
           export DISPLAY=:99
-          mgba-sdl -f "rom/$ROM_NAME" >evidence/mgba.log 2>&1 &
+          "$MGBA_BIN" -f "rom/$ROM_NAME" >evidence/mgba.log 2>&1 &
           MGBA_PID=$!
           trap 'kill $MGBA_PID $XVFB_PID || true' EXIT
           sleep 8
+          kill -0 "$MGBA_PID"
           for n in 1 2 3 4 5 6; do
             import -display :99 -window root "evidence/frame-$n.png"
             sleep 1
@@ -47,6 +53,7 @@ jobs:
           identify evidence/mgba-boot.gif | tee evidence/identify.txt
 
       - name: Upload the native mGBA evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: xx1.08-mgba-boot-evidence
