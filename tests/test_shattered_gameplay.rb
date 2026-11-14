@@ -2,11 +2,12 @@
 require 'minitest/autorun'
 
 class Pokemon
-  attr_accessor :species, :level, :calc_count
+  attr_accessor :species, :level, :calc_count, :moves
   def initialize(species, level)
     @species = species
     @level = level
     @calc_count = 0
+    @moves = []
   end
   def calc_stats
     @calc_count += 1
@@ -100,7 +101,6 @@ class ShatteredGameplayMigrationTest < Minitest::Test
       {:version => 2, :class_id => 0, :secondary_id => nil,
        :known => [:QUICKATTACK, :EMBER, :KARATECHOP], :trials => []})
     assert_equal [:QUICKATTACK, :EMBER], ShatteredGameplay.qualifying_moves(human, 1)
-    ShatteredGameplay.record_trial!(human, 1)
     assert ShatteredGameplay.can_choose_primary?(human, 1)
   end
 
@@ -112,8 +112,17 @@ class ShatteredGameplayMigrationTest < Minitest::Test
     assert_equal [0, *2.upto(17)], ShatteredGameplay.advanced_choices(human)
     assert_equal 18, ShatteredGameplay.combined_class_id(1, 2)
     assert_equal 19, ShatteredGameplay.combined_class_id(1, 0)
-    ShatteredGameplay.record_trial!(human, 2, true)
     assert_equal 18, ShatteredGameplay.choose_advanced!(human, 2)
     assert_equal 2, ShatteredGameplay.state(human)[:secondary_id]
+  end
+
+  def test_actual_human_moves_are_synchronised_before_primary_selection
+    human = Pokemon.new(:HUMAN, 30)
+    human.moves = [Struct.new(:id).new(:QUICKATTACK), Struct.new(:id).new(:EMBER)]
+    human.instance_variable_set(ShatteredGameplay::STATE_IVAR,
+      {:version => 2, :class_id => 0, :secondary_id => nil, :known => [], :trials => []})
+    assert ShatteredGameplay.can_choose_primary?(human, 1)
+    assert_equal 1, ShatteredGameplay.choose_primary!(human, 1)
+    assert_equal [:QUICKATTACK, :EMBER], ShatteredGameplay.state(human)[:known]
   end
 end
