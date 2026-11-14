@@ -16,6 +16,7 @@ import tempfile
 
 from stage_essentials import ROOT, stage
 from prepare_linux_map_aliases import prepare as prepare_linux_aliases
+from install_private_mount_composites import build as build_mount_composites
 
 RUNTIME_NAMES = (
     "Shattered Companion", "Shattered Core", "Shattered Gameplay", "Shattered Dojo", "Shattered Equipment",
@@ -28,6 +29,16 @@ REPORT = "SHATTERED_NATIVE_CANDIDATE.json"
 
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def install_available_mount_composites(candidate):
+    """Install only source-backed rider sheets; unsupported mounts stay disabled."""
+    characters = candidate / "Graphics" / "Characters"
+    onix = candidate / "Graphics" / "Pokemon" / "Front" / "ONIX.png"
+    players = [characters / f"{name}.png" for name in ("boy_run", "girl_run")]
+    if not onix.is_file() or not any(path.is_file() for path in players):
+        return None
+    return build_mount_composites(candidate)
 
 
 def source_pin(requested=None):
@@ -108,6 +119,7 @@ def build(project, output, requested_sha=None, linux_aliases=False):
         # A prior private Shattered candidate is a supported rebuild base. Replace
         # only reviewed runtime-plugin directories in the transient staging copy.
         staged = stage(base, candidate, include_runtime_set=True, replace_runtime_set=True)
+        mounts = install_available_mount_composites(candidate)
         compiled = run_ruby(
             "compile_private_plugins.rb",
             ["--project", str(candidate), *(
@@ -132,6 +144,7 @@ def build(project, output, requested_sha=None, linux_aliases=False):
             "compiled_plugin_archive_sha256": digest(candidate / "Data/PluginScripts.rxdata"),
             "runtime_plugins": isolated["runtime_plugin_names"],
             "offline_installers_isolated": len(isolated["moved"]),
+            "mount_composites": mounts,
             "linux_map_alias_count": aliases["alias_count"] if aliases else None,
             "hns_gate_installed": False,
             "native_pbs_compiled": False,
