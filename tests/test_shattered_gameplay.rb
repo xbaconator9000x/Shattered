@@ -47,7 +47,30 @@ def load_data(_path)
   $gameplay_payload
 end
 
+module EventHandlers
+  HANDLERS = {}
+  def self.add(event, name, callback)
+    HANDLERS[[event, name]] = callback
+  end
+end
+
 require_relative '../essentials/Plugins/Shattered Gameplay/001_Gameplay'
+
+module ShatteredCompanion
+  class << self
+    attr_accessor :test_mounted, :test_partner
+  end
+
+  def self.mounted?(*_args)
+    test_mounted
+  end
+
+  def self.partner(*_args)
+    test_partner
+  end
+end
+
+RuntimePlayer = Struct.new(:character_name, :move_speed)
 
 class ShatteredGameplayMigrationTest < Minitest::Test
   def setup
@@ -114,6 +137,28 @@ class ShatteredGameplayMigrationTest < Minitest::Test
     assert_equal 19, ShatteredGameplay.combined_class_id(1, 0)
     assert_equal 18, ShatteredGameplay.choose_advanced!(human, 2)
     assert_equal 2, ShatteredGameplay.state(human)[:secondary_id]
+  end
+
+  def test_missing_mount_composite_restores_avatar_and_speed_after_party_change
+    player = RuntimePlayer.new("boy_run", 4)
+    ShatteredCompanion.test_mounted = true
+    ShatteredCompanion.test_partner = Pokemon.new(:ONIX, 30)
+
+    File.stub(:file?, true) do
+      assert ShatteredGameplay.reconcile_mount(player)
+    end
+    assert_equal "SHATTERED_RIDE_ONIX_boy_run", player.character_name
+    assert_equal 5, player.move_speed
+
+    ShatteredCompanion.test_partner = Pokemon.new(:CRYSTALIX, 30)
+    File.stub(:file?, false) do
+      refute ShatteredGameplay.reconcile_mount(player)
+    end
+    assert_equal "boy_run", player.character_name
+    assert_equal 4, player.move_speed
+  ensure
+    ShatteredCompanion.test_mounted = nil
+    ShatteredCompanion.test_partner = nil
   end
 
   def test_actual_human_moves_are_synchronised_before_primary_selection
