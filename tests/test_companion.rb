@@ -54,6 +54,19 @@ module Shattered
   end
 end
 
+# Register native callbacks before loading the plugin so they can be exercised
+# without a full Essentials runtime.
+module EventHandlers
+  HANDLERS = {}
+  def self.add(event, name, callback)
+    HANDLERS[[event, name]] = callback
+  end
+
+  def self.trigger(event)
+    HANDLERS.each { |(registered, _name), callback| callback.call if registered == event }
+  end
+end
+
 load File.expand_path("../essentials/Plugins/Shattered Companion/001_Companion.rb", __dir__)
 
 # Minimal contract of Essentials' native follower API. This is intentionally
@@ -149,6 +162,24 @@ class ShatteredCompanionTest < Minitest::Test
     player = TestPlayer.new(Pokemon.new(:HUMAN), Pokemon.new(:VULPIX), Pokemon.new(:STARYU))
     refute ShatteredCompanion.valid_party?(player)
     assert_equal :VULPIX, ShatteredCompanion.partner(player).species
+  end
+
+  def test_player_step_refreshes_the_native_follower_after_a_party_swap
+    old_temp, old_avatar, old_map, old_player = $game_temp, $game_player, $game_map, $player
+    $game_temp = RuntimeTemp.new
+    $game_player = RuntimeAvatar.new(8, 9)
+    $game_map = TestMap.new(1)
+    $player = TestPlayer.new(Pokemon.new(:HUMAN), Pokemon.new(:VULPIX))
+
+    ShatteredCompanion.stub(:character_sheet_exists?, true) do
+      EventHandlers.trigger(:on_player_step_taken)
+      assert_equal "POKEMON_Vulpix", $game_temp.followers.get_follower_by_name(ShatteredCompanion::FOLLOWER_NAME).character_name
+      $player.party[1] = Pokemon.new(:STARYU)
+      EventHandlers.trigger(:on_player_step_taken)
+    end
+    assert_equal "POKEMON_Staryu", $game_temp.followers.get_follower_by_name(ShatteredCompanion::FOLLOWER_NAME).character_name
+  ensure
+    $game_temp, $game_player, $game_map, $player = old_temp, old_avatar, old_map, old_player
   end
 
   def test_native_follower_factory_receives_real_companion_event_only_with_sheet
