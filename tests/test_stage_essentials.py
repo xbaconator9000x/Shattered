@@ -25,6 +25,18 @@ class StageEssentialsTests(unittest.TestCase):
                 (dest / "Plugins" / "Shattered Companion" / "001_Companion.rb").is_file()
             )
 
+    def test_runtime_set_can_replace_only_known_runtime_plugins(self):
+        with tempfile.TemporaryDirectory() as temp:
+            dest = Path(temp)
+            old = dest / "Plugins" / "Shattered Raid"
+            old.mkdir(parents=True)
+            (old / "meta.txt").write_text("old")
+            report = stage_essentials.install_shattered_runtime_set(
+                dest, replace_existing=True
+            )
+            self.assertEqual(["Shattered Raid"], report["replaced"])
+            self.assertNotEqual("old", (old / "meta.txt").read_text())
+
     def test_rom_front_import_rejects_unrecognised_input_before_writing(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
