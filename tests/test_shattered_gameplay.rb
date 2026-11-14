@@ -19,10 +19,22 @@ module Shattered
   end
 end
 
+module GameData
+  class Move
+    Entry = Struct.new(:type)
+    TYPES = { :QUICKATTACK => 10, :EMBER => 10, :KARATECHOP => 1 }.freeze
+    def self.try_get(id)
+      type = TYPES[id]
+      type && Entry.new(type)
+    end
+  end
+end
+
 $gameplay_payload = {
   'classes' => [
-    {'name' => 'Starting HUMAN', 'types' => [9, 9]},
-    {'name' => 'Firebreather', 'types' => [9, 10], 'path_a' => 1, 'path_b' => 2},
+    {'name' => 'Starting HUMAN', 'types' => [9, 9], 'moves' => [[1, 33, 'Tackle']]},
+    {'name' => 'Firebreather', 'types' => [9, 10], 'path_a' => 1, 'path_b' => 2,
+     'moves' => [[1, 98, 'Quick Attack'], [20, 52, 'Ember'], [31, 2, 'Karate Chop']]},
     {'name' => 'Martial Artist', 'types' => [9, 1], 'path_a' => 1, 'path_b' => 2},
     {'name' => 'Flame Monk', 'types' => [9, 10], 'path_a' => 1, 'path_b' => 2}
   ]
@@ -69,5 +81,23 @@ class ShatteredGameplayMigrationTest < Minitest::Test
     human.instance_variable_set(ShatteredGameplay::STATE_IVAR,
       {:version => 2, :class_id => 99, :secondary_id => nil, :known => [], :trials => []})
     assert_raises(ArgumentError) { ShatteredGameplay.state(human) }
+  end
+
+  def test_study_uses_authenticated_extractor_moves_schema_and_level_gate
+    human = Pokemon.new(:HUMAN, 20)
+    human.instance_variable_set(ShatteredGameplay::STATE_IVAR,
+      {:version => 2, :class_id => 1, :secondary_id => nil, :known => [], :trials => []})
+    assert_equal [:QUICKATTACK, :EMBER], ShatteredGameplay.study!(human)
+    assert_equal [:QUICKATTACK, :EMBER], ShatteredGameplay.state(human)[:known]
+  end
+
+  def test_qualifying_moves_use_essentials_move_type_registry
+    human = Pokemon.new(:HUMAN, 30)
+    human.instance_variable_set(ShatteredGameplay::STATE_IVAR,
+      {:version => 2, :class_id => 0, :secondary_id => nil,
+       :known => [:QUICKATTACK, :EMBER, :KARATECHOP], :trials => []})
+    assert_equal [:QUICKATTACK, :EMBER], ShatteredGameplay.qualifying_moves(human, 1)
+    ShatteredGameplay.record_trial!(human, 1)
+    assert ShatteredGameplay.can_choose_primary?(human, 1)
   end
 end
