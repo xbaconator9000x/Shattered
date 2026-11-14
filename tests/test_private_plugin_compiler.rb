@@ -195,6 +195,27 @@ class PrivatePluginCompilerTest < Minitest::Test
     end
   end
 
+  def test_explicit_rebuild_replaces_only_requested_shattered_entries
+    with_stage do |root|
+      target = File.join(root, "Data/PluginScripts.rxdata")
+      ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      entries = Marshal.load(File.binread(target))
+      upstream = ["Other Plugin", { :version => "1.0.0", :essentials => ["21.1"] },
+                  [["other.rb", Zlib::Deflate.deflate("OTHER = true\n")]]]
+      entries << upstream
+      File.binwrite(target, Marshal.dump(entries))
+      File.write(File.join(root, "Plugins/Shattered Core/001_Core.rb"),
+        "module Shattered; CORE_TEST = :rebuilt; end\n")
+      report = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"], rebuild_existing: true)
+      assert_equal ["Shattered Core"], report.fetch("removed").map { |entry| entry.fetch("plugin") }
+      assert_equal ["Shattered Core"], report.fetch("added")
+      rebuilt = Marshal.load(File.binread(target))
+      assert_equal Marshal.dump(upstream), Marshal.dump(rebuilt.find { |entry| entry[0] == "Other Plugin" })
+      source = Zlib::Inflate.inflate(rebuilt.find { |entry| entry[0] == "Shattered Core" }[2][0][1])
+      assert_includes source, "CORE_TEST = :rebuilt"
+    end
+  end
+
   def test_rejects_modified_existing_plugin_without_overwrite
     with_stage do |root|
       target = File.join(root, "Data/PluginScripts.rxdata")
