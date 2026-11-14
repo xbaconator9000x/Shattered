@@ -5,6 +5,7 @@
 module ShatteredGameplay
   DATA_PATH = "Data/shattered_gameplay.dat".freeze
   STATE_IVAR = :@shattered_gameplay_state
+  CURRICULUM_TYPES = %w[NORMAL FIGHTING FLYING POISON GROUND ROCK BUG GHOST STEEL HUMAN FIRE WATER GRASS ELECTRIC PSYCHIC ICE DRAGON DARK].freeze
   module_function
 
   def data
@@ -167,13 +168,19 @@ module ShatteredGameplay
   def qualifying_moves(human, path)
     record = class_record(path)
     return [] unless record
-    type = Array(record["types"])[1]
-    state(human)[:known].select { |move| move_type_id(move) == type }
+    type = type_key(Array(record["types"])[1])
+    state(human)[:known].select { |move| type_key(move_type_id(move)) == type }
   end
 
   # Essentials' move registry is authoritative for elemental typing. The ROM
   # curriculum carries source move IDs/names, but not a second conflicting
   # type chart. Unknown or modded moves simply do not qualify.
+  def type_key(value)
+    value = value.id if value.respond_to?(:id)
+    return CURRICULUM_TYPES[value] if value.is_a?(Integer) && value.between?(0, CURRICULUM_TYPES.length - 1)
+    value.to_s.upcase.gsub(/[^A-Z0-9]/, "")
+  end
+
   def move_type_id(move)
     return nil unless defined?(GameData::Move)
     entry = if GameData::Move.respond_to?(:try_get)
