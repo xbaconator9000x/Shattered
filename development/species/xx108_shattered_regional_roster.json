@@ -1,0 +1,22 @@
+{
+  "schema": 1,
+  "target": "Shattered xx1.08",
+  "status": "implementation manifest",
+  "constraints": [
+    "IDs 263 and 264 remain Crystal Onix (display ONIX) and Crystalix.",
+    "Do not create Shattered Venomoth. Shattered Venonat evolves directly to Drenomoth with a Shiny Stone.",
+    "Vanilla Paras, Parasect, Sunkern and Sunflora remain unchanged.",
+    "No Shattered Machamp branch."
+  ],
+  "species": [
+    {"id":265,"internal":"SHATTERED_SPEAROW","display":"SPEAROW","types":["DARK","FLYING"],"evolves_to":266,"method":"LEVEL_WHILE_KNOWING_THIEF","assets":"spearow"},
+    {"id":266,"internal":"SHATTERED_FEAROW","display":"FEAROW","types":["DARK","FLYING"],"assets":"fearow"},
+    {"id":267,"internal":"SHATTERED_VENONAT","display":"VENONAT","types":["BUG","PSYCHIC"],"evolves_to":268,"method":"SHINY_STONE","assets":"venonat"},
+    {"id":268,"internal":"DRENOMOTH","display":"DRENOMOTH","types":["BUG","PSYCHIC"],"assets":"Drenomoth"},
+    {"id":269,"internal":"SHATTERED_MACHOP","display":"MACHOP","types":["ROCK","FIGHTING"],"evolves_to":270,"method":"LEVEL_28","assets":"machop"},
+    {"id":270,"internal":"SHATTERED_MACHOKE","display":"MACHOKE","types":["ROCK","FIGHTING"],"evolves_to":271,"method":"USE_EVERSTONE","assets":"machoke"},
+    {"id":271,"internal":"MACHOLYTH","display":"MACHOLYTH","types":["ROCK","FIGHTING"],"assets":"macholyth"},
+    {"id":272,"internal":"SUNFLORAL","display":"SUNFLORAL","types":["GRASS","FIRE"],"ability1":"DROUGHT","hidden_ability":"SOLAR_POWER","evolves_from":"SUNFLORA","method":"FIRE_STONE","assets":"sunfloral"},
+    {"id":273,"internal":"PARASPECTRE","display":"PARASPECTRE","types":["GHOST","GRASS"],"abilities":["EFFECT_SPORE","CURSED_BODY"],"evolves_from":"PARASECT","method":"DUSK_STONE","assets":"Paraspectre"}
+  ]
+}
