@@ -105,7 +105,9 @@ def build(project, output, requested_sha=None, linux_aliases=False):
     source_files["scripts/finalize_private_runtime.rb"] = digest(ROOT / "scripts/finalize_private_runtime.rb")
     with tempfile.TemporaryDirectory(prefix=".shattered-candidate-", dir=destination.parent) as temporary:
         candidate = Path(temporary) / "project"
-        staged = stage(base, candidate, include_runtime_set=True)
+        # A prior private Shattered candidate is a supported rebuild base. Replace
+        # only reviewed runtime-plugin directories in the transient staging copy.
+        staged = stage(base, candidate, include_runtime_set=True, replace_runtime_set=True)
         compiled = run_ruby(
             "compile_private_plugins.rb",
             ["--project", str(candidate), *(
