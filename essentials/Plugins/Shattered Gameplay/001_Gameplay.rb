@@ -132,8 +132,10 @@ module ShatteredGameplay
   end
 
   def combined_class_id(first, second)
-    wanted = [discipline_type(first), discipline_type(second)].sort
-    return nil if wanted.include?(nil) || wanted.uniq.length != 2
+    first_type = discipline_type(first)
+    second_type = discipline_type(second)
+    return nil if first_type.nil? || second_type.nil? || first_type == second_type
+    wanted = [first_type, second_type].sort
     classes.each_with_index.find do |record, id|
       next false if discipline_ids.include?(id)
       Array(record && record["types"]).map(&:to_i).sort == wanted
