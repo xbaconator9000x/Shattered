@@ -270,7 +270,7 @@ def install_shattered_runtime_set(dest, replace_existing=False):
     from shutil import copytree, rmtree
 
     from_names = (
-        "Shattered Companion", "Shattered Dojo", "Shattered Equipment", "Shattered Gate Story",
+        "Shattered Companion", "Shattered Gameplay", "Shattered Dojo", "Shattered Equipment", "Shattered Gate Story",
         "Shattered HnS Gate", "Shattered Murkrow Rescue", "Shattered Raid",
         "Shattered Route22", "Shattered Viridian", "Shattered World Links",
     )
