@@ -2,6 +2,10 @@ name: xx1.08 mGBA boot capture
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/xx108-mgba-capture.yml
+      - development/mgba_ci_boot_capture.c
 
 permissions:
   contents: read
@@ -16,18 +20,15 @@ jobs:
       ROM_SHA256: 262ad3fe92e2ec204bc10ad8e39a8eecf9d186472d3eadc7153486da4c7d1e87
     steps:
       - uses: actions/checkout@v4
-
       - name: Download the private xx1.08 test input
         run: |
           mkdir -p rom evidence
           gh release download xx1.08-crystal-body-test --repo "$GITHUB_REPOSITORY" --pattern "$ROM_NAME" --dir rom
           echo "$ROM_SHA256  rom/$ROM_NAME" | sha256sum --check --strict
-
       - name: Install mGBA native headers and image conversion
         run: |
           sudo apt-get update
           sudo apt-get install --yes libmgba-dev imagemagick
-
       - name: Capture mGBA's native framebuffer
         run: |
           set -euxo pipefail
@@ -35,7 +36,6 @@ jobs:
           evidence/mgba_ci_boot_capture "rom/$ROM_NAME" evidence/boot-060.ppm | tee evidence/mgba-native.log
           convert -resize 480x320 -delay 100 -loop 0 evidence/boot-060.ppm evidence/boot-180.ppm evidence/boot-360.ppm evidence/mgba-boot.gif
           identify evidence/mgba-boot.gif | tee evidence/identify.txt
-
       - name: Upload the native mGBA evidence
         if: always()
         uses: actions/upload-artifact@v4
