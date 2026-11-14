@@ -22,7 +22,7 @@ end
 module GameData
   class Move
     Entry = Struct.new(:type)
-    TYPES = { :QUICKATTACK => 10, :EMBER => 10, :KARATECHOP => 1 }.freeze
+    TYPES = { :QUICKATTACK => 10, :EMBER => 10, :KARATECHOP => 1, :LOWKICK => 1 }.freeze
     def self.try_get(id)
       type = TYPES[id]
       type && Entry.new(type)
@@ -30,14 +30,17 @@ module GameData
   end
 end
 
+$gameplay_classes = [
+  {'name' => 'Starting HUMAN', 'types' => [9, 9], 'moves' => [[1, 33, 'Tackle']]},
+  {'name' => 'Firebreather', 'types' => [9, 10],
+   'moves' => [[1, 98, 'Quick Attack'], [20, 52, 'Ember'], [31, 2, 'Karate Chop']]},
+  {'name' => 'Martial Artist', 'types' => [9, 1]},
+  *Array.new(15) { |i| {'name' => "Discipline #{i}", 'types' => [9, i + 20]} },
+  {'name' => 'Flame Monk', 'types' => [10, 1]},
+  {'name' => 'Hearthkeeper', 'types' => [9, 10]}
+]
 $gameplay_payload = {
-  'classes' => [
-    {'name' => 'Starting HUMAN', 'types' => [9, 9], 'moves' => [[1, 33, 'Tackle']]},
-    {'name' => 'Firebreather', 'types' => [9, 10], 'path_a' => 1, 'path_b' => 2,
-     'moves' => [[1, 98, 'Quick Attack'], [20, 52, 'Ember'], [31, 2, 'Karate Chop']]},
-    {'name' => 'Martial Artist', 'types' => [9, 1], 'path_a' => 1, 'path_b' => 2},
-    {'name' => 'Flame Monk', 'types' => [9, 10], 'path_a' => 1, 'path_b' => 2}
-  ]
+  'classes' => $gameplay_classes
 }
 def load_data(_path)
   $gameplay_payload
@@ -64,7 +67,7 @@ class ShatteredGameplayMigrationTest < Minitest::Test
     human = Pokemon.new(:HUMAN, 55)
     human.instance_variable_set(:@shattered_specialisation,
       {:version => 1, :primary => :FIREBREATHER, :advanced => :FLAMEMONK})
-    assert_equal 3, ShatteredGameplay.state(human)[:class_id]
+    assert_equal 18, ShatteredGameplay.state(human)[:class_id]
     assert_equal 1, ShatteredGameplay.state(human)[:secondary_id]
   end
 
@@ -99,5 +102,18 @@ class ShatteredGameplayMigrationTest < Minitest::Test
     assert_equal [:QUICKATTACK, :EMBER], ShatteredGameplay.qualifying_moves(human, 1)
     ShatteredGameplay.record_trial!(human, 1)
     assert ShatteredGameplay.can_choose_primary?(human, 1)
+  end
+
+  def test_advanced_choices_and_target_are_derived_from_recovered_type_pairs
+    human = Pokemon.new(:HUMAN, 55)
+    human.instance_variable_set(ShatteredGameplay::STATE_IVAR,
+      {:version => 2, :class_id => 1, :secondary_id => nil,
+       :known => [:QUICKATTACK, :EMBER, :KARATECHOP, :LOWKICK], :trials => []})
+    assert_equal [0, *2.upto(17)], ShatteredGameplay.advanced_choices(human)
+    assert_equal 18, ShatteredGameplay.combined_class_id(1, 2)
+    assert_equal 19, ShatteredGameplay.combined_class_id(1, 0)
+    ShatteredGameplay.record_trial!(human, 2, true)
+    assert_equal 18, ShatteredGameplay.choose_advanced!(human, 2)
+    assert_equal 2, ShatteredGameplay.state(human)[:secondary_id]
   end
 end
