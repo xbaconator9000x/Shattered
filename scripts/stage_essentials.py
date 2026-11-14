@@ -259,7 +259,7 @@ def png_dimensions(data):
 
 
 
-def install_shattered_runtime_set(dest):
+def install_shattered_runtime_set(dest, replace_existing=False):
     """Stage the reviewed Shattered plugin set for native archive compilation.
 
     This is not a native compilation or gameplay test. The subsequent guarded
@@ -267,7 +267,7 @@ def install_shattered_runtime_set(dest):
     """
     import re
     from pathlib import Path
-    from shutil import copytree
+    from shutil import copytree, rmtree
 
     from_names = (
         "Shattered Companion", "Shattered Dojo", "Shattered Equipment", "Shattered Gate Story",
@@ -285,12 +285,24 @@ def install_shattered_runtime_set(dest):
             raise ValueError(f"missing metadata: {name}")
         if any(p.is_symlink() for p in source.rglob("*")):
             raise ValueError(f"symlink in reviewed plugin: {name}")
-        if (plugins / name).exists() or (plugins / name).is_symlink():
-            raise ValueError(f"runtime plugin destination collision: {name}")
+        target = plugins / name
+        if target.exists() or target.is_symlink():
+            if not replace_existing:
+                raise ValueError(f"runtime plugin destination collision: {name}")
+            if target.is_symlink() or not target.is_dir():
+                raise ValueError(f"unsafe runtime plugin replacement target: {name}")
+    replaced = []
+    if replace_existing:
+        for name in from_names:
+            target = plugins / name
+            if target.exists():
+                rmtree(target)
+                replaced.append(name)
     for name in from_names:
         copytree(sources / name, plugins / name)
     return {
         "staged": list(from_names),
+        "replaced": replaced,
         "native_compiled": False,
         "offline_installers_isolated": False,
         "gameplay_verified": False,
@@ -343,7 +355,8 @@ def install_shattered_rom_fronts(dest, rom):
 
 
 def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None,
-          include_equipment=False, include_runtime_set=False, shattered_rom=None):
+          include_equipment=False, include_runtime_set=False, replace_runtime_set=False,
+          shattered_rom=None):
     project = Path(project).absolute()
     reject_symlinked_project(project)
     project = project.resolve()
@@ -390,7 +403,9 @@ def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_im
         if include_runtime_set:
             if include_equipment:
                 raise ValueError("use --include-runtime-set OR --include-equipment, not both")
-            report["runtime_set"] = install_shattered_runtime_set(target)
+            report["runtime_set"] = install_shattered_runtime_set(
+                target, replace_existing=replace_runtime_set
+            )
             report["caveats"].append("Full Shattered runtime set staged only; compile and isolate offline installers before launch")
         if include_equipment:
             report['equipment'] = install_shattered_equipment(target)
