@@ -109,7 +109,35 @@ module ShatteredGameplay
 
   def primary_choices(human)
     return [] unless human.level.to_i >= 30 && class_id_for(human) == 0
-    (1..17).to_a
+    discipline_ids - [0]
+  end
+
+  # The authenticated curriculum contains one base HUMAN record, 17 single
+  # disciplines and 153 pair records. It does not carry synthetic path_a or
+  # path_b fields. Derive the tree from those source type pairs so advancing
+  # remains correct for every recovered discipline, including combinations
+  # with base HUMAN itself.
+  def discipline_ids
+    classes.each_with_index.filter_map do |record, id|
+      types = Array(record && record["types"])
+      id if id <= 17 && types.length == 2 && types[0].to_i == 9 &&
+        (id == 0 || types[1].to_i != 9)
+    end
+  end
+
+  def discipline_type(id)
+    record = class_record(id)
+    types = Array(record && record["types"])
+    types.length == 2 ? types[1].to_i : nil
+  end
+
+  def combined_class_id(first, second)
+    wanted = [discipline_type(first), discipline_type(second)].sort
+    return nil if wanted.include?(nil) || wanted.uniq.length != 2
+    classes.each_with_index.find do |record, id|
+      next false if discipline_ids.include?(id)
+      Array(record && record["types"]).map(&:to_i).sort == wanted
+    end&.last
   end
 
   def trial_won?(human, path, advanced = false)
@@ -179,8 +207,13 @@ module ShatteredGameplay
 
   def advanced_choices(human)
     return [] unless human.level.to_i >= 55
-    current = class_record(class_id_for(human)); return [] unless current
-    [current["path_a"], current["path_b"]].compact.uniq.map(&:to_i)
+    current = class_id_for(human)
+    return [] unless primary_choices_for_level(human).include?(current)
+    discipline_ids - [current]
+  end
+
+  def primary_choices_for_level(human)
+    human.level.to_i >= 30 ? discipline_ids - [0] : []
   end
 
   def choose_advanced!(human, path)
@@ -188,7 +221,7 @@ module ShatteredGameplay
     raise ArgumentError, "advanced path requirements not met" unless advanced_choices(human).include?(path) &&
       trial_won?(human, path, true) && qualifying_moves(human, path).length >= 2
     primary = class_id_for(human)
-    target = classes.find_index { |r| r && [r["path_a"], r["path_b"]].map(&:to_i).sort == [primary, path].sort }
+    target = combined_class_id(primary, path)
     raise ArgumentError, "missing combined class" unless target
     state(human)[:class_id] = target; state(human)[:secondary_id] = path
     human.calc_stats if human.respond_to?(:calc_stats)
