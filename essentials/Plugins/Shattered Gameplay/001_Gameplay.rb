@@ -22,18 +22,35 @@ module ShatteredGameplay
     value && (value["training"] || value)
   end
 
+  def class_key(value)
+    value.to_s.upcase.gsub(/[^A-Z0-9]/, "")
+  end
+
+  def class_id_named(value)
+    key = class_key(value)
+    return nil if key.empty?
+    classes.find_index { |record| record && class_key(record["name"]) == key }
+  end
+
   def state(human)
     raise ArgumentError, "HUMAN required" unless defined?(Shattered) && Shattered.human?(human)
     value = human.instance_variable_get(STATE_IVAR)
     unless value.is_a?(Hash)
-      # Preserve the old six-path save state rather than silently discarding it.
+      # Older saves recorded the six descriptive paths in Core. Convert those
+      # names to the matching extracted curriculum record once, so gameplay,
+      # stats and later class choices have one persisted authority.
       legacy = human.instance_variable_get(:@shattered_specialisation)
-      value = { :version => 2, :class_id => legacy && legacy[:primary],
-                :secondary_id => nil, :known => [], :trials => [] }
+      primary = legacy && legacy[:primary]
+      advanced = legacy && legacy[:advanced]
+      class_id = class_id_named(advanced) || class_id_named(primary) || 0
+      value = { :version => 2, :class_id => class_id,
+                :secondary_id => class_id_named(primary), :known => [], :trials => [] }
       human.instance_variable_set(STATE_IVAR, value)
     end
     value[:known] ||= []; value[:trials] ||= []
     raise ArgumentError, "invalid HUMAN gameplay state" unless value[:version] == 2 &&
+      value[:class_id].is_a?(Integer) && class_record(value[:class_id]) &&
+      (value[:secondary_id].nil? || value[:secondary_id].is_a?(Integer)) &&
       value[:known].is_a?(Array) && value[:trials].is_a?(Array)
     value
   end
