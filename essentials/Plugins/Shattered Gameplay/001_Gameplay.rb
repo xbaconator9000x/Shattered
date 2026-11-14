@@ -99,6 +99,18 @@ module ShatteredGameplay
     move
   end
 
+  # Actual field/battle moves are the authority for specialisation entry. This
+  # keeps equipment-taught techniques and ordinary Essentials learning in sync
+  # with the private curriculum state without duplicating a move list in saves.
+  def record_known_moves!(human)
+    return [] unless human.respond_to?(:moves)
+    Array(human.moves).filter_map do |move|
+      id = move.respond_to?(:id) ? move.id : move
+      id = move_id(id)
+      id && unlock!(human, id)
+    end
+  end
+
   def study!(human)
     raise ArgumentError, "HUMAN must be level 20" unless human.level.to_i >= 20
     record = class_record(class_id_for(human))
@@ -177,7 +189,8 @@ module ShatteredGameplay
   end
 
   def can_choose_primary?(human, path)
-    primary_choices(human).include?(path.to_i) && trial_won?(human, path) &&
+    record_known_moves!(human)
+    primary_choices(human).include?(path.to_i) &&
       qualifying_moves(human, path).length >= 2
   end
 
@@ -194,7 +207,7 @@ module ShatteredGameplay
   # carrying a cached class id in switches.  Cancelling leaves the save state
   # untouched, and requirements are rechecked immediately before the commit.
   def choose_primary_interactive!(human)
-    options = primary_choices(human)
+    options = primary_choices(human).select { |id| can_choose_primary?(human, id) }
     return false if options.empty? || !defined?(pbShowCommands)
     labels = options.map do |id|
       record = class_record(id) || {}
@@ -220,8 +233,9 @@ module ShatteredGameplay
 
   def choose_advanced!(human, path)
     path = path.to_i
+    record_known_moves!(human)
     raise ArgumentError, "advanced path requirements not met" unless advanced_choices(human).include?(path) &&
-      trial_won?(human, path, true) && qualifying_moves(human, path).length >= 2
+      qualifying_moves(human, path).length >= 2
     primary = class_id_for(human)
     target = combined_class_id(primary, path)
     raise ArgumentError, "missing combined class" unless target
@@ -231,7 +245,7 @@ module ShatteredGameplay
   end
 
   def choose_advanced_interactive!(human)
-    options = advanced_choices(human)
+    options = advanced_choices(human).select { |id| can_choose_advanced?(human, id) }
     return false if options.empty? || !defined?(pbShowCommands)
     labels = options.map do |id|
       record = class_record(id) || {}
@@ -242,6 +256,23 @@ module ShatteredGameplay
     choose_advanced!(human, options[selection])
   rescue ArgumentError
     false
+  end
+
+  def can_choose_advanced?(human, path)
+    record_known_moves!(human)
+    advanced_choices(human).include?(path.to_i) &&
+      combined_class_id(class_id_for(human), path) &&
+      qualifying_moves(human, path).length >= 2
+  end
+
+  # Shared Ren/event entry point. It intentionally offers only paths backed by
+  # moves the player genuinely knows; cancelled or ineligible choices cannot
+  # mutate the HUMAN's persistent class state.
+  def offer_specialisation!(human)
+    if class_id_for(human) == 0
+      return choose_primary_interactive!(human)
+    end
+    choose_advanced_interactive!(human)
   end
 
   def mount_sheet(pokemon)
