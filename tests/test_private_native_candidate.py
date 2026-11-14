@@ -80,13 +80,13 @@ class PrivateNativeCandidateTest(unittest.TestCase):
             build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
         self.assertFalse((self.root / "candidate").exists())
 
-    def test_failed_plugin_collision_leaves_no_partial_candidate(self):
+    def test_rebuild_replaces_existing_runtime_plugin_in_staging_only(self):
         collision = self.base / "Plugins/Shattered Raid"
         collision.mkdir()
         (collision / "meta.txt").write_text("existing")
-        with self.assertRaisesRegex(ValueError, "destination collision"):
-            build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
-        self.assertFalse((self.root / "candidate").exists())
+        receipt = build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
+        self.assertIn("Shattered Raid", receipt["runtime_plugins"])
+        self.assertTrue((self.root / "candidate").exists())
         self.assertEqual("existing", (collision / "meta.txt").read_text())
 
     def test_requested_commit_cannot_disagree_with_checkout(self):
