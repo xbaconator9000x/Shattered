@@ -29,6 +29,15 @@ module GameData
       type && Entry.new(type)
     end
   end
+
+  class Type
+    Entry = Struct.new(:id)
+    IDS = { :HUMAN => :HUMAN, :FIRE => :FIRE, :FIGHTING => :FIGHTING }.freeze
+    def self.try_get(id)
+      value = IDS[id]
+      value && Entry.new(value)
+    end
+  end
 end
 
 $gameplay_classes = [
@@ -125,6 +134,14 @@ class ShatteredGameplayMigrationTest < Minitest::Test
        :known => [:QUICKATTACK, :EMBER, :KARATECHOP], :trials => []})
     assert_equal [:QUICKATTACK, :EMBER], ShatteredGameplay.qualifying_moves(human, 1)
     assert ShatteredGameplay.can_choose_primary?(human, 1)
+  end
+
+  def test_curriculum_type_slots_use_named_essentials_types
+    human = Pokemon.new(:HUMAN, 30)
+    human.instance_variable_set(ShatteredGameplay::STATE_IVAR,
+      {:version => 2, :class_id => 1, :secondary_id => nil, :known => [], :trials => []})
+    assert_equal [:HUMAN, :FIRE], human.types
+    assert_nil ShatteredGameplay.essentials_type_id(999)
   end
 
   def test_advanced_choices_and_target_are_derived_from_recovered_type_pairs
