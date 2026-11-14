@@ -28,15 +28,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes mgba-sdl imagemagick xvfb
+          dpkg -L mgba-sdl | tee evidence/mgba-package-files.txt
 
       - name: Run mGBA and capture its actual display
         run: |
           set -euxo pipefail
-          MGBA_BIN="$(command -v mgba-sdl || true)"
-          if [ -z "$MGBA_BIN" ] && [ -x /usr/games/mgba-sdl ]; then
-            MGBA_BIN=/usr/games/mgba-sdl
-          fi
+          MGBA_BIN="$(find /usr -type f -executable \( -iname 'mgba*' -o -iname 'mGBA*' \) -print -quit)"
           test -n "$MGBA_BIN"
+          printf '%s\n' "$MGBA_BIN" | tee evidence/mgba-binary.txt
           Xvfb :99 -screen 0 1024x768x24 >evidence/xvfb.log 2>&1 &
           XVFB_PID=$!
           export DISPLAY=:99
