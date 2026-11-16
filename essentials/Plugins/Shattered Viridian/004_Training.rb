@@ -67,19 +67,27 @@ module ShatteredRenTraining
   def read_manual
     data = load_data(DATA_PATH)
     entries = data.fetch('classes')
-    pbMessage('ROM curriculum reference: these are the original class stats and techniques. This book does not unlock unported specialisations.'.dup)
+    pbMessage('Ren\'s Training Manual records the recovered class stats and techniques. At level 30, use it to choose a discipline; at level 55, return to advance it.'.dup)
     page = 0
     loop do
       first = page * 6
       group = entries[first, 6]
       commands = group.map { |entry| entry.fetch('name').dup }
-      commands += ['Next page', 'Previous page', 'Close']
+      commands += ['Next page', 'Previous page']
+      commands << 'Choose or advance specialisation' if specialisation_available?
+      commands << 'Close'
       choice = pbMessage("Training Manual: page #{page + 1}/#{(entries.length + 5) / 6}".dup, commands, -1)
-      break if choice < 0 || choice == group.length + 2
+      break if choice < 0 || choice == commands.length - 1
       if choice == group.length
         page = (page + 1) % ((entries.length + 5) / 6)
       elsif choice == group.length + 1
         page = (page - 1) % ((entries.length + 5) / 6)
+      elsif choice == group.length + 2 && specialisation_available?
+        if ShatteredGameplay.offer_specialisation!(human)
+          pbMessage('Your training path has been recorded. Your HUMAN stats and techniques now follow that discipline.'.dup)
+        else
+          pbMessage('No eligible discipline is available yet. Learn two techniques of a discipline, then return here.'.dup)
+        end
       else
         entry = group.fetch(choice)
         text = [entry.fetch('name'), entry.fetch('description'),
@@ -93,6 +101,15 @@ module ShatteredRenTraining
       end
     end
     true
+  end
+
+  # The manual is the persistent, map-independent event hook for the full
+  # recovered class tree. It never presents a choice until the gameplay
+  # adapter can validate the HUMAN's level and known moves itself.
+  def specialisation_available?
+    pokemon = human
+    defined?(ShatteredGameplay) && pokemon && pokemon.respond_to?(:level) &&
+      pokemon.level.to_i >= 30 && ShatteredGameplay.respond_to?(:offer_specialisation!)
   end
 end
 
