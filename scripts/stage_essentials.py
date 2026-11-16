@@ -443,8 +443,13 @@ def main():
     p.add_argument('--gate-tileset-image', help='rights-cleared 256px-wide XP tileset PNG')
     p.add_argument('--shattered-rom', help='authorised exact xx1.08 ROM; injects authenticated battle fronts into staged output only')
     a = p.parse_args()
-    print(json.dumps(stage(a.project, a.output, a.archive, a.allow_overwrite,
-                           a.gate_data, a.gate_tileset_image, a.include_equipment, a.include_runtime_set, a.shattered_rom), indent=2))
+    print(json.dumps(stage(
+        a.project, a.output, a.archive, a.allow_overwrite,
+        a.gate_data, a.gate_tileset_image,
+        include_equipment=a.include_equipment,
+        include_runtime_set=a.include_runtime_set,
+        shattered_rom=a.shattered_rom,
+    ), indent=2))
 
 
 if __name__ == '__main__':
