@@ -93,6 +93,7 @@ class PrivateNativeCandidateTest(unittest.TestCase):
     def test_rebuild_discards_only_stale_shattered_runtime_outputs(self):
         (self.base / "SHATTERED_NATIVE_COMPILE_REPORT.json").write_text("{}")
         (self.base / "SHATTERED_RUNTIME_ISOLATION_REPORT.json").write_text("{}")
+        (self.base / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json").write_text("{}")
         tools = self.base / "SHATTERED_OFFLINE_TOOLS" / "Shattered Core"
         tools.mkdir(parents=True)
         (tools / "old.rb").write_text("old private tool")
@@ -101,7 +102,37 @@ class PrivateNativeCandidateTest(unittest.TestCase):
         report = (self.root / "candidate" / "SHATTERED_RUNTIME_ISOLATION_REPORT.json").read_text()
         self.assertIn("private_runtime_plugin_isolation", report)
         self.assertEqual("{}", (self.base / "SHATTERED_NATIVE_COMPILE_REPORT.json").read_text())
+        self.assertFalse((self.root / "candidate" / "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json").exists())
         self.assertTrue((self.base / "SHATTERED_OFFLINE_TOOLS/Shattered Core/old.rb").is_file())
+
+    def test_preserves_reviewed_hns_opening_only_when_all_maps_are_present(self):
+        review = {
+            "maps": {
+                "ReceptionGate_hns": 223,
+                "VictoryRoadKanto_B2F_hns": 224,
+                "Route26North_hns": 225,
+                "Route26_hns": 226,
+                "Route28_hns": 227,
+            },
+            "new_game": [223, 11, 14],
+        }
+        (self.base / "SHATTERED_HNS_REVIEW_IMPORT.json").write_text(
+            __import__("json").dumps(review)
+        )
+        for map_id in review["maps"].values():
+            (self.base / f"Data/Map{map_id:03d}.rxdata").write_bytes(b"reviewed-private-map")
+        receipt = build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
+        self.assertTrue(receipt["hns_gate_installed"])
+        self.assertEqual([223, 224, 225, 226, 227],
+                         receipt["preserved_hns_installation"]["map_ids"])
+
+    def test_does_not_claim_hns_opening_when_a_reviewed_map_is_missing(self):
+        (self.base / "SHATTERED_HNS_REVIEW_IMPORT.json").write_text(
+            '{"maps":{"ReceptionGate_hns":223},"new_game":[223,11,14]}'
+        )
+        receipt = build(self.base, self.root / "candidate", requested_sha=self.requested_sha)
+        self.assertFalse(receipt["hns_gate_installed"])
+        self.assertIsNone(receipt["preserved_hns_installation"])
 
     def test_requested_commit_cannot_disagree_with_checkout(self):
         try:
