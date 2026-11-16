@@ -29,6 +29,9 @@ REPORT = "SHATTERED_NATIVE_CANDIDATE.json"
 STALE_RECEIPTS = (
     "SHATTERED_NATIVE_COMPILE_REPORT.json",
     "SHATTERED_RUNTIME_ISOLATION_REPORT.json",
+    "SHATTERED_NATIVE_PBS_COMPILE_REPORT.json",
+    "SHATTERED_NATIVE_PBS_COMPILE.log",
+    "SHATTERED_PRIVATE_PBS_NATIVE.ok",
     REPORT,
 )
 
@@ -45,6 +48,37 @@ def install_available_mount_composites(candidate):
     if not onix.is_file() or not any(path.is_file() for path in players):
         return None
     return build_mount_composites(candidate)
+
+
+def preserved_hns_installation(candidate):
+    """Return reviewed H&S map IDs only when the authorised base contains them.
+
+    A runtime-only rebuild deliberately never reruns the destructive map
+    installer.  It may, however, faithfully carry forward an already reviewed
+    H&S opening.  This small, fail-closed check prevents the candidate receipt
+    from either erasing that fact or claiming it for a generic Essentials base.
+    """
+    review_path = candidate / "SHATTERED_HNS_REVIEW_IMPORT.json"
+    if not review_path.is_file() or review_path.is_symlink():
+        return None
+    try:
+        review = json.loads(review_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    expected = {
+        "ReceptionGate_hns": 223,
+        "VictoryRoadKanto_B2F_hns": 224,
+        "Route26North_hns": 225,
+        "Route26_hns": 226,
+        "Route28_hns": 227,
+    }
+    if review.get("maps") != expected or review.get("new_game") != [223, 11, 14]:
+        return None
+    for map_id in expected.values():
+        path = candidate / "Data" / f"Map{map_id:03d}.rxdata"
+        if not path.is_file() or path.is_symlink() or path.stat().st_size == 0:
+            return None
+    return {"map_ids": list(expected.values()), "new_game": review["new_game"]}
 
 
 def reset_prior_runtime_outputs(candidate):
@@ -148,6 +182,7 @@ def build(project, output, requested_sha=None, linux_aliases=False):
         # only reviewed runtime-plugin directories in the transient staging copy.
         staged = stage(base, candidate, include_runtime_set=True, replace_runtime_set=True)
         reset_prior_runtime_outputs(candidate)
+        hns_installation = preserved_hns_installation(candidate)
         mounts = install_available_mount_composites(candidate)
         compiled = run_ruby(
             "compile_private_plugins.rb",
@@ -175,7 +210,8 @@ def build(project, output, requested_sha=None, linux_aliases=False):
             "offline_installers_isolated": len(isolated["moved"]),
             "mount_composites": mounts,
             "linux_map_alias_count": aliases["alias_count"] if aliases else None,
-            "hns_gate_installed": False,
+            "hns_gate_installed": hns_installation is not None,
+            "preserved_hns_installation": hns_installation,
             "native_pbs_compiled": False,
             "native_engine_launched": False,
             "gameplay_verified": False,
