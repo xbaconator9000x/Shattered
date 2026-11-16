@@ -14,14 +14,16 @@ module ShatteredPrivatePluginCompiler
   # depend on CRuby stdlib (json/digest), which mkxp-z may not provide.
   # Never include a new .rb file silently: update this inventory and tests first.
   RUNTIME_FILES = {
+    "Shattered Companion" => %w[001_Companion.rb],
     "Shattered Core" => %w[001_Core.rb],
+    "Shattered Gameplay" => %w[001_Gameplay.rb],
     "Shattered Dojo" => %w[001_Starter.rb],
     "Shattered Equipment" => %w[001_Equipment.rb],
-    "Shattered Gate Story" => %w[001_GateStory.rb],
+    "Shattered Gate Story" => %w[001_GateStory.rb 002_Opening.rb],
     "Shattered Murkrow Rescue" => %w[001_Quest.rb],
     "Shattered Raid" => %w[001_Raid.rb],
     "Shattered Route22" => %w[001_Route22.rb],
-    "Shattered Viridian" => %w[001_Entry.rb]
+    "Shattered Viridian" => %w[001_Entry.rb 003_Quest.rb 004_Training.rb 005_NightRaid.rb 006_ForestConfrontation.rb]
   }.freeze
   INSTALLER_FILES = {
     "Shattered Dojo" => %w[002_Install.rb],
@@ -130,7 +132,7 @@ module ShatteredPrivatePluginCompiler
     end
   end
 
-  def compile(project, folders, replace_pins: {})
+  def compile(project, folders, replace_pins: {}, rebuild_existing: false)
     project = File.realpath(project)
     check(File.file?(File.join(project, "SHATTERED_STAGING_REPORT.json")),
       "Refusing to compile a project without a private staging report")
@@ -142,6 +144,22 @@ module ShatteredPrivatePluginCompiler
     validate_existing!(entries)
     check(folders.is_a?(Array) && folders.length.between?(1, 15) &&
       folders.uniq == folders, "Invalid requested plugin list")
+    # Rebuilding a reviewed private candidate stages new plugin directories
+    # over a prior PluginScripts archive. It must not leave old Shattered
+    # bytecode in place, but it also must not touch Essentials/upstream
+    # entries. The caller explicitly opts in and can only remove names it is
+    # compiling in this invocation.
+    removed = []
+    if rebuild_existing
+      names = folders.map(&:to_s)
+      entries.delete_if do |entry|
+        next false unless names.include?(entry[0])
+        removed << { "plugin" => entry[0],
+                     "source_sha256" => Digest::SHA256.hexdigest(
+                       entry[2].map { |script| Zlib::Inflate.inflate(script[1]) }.join("\0")) }
+        true
+      end
+    end
     added = []
     unchanged = []
     replaced = []
@@ -192,7 +210,7 @@ module ShatteredPrivatePluginCompiler
         added << folder
       end
     end
-    if added.any? || replaced.any?
+    if added.any? || replaced.any? || removed.any?
       backup = "#{target}.pre_shattered_#{Digest::SHA256.hexdigest(original)[0, 12]}.bak"
       check(!File.exist?(backup) && !File.symlink?(backup), "Existing backup needs review")
       temp = "#{target}.shattered.tmp"
@@ -208,7 +226,7 @@ module ShatteredPrivatePluginCompiler
     end
     report = {
       "kind" => "native_format_plugin_archive_not_gameplay_acceptance",
-      "added" => added, "unchanged" => unchanged, "replaced" => replaced,
+      "added" => added, "unchanged" => unchanged, "replaced" => replaced, "removed" => removed,
       "offline_only" => offline_only,
       "runtime_script_names" => entries.select { |entry| RUNTIME_FILES.key?(entry[0]) }.to_h { |entry| [entry[0], entry[2].map(&:first)] },
       "plugin_names" => entries.map(&:first),
@@ -224,7 +242,7 @@ module ShatteredPrivatePluginCompiler
 end
 
 if $PROGRAM_NAME == __FILE__
-  options = { :plugins => [], :replace_pins => {} }
+  options = { :plugins => [], :replace_pins => {}, :rebuild_existing => false }
   parser = OptionParser.new do |opts|
     opts.banner = "Usage: ruby scripts/compile_private_plugins.rb --project PRIVATE_STAGED --plugin 'Shattered Core'"
     opts.on("--project PATH") { |value| options[:project] = value }
@@ -234,10 +252,12 @@ if $PROGRAM_NAME == __FILE__
       abort "Invalid pinned replacement" unless name && sha && !options[:replace_pins].key?(name)
       options[:replace_pins][name] = sha
     end
+    opts.on("--rebuild-existing") { options[:rebuild_existing] = true }
   end
   parser.parse!
   abort parser.to_s unless options[:project]
   options[:plugins] = ["Shattered Core"] if options[:plugins].empty?
   puts JSON.pretty_generate(ShatteredPrivatePluginCompiler.compile(options[:project], options[:plugins],
-    replace_pins: options[:replace_pins]))
+    replace_pins: options[:replace_pins], rebuild_existing: options[:rebuild_existing]))
 end
+

@@ -307,4 +307,31 @@ class ShatteredEquipmentTest < Minitest::Test
     Shattered.define_singleton_method(:stamina_cost, original)
     ShatteredEquipment.install_battle_hook
   end
+  def test_bag_use_toggles_owned_gear_without_consuming_it
+    bag = Class.new do
+      def has?(item_id)
+        item_id == :KNIFE
+      end
+    end.new
+    player = Struct.new(:party).new([@human])
+
+    assert_equal 1, ShatteredEquipment.use_from_bag(:KNIFE, player, bag)
+    assert ShatteredEquipment.equipped?(@human, :KNIFE)
+    assert_equal :KNIFE, ShatteredEquipment.equipped_item(@human, :right_hand)
+
+    assert_equal 1, ShatteredEquipment.use_from_bag(:KNIFE, player, bag)
+    refute ShatteredEquipment.equipped?(@human, :KNIFE)
+  end
+
+  def test_bag_use_rejects_unowned_gear
+    bag = Class.new do
+      def has?(_item_id)
+        false
+      end
+    end.new
+    player = Struct.new(:party).new([@human])
+    assert_equal 0, ShatteredEquipment.use_from_bag(:KNIFE, player, bag)
+    refute ShatteredEquipment.equipped?(@human, :KNIFE)
+  end
+
 end

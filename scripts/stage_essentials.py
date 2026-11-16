@@ -5,6 +5,7 @@ Never modifies original. Doesn't compile plugin scripts or test Android runtime.
 """
 import argparse
 import binascii
+import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -258,7 +259,7 @@ def png_dimensions(data):
 
 
 
-def install_shattered_runtime_set(dest):
+def install_shattered_runtime_set(dest, replace_existing=False):
     """Stage the reviewed Shattered plugin set for native archive compilation.
 
     This is not a native compilation or gameplay test. The subsequent guarded
@@ -266,10 +267,10 @@ def install_shattered_runtime_set(dest):
     """
     import re
     from pathlib import Path
-    from shutil import copytree
+    from shutil import copytree, rmtree
 
     from_names = (
-        "Shattered Dojo", "Shattered Equipment", "Shattered Gate Story",
+        "Shattered Companion", "Shattered Gameplay", "Shattered Dojo", "Shattered Equipment", "Shattered Gate Story",
         "Shattered HnS Gate", "Shattered Murkrow Rescue", "Shattered Raid",
         "Shattered Route22", "Shattered Viridian", "Shattered World Links",
     )
@@ -284,19 +285,78 @@ def install_shattered_runtime_set(dest):
             raise ValueError(f"missing metadata: {name}")
         if any(p.is_symlink() for p in source.rglob("*")):
             raise ValueError(f"symlink in reviewed plugin: {name}")
-        if (plugins / name).exists() or (plugins / name).is_symlink():
-            raise ValueError(f"runtime plugin destination collision: {name}")
+        target = plugins / name
+        if target.exists() or target.is_symlink():
+            if not replace_existing:
+                raise ValueError(f"runtime plugin destination collision: {name}")
+            if target.is_symlink() or not target.is_dir():
+                raise ValueError(f"unsafe runtime plugin replacement target: {name}")
+    replaced = []
+    if replace_existing:
+        for name in from_names:
+            target = plugins / name
+            if target.exists():
+                rmtree(target)
+                replaced.append(name)
     for name in from_names:
         copytree(sources / name, plugins / name)
     return {
         "staged": list(from_names),
+        "replaced": replaced,
         "native_compiled": False,
         "offline_installers_isolated": False,
         "gameplay_verified": False,
     }
 
+
+def install_shattered_rom_fronts(dest, rom):
+    """Inject authenticated xx1.08 battle fronts into a staged copy only.
+
+    The exact user-supplied ROM is hash-gated by the extractor. This function
+    intentionally writes only the selected front PNGs in the transient staged
+    project and reports their hashes; it never copies ROM bytes or art into the
+    repository source tree.
+    """
+    import sys
+
+    script_dir = str(ROOT / "scripts")
+    if script_dir not in sys.path:
+        sys.path.insert(0, script_dir)
+    import extract_shattered_xx108_fronts as fronts
+
+    rom = Path(rom).absolute()
+    if not rom.is_file() or rom.is_symlink():
+        raise ValueError("Shattered ROM must be a regular local file")
+    data = rom.read_bytes()
+    actual = hashlib.sha256(data).hexdigest()
+    if actual != fronts.ROM_SHA256:
+        raise ValueError(
+            f"refusing unrecognised Shattered ROM: {actual} "
+            f"(expected {fronts.ROM_SHA256})"
+        )
+    output = dest / "Graphics" / "Pokemon" / "Front"
+    output.mkdir(parents=True, exist_ok=True)
+    installed = []
+    for name, species_id in fronts.SPECIES_IDS.items():
+        target = output / f"{name}.png"
+        previous = hashlib.sha256(target.read_bytes()).hexdigest() if target.is_file() else None
+        fronts.export_one(data, name, species_id, output)
+        installed.append({
+            "species": name,
+            "path": str(target.relative_to(dest)),
+            "replaced_sha256": previous,
+            "output_sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+        })
+    return {
+        "source_rom_sha256": actual,
+        "fronts": installed,
+        "native_engine_launched": False,
+    }
+
+
 def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_image=None,
-          include_equipment=False, include_runtime_set=False):
+          include_equipment=False, include_runtime_set=False, replace_runtime_set=False,
+          shattered_rom=None):
     project = Path(project).absolute()
     reject_symlinked_project(project)
     project = project.resolve()
@@ -343,7 +403,9 @@ def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_im
         if include_runtime_set:
             if include_equipment:
                 raise ValueError("use --include-runtime-set OR --include-equipment, not both")
-            report["runtime_set"] = install_shattered_runtime_set(target)
+            report["runtime_set"] = install_shattered_runtime_set(
+                target, replace_existing=replace_runtime_set
+            )
             report["caveats"].append("Full Shattered runtime set staged only; compile and isolate offline installers before launch")
         if include_equipment:
             report['equipment'] = install_shattered_equipment(target)
@@ -355,6 +417,11 @@ def stage(project, output, archives=(), overwrite=False, gate_data=None, gate_im
             report["caveats"].append(
                 "Run pbInstallShatteredHNSReceptionGate in Essentials to create native map data; "
                 "engine compilation and warp/collision playtest remain required")
+        if shattered_rom is not None:
+            report["shattered_rom_fronts"] = install_shattered_rom_fronts(target, shattered_rom)
+            report["caveats"].append(
+                "Authenticated xx1.08 battle fronts were injected into this staged copy only; "
+                "field-character sheets and native gameplay remain separately unverified")
         for key, archive in requested.items():
             report['plugin_archives'][key] = safe_zip_install(archive, target, key, overwrite)
         (target / 'SHATTERED_STAGING_REPORT.json').write_text(json.dumps(report, indent=2) + '\n')
@@ -374,9 +441,15 @@ def main():
                    help='stage in-repo equipment adapter only after validating native item/move PBS IDs')
     p.add_argument('--gate-data', help='converted SE-013 reception gate JSON bundle')
     p.add_argument('--gate-tileset-image', help='rights-cleared 256px-wide XP tileset PNG')
+    p.add_argument('--shattered-rom', help='authorised exact xx1.08 ROM; injects authenticated battle fronts into staged output only')
     a = p.parse_args()
-    print(json.dumps(stage(a.project, a.output, a.archive, a.allow_overwrite,
-                           a.gate_data, a.gate_tileset_image, a.include_equipment, a.include_runtime_set), indent=2))
+    print(json.dumps(stage(
+        a.project, a.output, a.archive, a.allow_overwrite,
+        a.gate_data, a.gate_tileset_image,
+        include_equipment=a.include_equipment,
+        include_runtime_set=a.include_runtime_set,
+        shattered_rom=a.shattered_rom,
+    ), indent=2))
 
 
 if __name__ == '__main__':

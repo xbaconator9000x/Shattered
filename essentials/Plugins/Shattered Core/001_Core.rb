@@ -5,6 +5,7 @@ module Shattered
   HUMAN_SPECIES = :HUMAN
   STRUGGLE = :STRUGGLE
   class HumanPartyFullError < ArgumentError; end
+  class PartnerCapacityError < ArgumentError; end
   BASE_STAMINA = 60
   STAMINA_PER_10_LEVELS = 5
   STAMINA_CAP = 100
@@ -19,10 +20,25 @@ module Shattered
   }.freeze
   EQUIPMENT_SLOTS = [:head, :torso, :left_hand, :right_hand, :legs, :feet].freeze
   SPECIALISATION_LEVELS = [30, 55].freeze
+  # A first discipline is chosen at level 30. At level 55 it resolves to one
+  # of the three approved paired disciplines; choices live on the genuine
+  # HUMAN Pokémon instance and therefore survive Essentials save serialization.
+  SPECIALISATIONS = [:FIREBREATHER, :MARTIALARTIST, :ROGUE,
+                     :ALCHEMIST, :MEDIUM, :MARINER].freeze
+  ADVANCED_SPECIALISATIONS = {
+    :FIREBREATHER => :FLAMEMONK, :MARTIALARTIST => :FLAMEMONK,
+    :ROGUE => :ASSASSIN, :ALCHEMIST => :ASSASSIN,
+    :MEDIUM => :WATERELEMENTIST, :MARINER => :WATERELEMENTIST
+  }.freeze
+  SPECIALISATION_STATE_IVAR = :@shattered_specialisation
 
   class << self
     def human?(pkmn)
       defined?(Pokemon) && pkmn.is_a?(Pokemon) && pkmn.species == HUMAN_SPECIES
+    end
+
+    def human_combatant?(pkmn)
+      human?(pkmn) || (defined?(Pokemon) && pkmn.is_a?(Pokemon) && pkmn.species == :RAIDER)
     end
 
     # Uses Essentials' genuine HUMAN species rather than a battle engine replacement.
@@ -93,6 +109,62 @@ module Shattered
       human = ensure_human(player, level)
       @human_setup_diagnostic = nil
       human
+    end
+
+    def specialisation_state(human)
+      raise ArgumentError, "HUMAN required" unless human?(human)
+      value = human.instance_variable_get(SPECIALISATION_STATE_IVAR)
+      if value.nil?
+        value = { :version => 1, :primary => nil, :advanced => nil }
+        human.instance_variable_set(SPECIALISATION_STATE_IVAR, value)
+      end
+      valid = value.is_a?(Hash) && value[:version] == 1 &&
+        (value[:primary].nil? || SPECIALISATIONS.include?(value[:primary])) &&
+        (value[:advanced].nil? || ADVANCED_SPECIALISATIONS.value?(value[:advanced])) &&
+        (value[:advanced].nil? || value[:primary] &&
+         ADVANCED_SPECIALISATIONS[value[:primary]] == value[:advanced])
+      raise ArgumentError, "Invalid HUMAN specialisation save data" unless valid
+      value
+    end
+
+    def specialisation_options(human)
+      return [] unless human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[0]
+      state = specialisation_state(human)
+      state[:primary] ? [state[:primary]] : SPECIALISATIONS.dup
+    end
+
+    def choose_specialisation!(human, discipline)
+      raise ArgumentError, "HUMAN must reach level #{SPECIALISATION_LEVELS[0]}" unless
+        human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[0]
+      discipline = discipline.to_sym if discipline.respond_to?(:to_sym)
+      raise ArgumentError, "Unknown HUMAN discipline" unless SPECIALISATIONS.include?(discipline)
+      state = specialisation_state(human)
+      raise ArgumentError, "HUMAN discipline is already chosen" if state[:primary]
+      state[:primary] = discipline
+      discipline
+    end
+
+    def advanced_specialisation_options(human)
+      return [] unless human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[1]
+      primary = specialisation_state(human)[:primary]
+      primary ? [ADVANCED_SPECIALISATIONS.fetch(primary)] : []
+    end
+
+    def choose_advanced_specialisation!(human, discipline)
+      raise ArgumentError, "HUMAN must reach level #{SPECIALISATION_LEVELS[1]}" unless
+        human?(human) && human.respond_to?(:level) &&
+        human.level.to_i >= SPECIALISATION_LEVELS[1]
+      state = specialisation_state(human)
+      raise ArgumentError, "Choose a HUMAN discipline first" unless state[:primary]
+      discipline = discipline.to_sym if discipline.respond_to?(:to_sym)
+      expected = ADVANCED_SPECIALISATIONS.fetch(state[:primary])
+      raise ArgumentError, "Incompatible advanced HUMAN discipline" unless discipline == expected
+      raise ArgumentError, "Advanced HUMAN discipline is already chosen" if state[:advanced]
+      state[:advanced] = discipline
+      discipline
     end
 
     def max_stamina(level)
@@ -220,7 +292,7 @@ module Shattered
         def pbCalcTypeMod(move_type, user, target)
           # Shadow moves retain the engine's special effectiveness rule.
           if move_type != :SHADOW && target && target.respond_to?(:pokemon) &&
-             Shattered.human?(target.pokemon)
+             Shattered.human_combatant?(target.pokemon)
             return Shattered.human_type_multiplier(move_type)
           end
           shattered_core_original_pb_calc_type_mod(move_type, user, target)
@@ -236,6 +308,13 @@ module Shattered
       battler_class = Battle::Battler
       return true if battler_class.method_defined?(:shattered_core_original_pb_try_use_move)
       battler_class.class_eval do
+        # Enemy HUMANs use their own native move PP. Shared stamina belongs
+        # only to the player, never to a raider on the opposing side.
+        def shattered_player_human?
+          Shattered.human?(instance_variable_get(:@pokemon)) &&
+            (!respond_to?(:pbOwnedByPlayer?) || pbOwnedByPlayer?)
+        end
+
         alias_method :shattered_core_original_pb_can_choose_move, :pbCanChooseMove?
         alias_method :shattered_core_original_pb_try_use_move, :pbTryUseMove
         alias_method :shattered_core_original_pb_reduce_pp, :pbReducePP
@@ -248,7 +327,7 @@ module Shattered
           # shared stamina can pay for it. Borrow one PP ONLY while running the
           # original legality checks (Disable, Encore, etc.), then restore it.
           # Never borrow PP for a companion, an unmapped technique or Struggle.
-          borrow_pp = Shattered.human?(human) && move.respond_to?(:pp) &&
+          borrow_pp = shattered_player_human? && move.respond_to?(:pp) &&
             move.respond_to?(:pp=) && move.pp == 0 &&
             move.id != Shattered::STRUGGLE &&
             Shattered.can_spend_stamina?(human, move.id)
@@ -262,7 +341,7 @@ module Shattered
             move.pp = original_pp if borrow_pp
           end
           return false unless allowed
-          return true unless Shattered.human?(human)
+          return true unless shattered_player_human?
           return true if Shattered.can_spend_stamina?(human, move.id)
           if showMessages
             message = _INTL("HUMAN doesn't have enough stamina to use {1}!", move.name)
@@ -276,12 +355,12 @@ module Shattered
         end
 
         def pbReducePP(move)
-          return true if Shattered.human?(instance_variable_get(:@pokemon))
+          return true if shattered_player_human?
           shattered_core_original_pb_reduce_pp(move)
         end
 
         def pbReducePPOther(move)
-          return true if Shattered.human?(instance_variable_get(:@pokemon))
+          return true if shattered_player_human?
           shattered_core_original_pb_reduce_pp_other(move)
         end
 
@@ -290,7 +369,7 @@ module Shattered
           result = shattered_core_original_pb_try_use_move(
             choice, move, specialUsage, skipAccuracyCheck
           )
-          return result unless result && Shattered.human?(human)
+          return result unless result && shattered_player_human?
           used_move = choice[2] || move
           return result if Shattered.spend_stamina(human, used_move.id)
           @lastMoveFailed = true
@@ -312,6 +391,14 @@ module Shattered
       return existing if existing
       raise ArgumentError, "party exceeds six members" if party.length > 6
       raise ArgumentError, "party full; unable to add companion" if party.length >= 6
+      # Shattered's early-game party is the player-character HUMAN plus one
+      # active Pokémon partner. Do not silently turn that into a normal six
+      # Pokémon party: the field follower, indoor hiding and automatic mount
+      # rules all rely on an unambiguous partner identity. Future story swaps
+      # must explicitly remove/replace the current partner at a safe location.
+      if party.any? { |pkmn| pkmn.respond_to?(:species) && !human?(pkmn) }
+        raise PartnerCapacityError, "HUMAN can travel with only one Pokémon partner"
+      end
       raise ArgumentError, "Pokemon class unavailable" unless defined?(Pokemon)
       friend = Pokemon.new(species, level)
       party << friend
@@ -329,3 +416,4 @@ if defined?(EventHandlers)
   EventHandlers.add(:on_start_battle, :shattered_core_battle_hooks,
     proc { |*args| Shattered.install_battle_hooks })
 end
+

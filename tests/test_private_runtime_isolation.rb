@@ -34,6 +34,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
     with_stage do |root|
       add_plugin(root, "Shattered Gate Story", {
         "001_GateStory.rb" => "module ShatteredGateStory; end\n",
+        "002_Opening.rb" => "module ShatteredOpening; end\n",
         "002_Install.rb" => "require 'json'\nraise 'offline only'\n"
       })
       add_plugin(root, "Shattered World Links", {
@@ -65,6 +66,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
     with_stage do |root|
       add_plugin(root, "Shattered Gate Story", {
         "001_GateStory.rb" => "module ShatteredGateStory; end\n",
+        "002_Opening.rb" => "module ShatteredOpening; end\n",
         "002_Install.rb" => "require 'json'\n"
       })
       COMPILER.compile(root, ["Shattered Gate Story"])
@@ -80,6 +82,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
       add_plugin(root, "Shattered Core", { "001_Core.rb" => "module Shattered; end\n" })
       add_plugin(root, "Shattered Gate Story", {
         "001_GateStory.rb" => "module ShatteredGateStory; end\n",
+        "002_Opening.rb" => "module ShatteredOpening; end\n",
         "002_Install.rb" => "require 'json'\n"
       })
       COMPILER.compile(root, ["Shattered Core"])
@@ -102,6 +105,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
     with_stage do |root|
       add_plugin(root, "Shattered Gate Story", {
         "001_GateStory.rb" => "module ShatteredGateStory; end\n",
+        "002_Opening.rb" => "module ShatteredOpening; end\n",
         "002_Install.rb" => "require 'json'\n"
       })
       COMPILER.compile(root, ["Shattered Gate Story"])
@@ -116,6 +120,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
     with_stage do |root|
       add_plugin(root, "Shattered Gate Story", {
         "001_GateStory.rb" => "module ShatteredGateStory; end\n",
+        "002_Opening.rb" => "module ShatteredOpening; end\n",
         "002_Install.rb" => "require 'json'\n"
       })
       COMPILER.compile(root, ["Shattered Gate Story"])
@@ -125,7 +130,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
     end
   end
 
-  def test_actual_eight_repository_runtime_plugins_can_be_isolated
+  def test_all_declared_repository_runtime_plugins_can_be_isolated
     with_stage do |root|
       source_root = File.expand_path("../essentials/Plugins", __dir__)
       names = (COMPILER::RUNTIME_FILES.keys + COMPILER::INSTALLER_FILES.keys).uniq
@@ -134,7 +139,7 @@ class PrivateRuntimeIsolationTest < Minitest::Test
       end
       COMPILER.compile(root, names)
       receipt = ISOLATION.finalize(root)
-      assert_equal 8, receipt.fetch("runtime_plugin_names").length
+      assert_equal COMPILER::RUNTIME_FILES.length, receipt.fetch("runtime_plugin_names").length
       assert_equal 2, names.count { |name| !COMPILER::RUNTIME_FILES.key?(name) }
       assert_equal receipt, ISOLATION.finalize(root)
       Dir.glob(File.join(root, "Plugins/Shattered *", "**", "*.rb")).each do |path|

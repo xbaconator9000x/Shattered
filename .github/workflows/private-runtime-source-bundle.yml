@@ -4,6 +4,10 @@ on:
   push:
     paths:
       - '.github/workflows/private-runtime-source-bundle.yml'
+      - 'essentials/Plugins/**'
+      - 'essentials/PBS/**'
+      - 'scripts/**'
+      - 'tests/**'
       - 'scripts/build_private_native_candidate.py'
       - 'scripts/stage_essentials.py'
       - 'tests/test_private_native_candidate.py'
@@ -24,6 +28,14 @@ on:
       - 'tests/test_human_battle_sprite.py'
   pull_request:
     paths:
+      - 'essentials/Plugins/**'
+      - 'essentials/PBS/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'scripts/build_private_native_candidate.py'
+      - 'tests/test_private_native_candidate.py'
+      - 'scripts/stage_essentials.py'
+      - 'tests/test_stage.py'
       - 'scripts/finalize_private_runtime.rb'
       - 'tests/test_private_runtime_isolation.rb'
       - 'scripts/prepare_linux_map_aliases.py'

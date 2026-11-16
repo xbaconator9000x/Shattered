@@ -6,9 +6,11 @@ import struct
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 import zipfile
 import zlib
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'scripts'))
+import stage_essentials
 from stage_essentials import stage, safe_zip_install, clean_path
 from validate_integration import validate
 
@@ -35,6 +37,21 @@ class StagingTest(unittest.TestCase):
         (self.project / 'PBS/pokemon.txt').write_text('[PIKACHU]\nName = Pikachu\n')
         (self.project / 'Plugins/v21.1 Hotfixes/meta.txt').write_text('Name = v21.1 Hotfixes\n')
 
+    def test_cli_routes_shattered_rom_to_rom_injection_not_runtime_replace_flag(self):
+        arguments = [
+            'stage_essentials.py', '--project', '/private/base', '--output', '/private/out',
+            '--include-runtime-set', '--shattered-rom', '/private/xx1.08.gba',
+        ]
+        with patch.object(sys, 'argv', arguments), patch.object(stage_essentials, 'stage',
+            return_value={'ok': True}) as staged:
+            stage_essentials.main()
+        self.assertEqual(('/private/base', '/private/out', [], False, None, None), staged.call_args.args)
+        self.assertEqual(
+            {'include_equipment': False, 'include_runtime_set': True,
+             'shattered_rom': '/private/xx1.08.gba'},
+            staged.call_args.kwargs,
+        )
+
     def test_manifest_dependency_graph(self):
         self.assertEqual(7, validate()['plugins'])
 
@@ -50,7 +67,8 @@ class StagingTest(unittest.TestCase):
     def test_full_runtime_set_stages_all_reviewed_modules_without_modifying_source(self):
         out = self.root / 'staged'
         report = stage(self.project, out, include_runtime_set=True)
-        self.assertEqual(9, len(report['runtime_set']['staged']))
+        self.assertEqual(11, len(report['runtime_set']['staged']))
+        self.assertIn('Shattered Companion', report['runtime_set']['staged'])
         self.assertFalse(report['runtime_set']['native_compiled'])
         self.assertFalse(report['runtime_set']['gameplay_verified'])
         for name in report['runtime_set']['staged']:

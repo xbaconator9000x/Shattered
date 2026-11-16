@@ -47,6 +47,9 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Equipment/001_Equipment.rb'
           ruby tests/test_equipment.rb
           ruby tests/test_equipment_core_integration.rb
+          ruby -c 'essentials/Plugins/Shattered Companion/001_Companion.rb'
+          ruby tests/test_companion.rb
+          ruby tests/test_shattered_gameplay.rb
       - name: Private native RMXP inventory regression (synthetic fixtures only)
         run: |
           ruby -c scripts/audit_native_project.rb
@@ -66,6 +69,12 @@ jobs:
           ruby -c 'essentials/Plugins/Shattered Viridian/002_Install.rb'
           ruby tests/test_viridian.rb
           ruby tests/test_viridian_map_restore.rb
+          ruby tests/test_viridian_quest.rb
+          ruby tests/test_ren_training.rb
+          ruby tests/test_viridian_night_raid.rb
+          ruby tests/test_forest_confrontation.rb
+          python3 -m unittest discover -s tests -p test_extract_training.py
+          ruby -c scripts/install_private_viridian_chapter.rb
           ruby -c scripts/repair_private_viridian_center_arrival.rb
           ruby tests/test_private_viridian_center_arrival.rb
       - name: Native dojo starter questionnaire and map collision regression
@@ -87,6 +96,8 @@ jobs:
         run: |
           ruby -c scripts/compile_private_plugins.rb
           ruby tests/test_private_plugin_compiler.rb
+          ruby tests/test_private_hns_upgrade.rb
+          ruby tests/test_private_rom_guard.rb
       - name: Private native runtime-only plugin isolation regression
         run: |
           ruby -c scripts/finalize_private_runtime.rb

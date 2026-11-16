@@ -43,13 +43,14 @@ class PrivatePluginCompilerTest < Minitest::Test
     with_stage do |root|
       add_staged_plugin(root, "Shattered Gate Story", {
         "001_GateStory.rb" => "module GateRuntime; end\n",
+        "002_Opening.rb" => "module OpeningRuntime; end\n",
         "002_Install.rb" => "require 'json'\nraise 'offline installer executed'\n"
       })
       report = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Gate Story"])
       assert_equal ["Shattered Gate Story"], report["added"]
       entries = Marshal.load(File.binread(File.join(root, "Data/PluginScripts.rxdata")))
-      assert_equal ["001_GateStory.rb"], entries.last[2].map(&:first)
-      refute_includes Zlib::Inflate.inflate(entries.last[2].first.last), "offline installer"
+      assert_equal ["001_GateStory.rb", "002_Opening.rb"], entries.last[2].map(&:first)
+      refute_includes entries.last[2].map { |item| Zlib::Inflate.inflate(item.last) }.join, "offline installer"
     end
   end
 
@@ -128,7 +129,8 @@ class PrivatePluginCompilerTest < Minitest::Test
       assert_equal ["Shattered HnS Gate", "Shattered World Links"].sort,
         report["offline_only"].sort
       entries = Marshal.load(File.binread(File.join(root, "Data/PluginScripts.rxdata")))
-      assert_equal 9, entries.length # existing Hotfixes + eight Shattered runtime plugins
+      assert_equal 1 + ShatteredPrivatePluginCompiler::RUNTIME_FILES.length, entries.length
+      # Existing Hotfixes plus every explicitly declared Shattered runtime plugin.
       entries.drop(1).each do |name, _metadata, scripts|
         assert_equal ShatteredPrivatePluginCompiler::RUNTIME_FILES.fetch(name),
           scripts.map(&:first)
@@ -155,7 +157,7 @@ class PrivatePluginCompilerTest < Minitest::Test
         end
       end
       _child, status = Process.waitpid2(pid)
-      assert status.success?, "All eight source plugins must load without installer dependencies"
+      assert status.success?, "All declared source plugins must load without installer dependencies"
     end
   end
 
@@ -190,6 +192,27 @@ class PrivatePluginCompilerTest < Minitest::Test
       assert_equal ["Shattered Core"], report["unchanged"]
       assert_equal sha, Digest::SHA256.file(target).hexdigest
       assert_equal 1, Dir.glob(target + ".pre_shattered_*.bak").length
+    end
+  end
+
+  def test_explicit_rebuild_replaces_only_requested_shattered_entries
+    with_stage do |root|
+      target = File.join(root, "Data/PluginScripts.rxdata")
+      ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"])
+      entries = Marshal.load(File.binread(target))
+      upstream = ["Other Plugin", { :version => "1.0.0", :essentials => ["21.1"] },
+                  [["other.rb", Zlib::Deflate.deflate("OTHER = true\n")]]]
+      entries << upstream
+      File.binwrite(target, Marshal.dump(entries))
+      File.write(File.join(root, "Plugins/Shattered Core/001_Core.rb"),
+        "module Shattered; CORE_TEST = :rebuilt; end\n")
+      report = ShatteredPrivatePluginCompiler.compile(root, ["Shattered Core"], rebuild_existing: true)
+      assert_equal ["Shattered Core"], report.fetch("removed").map { |entry| entry.fetch("plugin") }
+      assert_equal ["Shattered Core"], report.fetch("added")
+      rebuilt = Marshal.load(File.binread(target))
+      assert_equal Marshal.dump(upstream), Marshal.dump(rebuilt.find { |entry| entry[0] == "Other Plugin" })
+      source = Zlib::Inflate.inflate(rebuilt.find { |entry| entry[0] == "Shattered Core" }[2][0][1])
+      assert_includes source, "CORE_TEST = :rebuilt"
     end
   end
 
