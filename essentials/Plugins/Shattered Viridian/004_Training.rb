@@ -108,8 +108,20 @@ module ShatteredRenTraining
   # adapter can validate the HUMAN's level and known moves itself.
   def specialisation_available?
     pokemon = human
-    defined?(ShatteredGameplay) && pokemon && pokemon.respond_to?(:level) &&
+    return false unless defined?(ShatteredGameplay) && pokemon && pokemon.respond_to?(:level) &&
       pokemon.level.to_i >= 30 && ShatteredGameplay.respond_to?(:offer_specialisation!)
+    # Do not offer a dead-end command after the level-30 choice has been made
+    # but before the level-55 advancement unlocks, nor after an advanced class
+    # is complete.  Keep the small fallback for an older gameplay adapter so a
+    # save can still be opened and upgraded rather than losing its manual UI.
+    return true unless ShatteredGameplay.respond_to?(:class_id_for) &&
+      ShatteredGameplay.respond_to?(:primary_choices) &&
+      ShatteredGameplay.respond_to?(:advanced_choices)
+    if ShatteredGameplay.class_id_for(pokemon) == 0
+      !ShatteredGameplay.primary_choices(pokemon).empty?
+    else
+      !ShatteredGameplay.advanced_choices(pokemon).empty?
+    end
   end
 end
 
