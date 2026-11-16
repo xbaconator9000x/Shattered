@@ -128,4 +128,20 @@ class RenTrainingTest < Minitest::Test
   ensure
     ShatteredGameplay.offered_human = nil if defined?(ShatteredGameplay) && ShatteredGameplay.respond_to?(:offered_human=)
   end
+
+  def test_manual_hides_specialisation_between_primary_and_advanced_levels
+    Object.const_set(:ShatteredGameplay, Module.new) unless defined?(ShatteredGameplay)
+    ShatteredGameplay.singleton_class.class_eval do
+      define_method(:offer_specialisation!) { |_pokemon| raise 'should not be offered' }
+      define_method(:class_id_for) { |_pokemon| 1 }
+      define_method(:primary_choices) { |_pokemon| [] }
+      define_method(:advanced_choices) { |_pokemon| [] }
+    end
+    @human.level = 40
+    # Six classes, Next, Previous, Close.  There must be no specialisation
+    # entry between the established primary discipline and level 55.
+    $choices = [8]
+    assert Q.read_manual
+    refute_includes $messages, 'Your training path has been recorded. Your HUMAN stats and techniques now follow that discipline.'
+  end
 end
