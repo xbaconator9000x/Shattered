@@ -40,7 +40,7 @@ class RenTrainingTest < Minitest::Test
     $PokemonGlobal = Object.new
     $chapter_stage = :supplied
     $night_stage = :rested
-    @human = OpenStruct.new(species: :HUMAN, egg?: false, moves: [])
+    @human = OpenStruct.new(species: :HUMAN, egg?: false, level: 5, moves: [])
     $player = OpenStruct.new(party: [OpenStruct.new(species: :AIPOM, egg?: false, moves: []), @human])
     $bag = Bag.new
     $messages = []
@@ -110,6 +110,22 @@ class RenTrainingTest < Minitest::Test
     assert_includes $messages, 'Class 170'
     assert_includes $messages, 'Types: Human/Fire'
     assert_includes $messages, 'Lv1: Quick Attack'
-    assert_match(/reference/, $messages.first)
+    assert_match(/Training Manual/, $messages.first)
+  end
+
+  def test_manual_offers_the_real_specialisation_hook_at_level_30
+    Object.const_set(:ShatteredGameplay, Module.new) unless defined?(ShatteredGameplay)
+    ShatteredGameplay.singleton_class.class_eval do
+      attr_accessor :offered_human
+      define_method(:offer_specialisation!) { |pokemon| self.offered_human = pokemon; :FIREBREATHER }
+    end
+    @human.level = 30
+    # Six classes, Next, Previous, specialisation, Close.
+    $choices = [8, -1]
+    assert Q.read_manual
+    assert_same @human, ShatteredGameplay.offered_human
+    assert_includes $messages, 'Your training path has been recorded. Your HUMAN stats and techniques now follow that discipline.'
+  ensure
+    ShatteredGameplay.offered_human = nil if defined?(ShatteredGameplay) && ShatteredGameplay.respond_to?(:offered_human=)
   end
 end
